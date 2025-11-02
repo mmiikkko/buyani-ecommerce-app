@@ -1,6 +1,6 @@
-// import {betterAuth} from "better-auth";
+// import { betterAuth } from "better-auth";
 
-// const betterAuth = betterAuth({
+// const authConfig = betterAuth({
 //   providers: [
 //     {
 //       type: "email",
@@ -10,10 +10,9 @@
 //     },
 //   ],
 //   database: {
-//     type: "postgresql", // or mysql / sqlite
+//     type: "postgresql", // or "mysql" / "sqlite"
 //     url: process.env.DATABASE_URL,
 //   },
 // });
 
-// export const { auth, handlers } = betterAuth;
-
+// export const { auth, handlers } = authConfig;
