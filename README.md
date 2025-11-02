@@ -24,6 +24,8 @@ To build all apps and packages, run the following command:
 bun install
 ```
 
+To run all apps:
+
 ```sh
 bun dev
 ```

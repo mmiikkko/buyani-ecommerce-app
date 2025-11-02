@@ -1,0 +1,10 @@
+{
+  "name": "@repo/ui",
+  "type": "module",
+  "main": "./index.ts",
+  "exports": {
+    ".": "./index.ts",
+    "./node": "./node.ts",
+    "./assets/*": "./assets/*"
+  }
+}
