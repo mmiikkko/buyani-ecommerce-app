@@ -3,14 +3,13 @@
 import Image from "next/image";
 import Link from "next/link";
 import { ShoppingCart, User, Home, Store, Tag } from "lucide-react";
-import Logo from "../../assets/logo/Logo.png";
+import Logo from "@/assets/logo/Logo.png";
 
 export default function Navbar() {
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 bg-gradient-to-r from-green-500 via-yellow-400 to-orange-500 rounded-b-2xl shadow-lg">
       {/* === MAIN CONTAINER === */}
       <div className="flex items-center justify-center w-full px-10 md:px-20 py-3 ">
-        
         {/* === LEFT SIDE (Logo) === */}
         <div className="flex items-center mr-15">
           <Link href="/" className="flex items-center space-x-2">
@@ -26,7 +25,6 @@ export default function Navbar() {
 
         {/* === RIGHT SIDE === */}
         <div className="flex flex-col justify-between w-full md:w-3/4 space-y-3">
-          
           {/* --- TOP SECTION: Links + Buttons --- */}
           <div className="flex items-center justify-between">
             {/* Navigation Links */}

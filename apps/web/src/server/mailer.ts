@@ -11,13 +11,13 @@ export async function sendMail({ to, subject, text }: sendMailProps) {
   const transporter = nodemailer.createTransport({
     service: "gmail",
     auth: {
-      user: process.env.GMAIL_USER,
-      pass: process.env.GMAIL_APP_KEY,
+      user: env.GMAIL_USER,
+      pass: env.GMAIL_APP_KEY,
     },
   });
 
   await transporter.sendMail({
-    from: process.env.GMAIL_USER,
+    from: env.GMAIL_USER,
     to,
     subject,
     text,
