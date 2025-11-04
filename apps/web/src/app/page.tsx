@@ -1,31 +1,57 @@
-import Navbar from "@/components/nav/Navbar";
+"use client"
+
+import Image from "next/image"
+import Backdrop from "@/assets/backdrop.png"
+import Autoplay from "embla-carousel-autoplay"
+import { useRef } from "react"
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselNext,
+  CarouselPrevious,
+} from "@/components/ui/carousel"
 
 export default function Home() {
-  return (
-    <div>
-      <Navbar />
-      <div className="mt-12 space-y-10">
-        <h1 className="text-3xl font-bold text-centers">
-          Welcome to BuyAni Ecommerce
-        </h1>
+  // ✅ Create plugin instance on client
+  const plugin = useRef(Autoplay({ delay: 3000, stopOnInteraction: false }))
 
-        {[...Array(20)].map((_, i) => (
-          <div
-            key={i}
-            className="bg-white shadow-md rounded-lg p-6 max-w-3xl mx-auto"
+  return (
+    <div className="relative min-h-screen">
+      <section className="relative w-full h-[80vh] mt-8 overflow-hidden">
+        <Image
+          src={Backdrop}
+          alt="Backdrop"
+          fill
+          priority
+          className="object-cover brightness-75"
+        />
+
+        <div className="absolute inset-0 flex items-center justify-center">
+          <Carousel
+            opts={{ loop: true }}
+            plugins={[plugin.current]} // ✅ use plugin.current here
+            className="w-[90%] max-w-5xl"
           >
-            <h2 className="text-xl font-semibold mb-2">
-              Sample Section {i + 1}
-            </h2>
-            <p className="text-gray-600">
-              Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed
-              euismod, nunc vel tincidunt sagittis, justo risus convallis leo,
-              in pretium lorem risus sit amet magna. Duis et nunc non purus
-              pretium tristique vel ut enim.
-            </p>
-          </div>
-        ))}
-      </div>
+            <CarouselContent>
+              {[1, 2, 3, 4, 5].map((i) => (
+                <CarouselItem key={i} className="basis-full p-4">
+                  <div className="bg-white bg-opacity-90 rounded-2xl h-125 shadow-1xl w-[90%] 
+                    mx-auto flex flex-col items-center justify-center transition-transform duration-300 hover:scale-105 ">
+                    <h3 className="text-lg font-semibold">Slide {i}</h3>
+                    <p className="text-sm text-gray-600">
+                      HARDCODED :p
+                    </p>
+                  </div>
+                </CarouselItem>
+              ))}
+            </CarouselContent>
+
+            <CarouselPrevious className="bg-gray-900/70 text-white hover:bg-gray-900 absolute left-2" />
+            <CarouselNext className="bg-gray-900/70 text-white hover:bg-gray-900 absolute right-2" />
+          </Carousel>
+        </div>
+      </section>
     </div>
-  );
+  )
 }
