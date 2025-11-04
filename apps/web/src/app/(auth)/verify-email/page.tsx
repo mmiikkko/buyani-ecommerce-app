@@ -1,11 +1,6 @@
-import type { Metadata } from "next";
 import { ResendVerificationButton } from "./resend-verification-button";
 import { getServerSession } from "@/server/session-utils";
 import { redirect, unauthorized } from "next/navigation";
-
-export const metadata: Metadata = {
-  title: "Verify Email",
-};
 
 export default async function VerifyEmailPage() {
   const session = await getServerSession();

@@ -1,8 +1,9 @@
-import Image from "next/image";
+import Navbar from "@/components/nav/Navbar";
 
 export default function Home() {
   return (
     <div className="space-y-10">
+      <Navbar />
       <h1 className="text-3xl font-bold text-centers">
         Welcome to BuyAni Ecommerce
       </h1>

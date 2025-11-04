@@ -18,11 +18,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className="antialiased">
-        {/* Add Navbar here */}
-        <Navbar />
-
-        {/* Main Page Content -> margin top 10 for navbar fixed space*/}
-        <main className="mt-12">{children}</main>
+        <main>{children}</main>
       </body>
     </html>
   );
