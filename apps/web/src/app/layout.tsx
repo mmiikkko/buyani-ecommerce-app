@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import "@/styles/globals.css";
-import Navbar from "@/components/nav/Navbar";
 import icon from "@/assets/logo/favicon.ico";
 
 export const metadata: Metadata = {
