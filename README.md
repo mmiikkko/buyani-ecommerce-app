@@ -4,7 +4,7 @@ This Turborepo includes the following packages/apps:
 
 ### Apps and Packages
 
-- `mobile`: a Flutter App
+- `mobile`: a [React Native Expo](https://reactnative.dev/) app
 - `web`: another [Next.js](https://nextjs.org/) app
 
 ### Utilities
