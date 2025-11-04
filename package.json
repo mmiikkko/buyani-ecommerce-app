@@ -1,7 +1,6 @@
 {
   "name": "buyani",
   "devDependencies": {
-    "drizzle-kit": "^0.31.6",
     "prettier": "^3.6.2",
     "turbo": "^2.6.0",
     "typescript": "5.9.2"
@@ -21,8 +20,5 @@
   "workspaces": [
     "apps/*",
     "packages/*"
-  ],
-  "dependencies": {
-    "drizzle-orm": "^0.44.7"
-  }
+  ]
 }

@@ -5,7 +5,7 @@ import { ShoppingCart, User, Home, Store, Tag } from "lucide-react";
 
 export default function Navbar() {
   return (
-    <nav className="fixed top-0 left-0 w-full z-50 bg-gradient-to-r from-green-500 to-orange-500 text-white shadow-lg">
+    <nav className="fixed top-0 left-0 w-full z-50 bg-linear-to-r from-green-500 to-orange-500 text-white shadow-lg">
       {/* Top row */}
       <div className="flex items-center justify-between px-6 py-3">
         {/* Logo */}
@@ -47,8 +47,12 @@ export default function Navbar() {
           </li>
 
           {/* Icons */}
-          <li><ShoppingCart size={20} /></li>
-          <li><User size={20} /></li>
+          <li>
+            <ShoppingCart size={20} />
+          </li>
+          <li>
+            <User size={20} />
+          </li>
         </ul>
       </div>
 
