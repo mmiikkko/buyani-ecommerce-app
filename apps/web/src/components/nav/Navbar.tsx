@@ -5,12 +5,7 @@ import { ShoppingCart, User, Home, Store, Tag } from "lucide-react";
 
 export default function Navbar() {
   return (
-<<<<<<< HEAD:apps/web/src/app/components/Navbar.tsx
     <nav className="fixed top-0 left-0 right-0 z-50 bg-gradient-to-r from-green-500 via-yellow-400 to-orange-500 shadow-md">
-
-=======
-    <nav className="fixed top-0 left-0 w-full z-50 bg-linear-to-r from-green-500 to-orange-500 text-white shadow-lg">
->>>>>>> fba79d04cc13feb8cb1a6a395869608c46096c89:apps/web/src/components/nav/Navbar.tsx
       {/* Top row */}
       <div className="flex items-center justify-between px-6 py-3">
         {/* Logo */}

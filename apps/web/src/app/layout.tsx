@@ -17,8 +17,8 @@ export default function RootLayout({
         {/* Add Navbar here */}
         <Navbar />
 
-        {/* Main Page Content */}
-        <main>{children}</main>
+        {/* Main Page Content -> margin top 10 for navbar fixed space*/}
+        <main className="mt-12">{children}</main>
       </body>
     </html>
   );
