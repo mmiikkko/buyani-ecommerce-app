@@ -11,14 +11,15 @@ import {
   CarouselNext,
   CarouselPrevious,
 } from "@/components/ui/carousel"
+import { ShopByCategorySection } from "@/components/home/shop-by-category"
 
 export default function Home() {
   // ✅ Create plugin instance on client
   const plugin = useRef(Autoplay({ delay: 3000, stopOnInteraction: false }))
 
   return (
-    <div className="relative min-h-screen">
-      <section className="relative w-full h-[80vh] mt-8 overflow-hidden">
+    <main className="relative min-h-screen space-y-12">
+      <section className="relative mt-8 h-[80vh] w-full overflow-hidden">
         <Image
           src={Backdrop}
           alt="Backdrop"
@@ -28,11 +29,11 @@ export default function Home() {
         />
 
         <div className="absolute inset-0 flex items-center justify-center">
-          <Carousel
-            opts={{ loop: true }}
-            plugins={[plugin.current]} // ✅ use plugin.current here
-            className="w-[90%] max-w-5xl"
-          >
+            <Carousel
+              opts={{ loop: true }}
+              plugins={[plugin.current]} // ✅ use plugin.current here
+              className="w-[90%] max-w-5xl"
+            >
             <CarouselContent>
               {[1, 2, 3, 4, 5].map((i) => (
                 <CarouselItem key={i} className="basis-full p-4">
@@ -52,6 +53,8 @@ export default function Home() {
           </Carousel>
         </div>
       </section>
-    </div>
+
+      <ShopByCategorySection />
+    </main>
   )
 }
