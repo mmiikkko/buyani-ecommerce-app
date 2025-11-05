@@ -85,7 +85,7 @@ const FEATURED_CATEGORIES: FeaturedCategory[] = [
 
 export function ShopByCategorySection() {
   return (
-    <section className="py-16">
+    <section>
       <div className="mx-auto flex w-full max-w-6xl flex-col gap-8 px-4 sm:px-6 lg:px-8">
         <header className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <div className="space-y-1">

@@ -36,14 +36,14 @@ export default function Navbar() {
                 </li>
                 <li className="flex items-center space-x-1 hover:text-white transition">
                   <Store size={16} />
-                  <Link href="/shop">Shop</Link>
+                  <Link href="/shops">Shops</Link>
                 </li>
                 <li className="flex items-center space-x-1 hover:text-white transition">
                   <Tag size={16} />
                   <Link href="/categories">Categories</Link>
                 </li>
                 <li className="hover:text-white transition">
-                  <Link href="/seller-center">Seller Center</Link>
+                  <Link href="/seller">Seller Center</Link>
                 </li>
               </ul>
 
