@@ -26,7 +26,7 @@ const FEATURED_VENDORS: FeaturedVendor[] = [
     followers: 0,
     isVerified: true,
     image: "/api/placeholder/300/200",
-    href: "/vendors/camarines-norte-primary",
+    href: "/vendors/featured-vendor-one",
   },
   {
     id: "FV002",
@@ -38,7 +38,7 @@ const FEATURED_VENDORS: FeaturedVendor[] = [
     followers: 0,
     isVerified: true,
     image: "/api/placeholder/300/200",
-    href: "/vendors/camarines-norte-federation",
+    href: "/vendors/featured-vendor-two",
   },
   {
     id: "FV003",
@@ -50,7 +50,7 @@ const FEATURED_VENDORS: FeaturedVendor[] = [
     followers: 0,
     isVerified: true,
     image: "/api/placeholder/300/200",
-    href: "/vendors/pangpang-farmers",
+    href: "/vendors/featured-vendor-three",
   },
   {
     id: "FV004",
@@ -62,7 +62,7 @@ const FEATURED_VENDORS: FeaturedVendor[] = [
     followers: 0,
     isVerified: false,
     image: "/api/placeholder/300/200",
-    href: "",
+    href: "vendors/featured-vendor-four",
   },
   {
     id: "FB005",
@@ -74,7 +74,7 @@ const FEATURED_VENDORS: FeaturedVendor[] = [
     followers: 0,
     isVerified: true,
     image: "/api/placeholder/300/200",
-    href: "/vendors/tuaca-livelihood",
+    href: "/vendors/featured-vendor-five",
   },
   {
     id: "FB006",
@@ -86,7 +86,7 @@ const FEATURED_VENDORS: FeaturedVendor[] = [
     followers: 0,
     isVerified: true,
     image: "/api/placeholder/300/200",
-    href: "/vendors/beverage-bliss",
+    href: "/vendors/featured-vendor-six",
   },
 ];
 
