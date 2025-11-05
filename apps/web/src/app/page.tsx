@@ -37,7 +37,7 @@ export default function Home() {
               {[1, 2, 3, 4, 5].map((i) => (
                 <CarouselItem key={i} className="basis-full p-4">
                   <div className="bg-white bg-opacity-90 rounded-2xl h-125 shadow-1xl w-[90%] 
-                    mx-auto flex flex-col items-center justify-center transition-transform duration-300 hover:scale-105 ">
+                    mx-auto flex flex-col items-center justify-center transition-transform duration-300 hover:scale-102 cursor-pointer">
                     <h3 className="text-lg font-semibold">Slide {i}</h3>
                     <p className="text-sm text-gray-600">
                       HARDCODED :p
