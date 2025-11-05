@@ -1,9 +1,9 @@
-"use client"
+"use client";
 
-import Image from "next/image"
-import Backdrop from "@/assets/backdrop.png"
-import Autoplay from "embla-carousel-autoplay"
-import { useRef } from "react"
+import Image from "next/image";
+import Backdrop from "@/assets/backdrop.png";
+import Autoplay from "embla-carousel-autoplay";
+import { useRef } from "react";
 import {
   Carousel,
   CarouselContent,
@@ -14,8 +14,7 @@ import {
 import { ShopByCategorySection } from "@/components/home/shop-by-category"
 
 export default function Home() {
-  // ✅ Create plugin instance on client
-  const plugin = useRef(Autoplay({ delay: 3000, stopOnInteraction: false }))
+  const plugin = useRef(Autoplay({ delay: 3000, stopOnInteraction: false }));
 
   return (
     <main className="relative min-h-screen space-y-12">
@@ -37,12 +36,12 @@ export default function Home() {
             <CarouselContent>
               {[1, 2, 3, 4, 5].map((i) => (
                 <CarouselItem key={i} className="basis-full p-4">
-                  <div className="bg-white bg-opacity-90 rounded-2xl h-125 shadow-1xl w-[90%] 
-                    mx-auto flex flex-col items-center justify-center transition-transform duration-300 hover:scale-105 ">
+                  <div
+                    className="bg-white bg-opacity-90 rounded-2xl h-125 shadow-1xl w-[90%] 
+                    mx-auto flex flex-col items-center justify-center transition-transform duration-300 hover:scale-105 "
+                  >
                     <h3 className="text-lg font-semibold">Slide {i}</h3>
-                    <p className="text-sm text-gray-600">
-                      HARDCODED :p
-                    </p>
+                    <p className="text-sm text-gray-600">HARDCODED :p</p>
                   </div>
                 </CarouselItem>
               ))}

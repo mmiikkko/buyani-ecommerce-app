@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import "@/styles/globals.css";
-import Navbar from "@/components/nav/Navbar";
 import icon from "@/assets/logo/favicon.ico";
 
 export const metadata: Metadata = {
@@ -8,7 +7,6 @@ export const metadata: Metadata = {
   icons: {
     icon: icon.src,
   },
-  
 };
 
 export default function RootLayout({
@@ -19,11 +17,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className="antialiased">
-        {/* Add Navbar here */}
-        <Navbar />
-
-        {/* Main Page Content -> margin top 10 for navbar fixed space*/}
-        <main className="pt-15">{children}</main>
+        <main>{children}</main>
       </body>
     </html>
   );
