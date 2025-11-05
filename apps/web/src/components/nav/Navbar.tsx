@@ -2,11 +2,12 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { ShoppingCart, Home, Store, Tag, UserIcon } from "lucide-react";
+import { MapPin, ShoppingCart, Home, Store, Tag, UserIcon } from "lucide-react";
 import Logo from "@/assets/logo/Logo.png";
 import { UserDropdown } from "./user-dropdown";
 import { authClient } from "@/server/auth-client";
 import { Button } from "@/components/ui/button";
+import { Input } from "../ui/input";
 
 export default function Navbar() {
   const session = authClient.useSession();
@@ -19,8 +20,8 @@ export default function Navbar() {
     >
       {/* === MAIN CONTAINER === */}
       <div className="flex items-center justify-center w-full px-10 md:px-20 py-4 ">
-        <div className="flex w-full md:w-3/4">
-          <div className="flex items-center mr-20">
+        <div className="flex w-full md:w-3/4 space-between space-x-8">
+          <div className="flex items-center ">
             <Link href="/" className="flex items-center space-x-2">
               <Image
                 src={Logo}
@@ -54,42 +55,35 @@ export default function Navbar() {
               </ul>
 
               <div className="flex items-center space-x-3">
-                <button className="bg-orange-500 hover:bg-orange-600 text-white px-3 rounded-md text-sm transition p-2">
-                  Become a Seller
-                </button>
-                <button className="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded-md text-sm transition">
-                  CNSC
-                </button>
+                <Button className="">Become a Seller</Button>
+                <Button className="">
+                  CNSC <MapPin />
+                </Button>
               </div>
             </div>
 
             <div className="flex items-center justify-between space-x-4 mt-auto">
               {/* Search bar */}
-              <input
+              <Input
                 type="text"
                 placeholder="Search for products or vendors"
-                className="flex-1 px-4 py-3 text-gray-700 rounded-xl shadow-sm focus:outline-none bg-white"
+                className="flex-1 p-4 text-gray-700  shadow-sm focus:outline-none bg-white"
               />
-              {/* Icons beside search bar */}
-              <div className="flex items-end space-x-4 text-black">
-                <ShoppingCart
-                  size={22}
-                  className="cursor-pointer  transition"
-                />
-
-                {user ? (
-                  <UserDropdown user={user} />
-                ) : (
-                  // If no user, show login button (or SignInFirstModal)
-                  <Link href="/sign-in" className="text-sm font-medium ">
-                    <Button>
-                      <UserIcon />
-                      <span>Log in</span>
-                    </Button>
-                  </Link>
-                )}
-              </div>
             </div>
+          </div>
+
+          <div className="flex items-end space-x-4 text-black">
+            {user ? (
+              <UserDropdown user={user} />
+            ) : (
+              // If no user, show login button (or SignInFirstModal)
+              <Link href="/sign-in" className="text-sm font-medium ">
+                <Button>
+                  <UserIcon />
+                  <span>Log in</span>
+                </Button>
+              </Link>
+            )}
           </div>
         </div>
       </div>
