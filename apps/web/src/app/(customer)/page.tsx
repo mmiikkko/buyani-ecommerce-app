@@ -12,6 +12,7 @@ import {
   CarouselPrevious,
 } from "@/components/ui/carousel";
 import { ShopByCategorySection } from "./_components/shop-by-category";
+import { BestSellersSection } from "./_components/best-sellers";
 
 export default function Home() {
   const plugin = useRef(Autoplay({ delay: 3000, stopOnInteraction: false }));
@@ -54,6 +55,7 @@ export default function Home() {
       </section>
 
       <ShopByCategorySection />
+      <BestSellersSection />
     </main>
   );
 }
