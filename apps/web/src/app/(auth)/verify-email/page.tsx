@@ -1,5 +1,5 @@
 import { ResendVerificationButton } from "./resend-verification-button";
-import { getServerSession } from "@/server/session-utils";
+import { getServerSession } from "@/server/session";
 import { redirect, unauthorized } from "next/navigation";
 
 export default async function VerifyEmailPage() {

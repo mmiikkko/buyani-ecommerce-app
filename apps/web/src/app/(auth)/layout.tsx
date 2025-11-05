@@ -1,4 +1,4 @@
-import { getServerSession } from "@/server/session-utils";
+import { getServerSession } from "@/server/session";
 
 import { ReactNode } from "react";
 

@@ -1,17 +1,17 @@
-import { ArrowRight } from "lucide-react"
-import Image from "next/image"
-import Link from "next/link"
+import { ArrowRight } from "lucide-react";
+import Image from "next/image";
+import Link from "next/link";
 
 interface FeaturedCategory {
-  id: string
-  name: string
-  tag: string
-  itemCount: number
-  href: string
-  gradient: string
-  nameClassName: string
-  itemCountClassName: string
-  image: string
+  id: string;
+  name: string;
+  tag: string;
+  itemCount: number;
+  href: string;
+  gradient: string;
+  nameClassName: string;
+  itemCountClassName: string;
+  image: string | null;
 }
 
 const FEATURED_CATEGORIES: FeaturedCategory[] = [
@@ -24,7 +24,7 @@ const FEATURED_CATEGORIES: FeaturedCategory[] = [
     gradient: "from-orange-200/70 via-orange-100 to-orange-50",
     nameClassName: "text-amber-900",
     itemCountClassName: "bg-orange-400",
-    image: "/images/categories/dried-pineapple.png",
+    image: "",
   },
   {
     id: "handmade",
@@ -35,7 +35,7 @@ const FEATURED_CATEGORIES: FeaturedCategory[] = [
     gradient: "from-green-200/60 via-green-100 to-emerald-50",
     nameClassName: "text-green-800",
     itemCountClassName: "bg-green-400",
-    image: "/images/categories/handmade-basket.png",
+    image: "",
   },
   {
     id: "vegetables",
@@ -46,7 +46,7 @@ const FEATURED_CATEGORIES: FeaturedCategory[] = [
     gradient: "from-orange-200/70 via-orange-100 to-orange-50",
     nameClassName: "text-amber-900",
     itemCountClassName: "bg-orange-400",
-    image: "/images/categories/vegetables.png",
+    image: "",
   },
   {
     id: "essentials",
@@ -57,7 +57,7 @@ const FEATURED_CATEGORIES: FeaturedCategory[] = [
     gradient: "from-green-200/60 via-green-100 to-emerald-50",
     nameClassName: "text-green-800",
     itemCountClassName: "bg-green-400",
-    image: "/images/categories/essentials.png",
+    image: "",
   },
   {
     id: "novelty-items",
@@ -68,7 +68,7 @@ const FEATURED_CATEGORIES: FeaturedCategory[] = [
     gradient: "from-orange-200/70 via-orange-100 to-orange-50",
     nameClassName: "text-amber-900",
     itemCountClassName: "bg-orange-400",
-    image: "/images/categories/novelty-items.png",
+    image: "",
   },
   {
     id: "souvenir",
@@ -79,9 +79,9 @@ const FEATURED_CATEGORIES: FeaturedCategory[] = [
     gradient: "from-green-200/60 via-green-100 to-emerald-50",
     nameClassName: "text-green-800",
     itemCountClassName: "bg-green-400",
-    image: "/images/categories/souvenir.png",
+    image: "",
   },
-]
+];
 
 export function ShopByCategorySection() {
   return (
@@ -117,21 +117,23 @@ export function ShopByCategorySection() {
                 className={`flex h-full flex-col justify-between gap-4 rounded-2xl bg-gradient-to-b p-4 shadow-sm transition-shadow duration-200 group-hover:shadow-md ${category.gradient}`}
               >
                 <div>
-                  <p className="text-xs font-medium uppercase text-slate-600">{category.tag}</p>
-                  <p className={`text-lg font-semibold ${category.nameClassName}`}>{category.name}</p>
+                  <p className="text-xs font-medium uppercase text-slate-600">
+                    {category.tag}
+                  </p>
+                  <p
+                    className={`text-lg font-semibold ${category.nameClassName}`}
+                  >
+                    {category.name}
+                  </p>
                 </div>
 
-                <Image
-                  src={category.image}
-                  alt={category.name}
-                  width={200}
-                  height={200}
-                  className="aspect-square w-full rounded-lg object-cover transition-transform duration-300 group-hover:scale-105"
-                />
-
                 <div className="flex items-center gap-2">
-                  <span className={`size-2 rounded-full ${category.itemCountClassName}`} />
-                  <p className="text-sm font-medium text-slate-700">{category.itemCount} items</p>
+                  <span
+                    className={`size-2 rounded-full ${category.itemCountClassName}`}
+                  />
+                  <p className="text-sm font-medium text-slate-700">
+                    {category.itemCount} items
+                  </p>
                 </div>
               </div>
             </Link>
@@ -139,5 +141,5 @@ export function ShopByCategorySection() {
         </div>
       </div>
     </section>
-  )
+  );
 }

@@ -1,0 +1,101 @@
+"use client";
+
+import { LogOutIcon, ShieldIcon, UserIcon } from "lucide-react";
+import Image from "next/image";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+
+import { authClient } from "@/server/auth-client";
+import { toast } from "sonner";
+import { User } from "@/server/auth-types";
+
+interface UserDropdownProps {
+  user: User;
+}
+
+export function UserDropdown({ user }: UserDropdownProps) {
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="outline">
+          {user.image ? (
+            <Image
+              src={user.image}
+              alt={user.name}
+              width={16}
+              height={16}
+              className="rounded-full object-cover"
+            />
+          ) : (
+            <UserIcon />
+          )}
+          <span className="max-w-48 truncate">{user.name}</span>
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-56">
+        <DropdownMenuLabel>{user.email}</DropdownMenuLabel>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem asChild>
+          <Link href="/profile">
+            <UserIcon className="size-4" /> <span>Profile</span>
+          </Link>
+        </DropdownMenuItem>
+        <SignOutItem />
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
+
+function AdminItem() {
+  return (
+    <DropdownMenuItem asChild>
+      <Link href="/admin">
+        <ShieldIcon className="size-4" /> <span>Admin</span>
+      </Link>
+    </DropdownMenuItem>
+  );
+}
+
+function SellerItem() {
+  return (
+    <DropdownMenuItem asChild>
+      <Link href="/seller-center">
+        <ShieldIcon className="size-4" /> <span>Seller Center</span>
+      </Link>
+    </DropdownMenuItem>
+  );
+}
+
+function SignOutItem() {
+  const router = useRouter();
+
+  async function handleSignOut() {
+    toast.loading("Signing out...");
+
+    const { error } = await authClient.signOut();
+
+    toast.dismiss();
+
+    if (error) {
+      toast.error(error.message || "Something went wrong");
+    } else {
+      toast.success("Signed out successfully");
+      router.push("/sign-in");
+    }
+  }
+
+  return (
+    <DropdownMenuItem onClick={handleSignOut}>
+      <LogOutIcon className="size-4" /> <span>Sign out</span>
+    </DropdownMenuItem>
+  );
+}
