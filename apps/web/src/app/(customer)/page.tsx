@@ -10,8 +10,8 @@ import {
   CarouselItem,
   CarouselNext,
   CarouselPrevious,
-} from "@/components/ui/carousel"
-import { ShopByCategorySection } from "@/components/home/shop-by-category"
+} from "@/components/ui/carousel";
+import { ShopByCategorySection } from "./_components/shop-by-category";
 
 export default function Home() {
   const plugin = useRef(Autoplay({ delay: 3000, stopOnInteraction: false }));
@@ -28,11 +28,11 @@ export default function Home() {
         />
 
         <div className="absolute inset-0 flex items-center justify-center">
-            <Carousel
-              opts={{ loop: true }}
-              plugins={[plugin.current]} // ✅ use plugin.current here
-              className="w-[90%] max-w-5xl"
-            >
+          <Carousel
+            opts={{ loop: true }}
+            plugins={[plugin.current]} // ✅ use plugin.current here
+            className="w-[90%] max-w-5xl"
+          >
             <CarouselContent>
               {[1, 2, 3, 4, 5].map((i) => (
                 <CarouselItem key={i} className="basis-full p-4">
@@ -55,5 +55,5 @@ export default function Home() {
 
       <ShopByCategorySection />
     </main>
-  )
+  );
 }
