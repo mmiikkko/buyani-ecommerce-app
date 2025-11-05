@@ -1,4 +1,4 @@
-import Navbar from "@/components/nav/navbar";
+import Navbar from "@/components/nav/Navbar";
 import { ReactNode } from "react";
 
 export default function CustomerLayout({ children }: { children: ReactNode }) {
