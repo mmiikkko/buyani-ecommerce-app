@@ -7,7 +7,6 @@ import {
   ShoppingBasket,
   Handshake,
   Home,
-  Store,
   Tag,
   UserIcon,
 } from "lucide-react";
@@ -16,7 +15,7 @@ import { UserDropdown } from "./user-dropdown";
 import { authClient } from "@/server/auth-client";
 import { Button } from "@/components/ui/button";
 import { Input } from "../ui/input";
-import clsx from "clsx"; // <- use this for cleaner class merging
+import clsx from "clsx";
 
 interface NavbarProps {
   className?: string;
@@ -24,7 +23,10 @@ interface NavbarProps {
 
 export default function Navbar({ className }: NavbarProps) {
   const session = authClient.useSession();
+
   const user = session.data?.user;
+  const isLoading = session.isPending || session.isRefetching;
+  const isAuthenticated = !!user;
 
   return (
     <nav
@@ -90,8 +92,10 @@ export default function Navbar({ className }: NavbarProps) {
 
           {/* User Section */}
           <div className="flex items-end space-x-4 text-black">
-            {user ? (
-              <UserDropdown user={user} />
+            {isLoading ? (
+              <div className="w-[90px] h-[38px] bg-black/10 rounded animate-pulse" />
+            ) : isAuthenticated ? (
+              <UserDropdown user={user!} />
             ) : (
               <Link href="/sign-in" className="text-sm font-medium">
                 <Button>

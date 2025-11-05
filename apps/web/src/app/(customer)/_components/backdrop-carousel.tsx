@@ -16,18 +16,17 @@ export function BackdropCarousel() {
   const plugin = useRef(Autoplay({ delay: 3000, stopOnInteraction: false }));
 
   return (
-    <main className="relative">
-      <section className="relative h-[80vh] w-full overflow-hidden">
+    <main className="relative ">
+      <section className="relative h-screen w-full overflow-hidden ">
         <Image
           src={Backdrop}
           alt="Backdrop"
           fill
           priority
-          sizes="100vw"
-          className="object-cover object-center brightness-75"
+          className="object-cover object-center brightness-75 pointer-events-none select-none w-full "
         />
 
-        <div className="absolute inset-0 flex items-center justify-center">
+        <div className="absolute inset-0 flex items-center justify-center ">
           <Carousel
             opts={{ loop: true }}
             plugins={[plugin.current]}

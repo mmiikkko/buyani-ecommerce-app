@@ -1,6 +1,14 @@
-import { MapPin, Phone, Facebook, Mail, ChevronDown, ShieldCheck } from "lucide-react";
+import {
+  MapPin,
+  Phone,
+  Facebook,
+  Mail,
+  ChevronDown,
+  ShieldCheck,
+} from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
+import logo from "@/assets/logo/Logo.png";
 
 export function Footer() {
   return (
@@ -11,11 +19,12 @@ export function Footer() {
           {/* Brand Section */}
           <div className="space-y-4">
             <div className="flex items-center gap-2">
-              <Image src="/logo.svg" alt="Buyani Logo" width={40} height={40} />
+              <Image src={logo.src} alt="Buyani Logo" width={64} height={64} />
               <span className="text-xl font-bold">BUYANI</span>
             </div>
             <p className="text-sm text-green-100">
-              Your trusted marketplace for local products at CNSC. Supporting local vendors and building community through commerce.
+              Your trusted marketplace for local products at CNSC. Supporting
+              local vendors and building community through commerce.
             </p>
             <div className="space-y-2">
               <div className="flex items-center gap-2 text-sm text-green-100">
@@ -34,27 +43,42 @@ export function Footer() {
             <h3 className="text-lg font-semibold">Quick Links</h3>
             <ul className="space-y-2">
               <li>
-                <Link href="/about" className="flex items-center gap-2 text-sm text-green-100 hover:text-white transition-colors">
+                <Link
+                  href="/about"
+                  className="flex items-center gap-2 text-sm text-green-100 hover:text-white transition-colors"
+                >
                   <ChevronDown className="h-4 w-4" /> About Us
                 </Link>
               </li>
               <li>
-                <Link href="/how-it-works" className="flex items-center gap-2 text-sm text-green-100 hover:text-white transition-colors">
+                <Link
+                  href="/how-it-works"
+                  className="flex items-center gap-2 text-sm text-green-100 hover:text-white transition-colors"
+                >
                   <ChevronDown className="h-4 w-4" /> How It Works
                 </Link>
               </li>
               <li>
-                <Link href="/seller-center" className="flex items-center gap-2 text-sm text-green-100 hover:text-white transition-colors">
+                <Link
+                  href="/seller-center"
+                  className="flex items-center gap-2 text-sm text-green-100 hover:text-white transition-colors"
+                >
                   <ChevronDown className="h-4 w-4" /> Seller Center
                 </Link>
               </li>
               <li>
-                <Link href="/flash-deals" className="flex items-center gap-2 text-sm text-green-100 hover:text-white transition-colors">
+                <Link
+                  href="/flash-deals"
+                  className="flex items-center gap-2 text-sm text-green-100 hover:text-white transition-colors"
+                >
                   <ChevronDown className="h-4 w-4" /> Flash Deals
                 </Link>
               </li>
               <li>
-                <Link href="/blog" className="flex items-center gap-2 text-sm text-green-100 hover:text-white transition-colors">
+                <Link
+                  href="/blog"
+                  className="flex items-center gap-2 text-sm text-green-100 hover:text-white transition-colors"
+                >
                   <ChevronDown className="h-4 w-4" /> Blog
                 </Link>
               </li>
@@ -66,27 +90,42 @@ export function Footer() {
             <h3 className="text-lg font-semibold">Customer Care</h3>
             <ul className="space-y-2">
               <li>
-                <Link href="/help" className="flex items-center gap-2 text-sm text-green-100 hover:text-white transition-colors">
+                <Link
+                  href="/help"
+                  className="flex items-center gap-2 text-sm text-green-100 hover:text-white transition-colors"
+                >
                   <ChevronDown className="h-4 w-4" /> Help Center
                 </Link>
               </li>
               <li>
-                <Link href="/returns" className="flex items-center gap-2 text-sm text-green-100 hover:text-white transition-colors">
+                <Link
+                  href="/returns"
+                  className="flex items-center gap-2 text-sm text-green-100 hover:text-white transition-colors"
+                >
                   <ChevronDown className="h-4 w-4" /> Returns & Refunds
                 </Link>
               </li>
               <li>
-                <Link href="/shipping" className="flex items-center gap-2 text-sm text-green-100 hover:text-white transition-colors">
+                <Link
+                  href="/shipping"
+                  className="flex items-center gap-2 text-sm text-green-100 hover:text-white transition-colors"
+                >
                   <ChevronDown className="h-4 w-4" /> Shipping Information
                 </Link>
               </li>
               <li>
-                <Link href="/terms" className="flex items-center gap-2 text-sm text-green-100 hover:text-white transition-colors">
+                <Link
+                  href="/terms"
+                  className="flex items-center gap-2 text-sm text-green-100 hover:text-white transition-colors"
+                >
                   <ChevronDown className="h-4 w-4" /> Terms & Conditions
                 </Link>
               </li>
               <li>
-                <Link href="/privacy" className="flex items-center gap-2 text-sm text-green-100 hover:text-white transition-colors">
+                <Link
+                  href="/privacy"
+                  className="flex items-center gap-2 text-sm text-green-100 hover:text-white transition-colors"
+                >
                   <ChevronDown className="h-4 w-4" /> Privacy Policy
                 </Link>
               </li>
