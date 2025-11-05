@@ -81,7 +81,7 @@ export function SignInForm() {
     }
   }
 
-  async function handleSocialSignIn(provider: "google" | "github") {
+  async function handleSocialSignIn(provider: "google") {
     setError(null);
     setLoading(true);
     const { error } = await authClient.signIn.social({
