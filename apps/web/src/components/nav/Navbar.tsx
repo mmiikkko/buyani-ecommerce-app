@@ -61,9 +61,6 @@ export default function Navbar({ className }: NavbarProps) {
                   <Tag size={16} />
                   <Link href="/categories">Categories</Link>
                 </li>
-                <li className="hover:text-white transition">
-                  <Link href="/seller"> Seller Center</Link>
-                </li>
               </ul>
 
               <div className="flex items-center space-x-3">
