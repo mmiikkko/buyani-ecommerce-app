@@ -8,6 +8,13 @@
       "when": 1762070288961,
       "tag": "0000_fearless_bill_hollister",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "5",
+      "when": 1762346873115,
+      "tag": "0001_lethal_rockslide",
+      "breakpoints": true
     }
   ]
 }
