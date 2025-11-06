@@ -14,7 +14,9 @@ export const USER_ROLES = {
 
 export const user = mysqlTable("user", {
   id: varchar("id", { length: 36 }).primaryKey(),
-  name: text("name").notNull(),
+  name: text("name").notNull(), // username
+  first_name: text("first_name").notNull(),
+  last_name: text("last_name").notNull(),
   email: varchar("email", { length: 255 }).notNull().unique(),
   emailVerified: boolean("email_verified").default(false).notNull(),
   image: text("image"),

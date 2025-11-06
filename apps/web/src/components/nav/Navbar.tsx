@@ -25,10 +25,13 @@ export default function Navbar({ className }: NavbarProps) {
   return (
     <nav
       className={clsx(
-        "fixed top-0 left-0 right-0 z-50 rounded-b-sm bg-linear-to-r from-[#77ce86] via-[#c0ac76] to-[#d89a67] bg-opacity-95 backdrop-blur-sm shadow-md border-b border-black/10",
+        "fixed top-0 left-0 right-0 z-50 rounded-b-sm bg-opacity-95 backdrop-blur-sm shadow-md border-b border-black/10",
         className
       )}
-      style={{ filter: "saturate(0.85)" }}
+      style={{
+        background:
+          "linear-gradient(to right, #5EA162 0%, #84BA75 15%, #DCB680 87%, #FFBC89 100%)",
+      }}
     >
       <div className="flex items-center justify-center w-full px-10 md:px-20 py-4">
         <div className="flex w-full md:w-3/4 space-between space-x-8">
@@ -64,7 +67,7 @@ export default function Navbar({ className }: NavbarProps) {
               </ul>
 
               <div className="flex items-center space-x-3">
-                <Button>
+                <Button className="bg-secondary">
                   <Handshake />
                   <span>Become a Seller</span>
                 </Button>
@@ -79,7 +82,7 @@ export default function Navbar({ className }: NavbarProps) {
               <Input
                 type="text"
                 placeholder="Search for products or vendors"
-                className="flex-1 p-4 text-gray-700 shadow-sm focus:outline-none bg-white"
+                className="flex-1  bg-white"
               />
             </div>
           </div>
@@ -92,7 +95,7 @@ export default function Navbar({ className }: NavbarProps) {
               <UserDropdown user={user!} />
             ) : (
               <Link href="/sign-in" className="text-sm font-medium">
-                <Button className="flex items-center space-x-2 bg-secondary">
+                <Button className="flex items-center space-x-2 ">
                   <UserIcon />
                   <span>Log in</span>
                 </Button>
