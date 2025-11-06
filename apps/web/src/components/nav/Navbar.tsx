@@ -16,6 +16,7 @@ import { authClient } from "@/server/auth-client";
 import { Button } from "@/components/ui/button";
 import { Input } from "../ui/input";
 import clsx from "clsx";
+import { Skeleton } from "../ui/skeleton";
 
 interface NavbarProps {
   className?: string;
@@ -54,7 +55,7 @@ export default function Navbar({ className }: NavbarProps) {
           {/* Middle Section */}
           <div className="w-full flex flex-col space-between mt-2">
             <div className="flex justify-between">
-              <ul className="flex space-x-8 items-center text-sm font-medium text-secondary">
+              <ul className="flex space-x-8 items-center text-sm font-medium ">
                 <li className="flex items-center space-x-2 transition">
                   <Home size={16} />
                   <Link href="/">Home</Link>
@@ -74,7 +75,7 @@ export default function Navbar({ className }: NavbarProps) {
                   <Handshake />
                   <span>Become a Seller</span>
                 </Button>
-                <Button>
+                <Button variant="outline">
                   <MapPin />
                   <span>CNSC</span>
                 </Button>
@@ -93,12 +94,12 @@ export default function Navbar({ className }: NavbarProps) {
           {/* User Section */}
           <div className="flex items-end space-x-4 text-black">
             {isLoading ? (
-              <div className="w-[90px] h-[38px] bg-black/10 rounded animate-pulse" />
+              <Skeleton className="h-9 w-[100px] rounded-md" />
             ) : isAuthenticated ? (
               <UserDropdown user={user!} />
             ) : (
               <Link href="/sign-in" className="text-sm font-medium">
-                <Button>
+                <Button className="flex items-center space-x-2">
                   <UserIcon />
                   <span>Log in</span>
                 </Button>
