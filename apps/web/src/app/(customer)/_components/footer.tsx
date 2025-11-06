@@ -8,7 +8,7 @@ import {
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import logo from "@/assets/logo/Logo.png";
+import Logo from "@/assets/logo/Logo.png";
 
 export function Footer() {
   return (
@@ -19,7 +19,7 @@ export function Footer() {
           {/* Brand Section */}
           <div className="space-y-4">
             <div className="flex items-center gap-2">
-              <Image src={logo.src} alt="Buyani Logo" width={64} height={64} />
+              <Image src={Logo} alt="Buyani Logo" width={40} height={40} />
               <span className="text-xl font-bold">BUYANI</span>
             </div>
             <p className="text-sm text-green-100">

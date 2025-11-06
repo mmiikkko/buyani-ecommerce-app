@@ -30,7 +30,7 @@ export function BackdropCarousel() {
           <Carousel
             opts={{ loop: true }}
             plugins={[plugin.current]}
-            className="relative w-[90%] max-w-6xl mx-auto overflow-hidden rounded-2xl"
+            className="relative w-[90%] max-w-6xl mx-auto mt-30 overflow-hidden rounded-2xl"
           >
             <CarouselContent>
               {[1, 2, 3, 4, 5].map((i) => (

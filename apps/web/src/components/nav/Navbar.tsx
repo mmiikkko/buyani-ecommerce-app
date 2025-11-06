@@ -2,14 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import {
-  MapPin,
-  ShoppingBasket,
-  Handshake,
-  Home,
-  Tag,
-  UserIcon,
-} from "lucide-react";
+import { MapPin, Package, Home, Handshake, Tag, UserIcon } from "lucide-react";
 import Logo from "@/assets/logo/Logo.png";
 import { UserDropdown } from "./user-dropdown";
 import { authClient } from "@/server/auth-client";
@@ -60,13 +53,16 @@ export default function Navbar({ className }: NavbarProps) {
                   <Home size={16} />
                   <Link href="/">Home</Link>
                 </li>
-                <li className="flex items-center space-x-2 transition">
-                  <ShoppingBasket size={16} />
+                <li className="flex items-center space-x-4 transition">
+                  <Package size={16} />
                   <Link href="/shops">Shops</Link>
                 </li>
                 <li className="flex items-center space-x-2 transition">
                   <Tag size={16} />
                   <Link href="/categories">Categories</Link>
+                </li>
+                <li className="hover:text-white transition">
+                  <Link href="/seller"> Seller Center</Link>
                 </li>
               </ul>
 
