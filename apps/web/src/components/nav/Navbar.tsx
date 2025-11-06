@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { MapPin, ShoppingCart, Home, Store, Tag, UserIcon } from "lucide-react";
+import { MapPin, Package, Home, Store, Tag, UserIcon } from "lucide-react";
 import Logo from "@/assets/logo/Logo.png";
 import { UserDropdown } from "./user-dropdown";
 import { authClient } from "@/server/auth-client";
@@ -42,7 +42,7 @@ export default function Navbar() {
                   <Link href="/">Home</Link>
                 </li>
                 <li className="flex items-center space-x-4 transition">
-                  <Store size={16} />
+                  <Package size={16} />
                   <Link href="/shops">Shops</Link>
                 </li>
                 <li className="flex items-center space-x-4 transition">
@@ -50,13 +50,13 @@ export default function Navbar() {
                   <Link href="/categories">Categories</Link>
                 </li>
                 <li className="hover:text-white transition">
-                  <Link href="/seller">Seller Center</Link>
+                  <Link href="/seller"> Seller Center</Link>
                 </li>
               </ul>
 
               <div className="flex items-center space-x-3">
-                <Button className="">Become a Seller</Button>
-                <Button className="">
+                <Button className="bg-[#FF6F00] text-white hover:bg-[#e66000]"> <Store size={16} /> Become a Seller</Button>
+                <Button className="bg-[#FFFFFF] text-[#2E7D32] hover:bg-[#e0e0e0]">
                   CNSC <MapPin />
                 </Button>
               </div>

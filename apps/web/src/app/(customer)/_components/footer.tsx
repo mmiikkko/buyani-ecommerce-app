@@ -1,6 +1,7 @@
 import { MapPin, Phone, Facebook, Mail, ChevronDown, ShieldCheck } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
+import Logo from "@/assets/logo/Logo.png";
 
 export function Footer() {
   return (
@@ -11,7 +12,7 @@ export function Footer() {
           {/* Brand Section */}
           <div className="space-y-4">
             <div className="flex items-center gap-2">
-              <Image src="/logo.svg" alt="Buyani Logo" width={40} height={40} />
+              <Image src={Logo} alt="Buyani Logo" width={40} height={40} />
               <span className="text-xl font-bold">BUYANI</span>
             </div>
             <p className="text-sm text-green-100">
