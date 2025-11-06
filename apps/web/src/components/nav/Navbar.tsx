@@ -99,7 +99,7 @@ export default function Navbar({ className }: NavbarProps) {
               <UserDropdown user={user!} />
             ) : (
               <Link href="/sign-in" className="text-sm font-medium">
-                <Button className="flex items-center space-x-2">
+                <Button className="flex items-center space-x-2 bg-secondary">
                   <UserIcon />
                   <span>Log in</span>
                 </Button>
