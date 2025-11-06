@@ -31,7 +31,9 @@ import { z } from "zod";
 
 const signUpSchema = z
   .object({
-    name: z.string().min(1, { message: "Name is required" }),
+    name: z.string().min(1, { message: "Username is required" }),
+    first_name: z.string().optional(),
+    last_name: z.string().optional(),
     email: z.email({ message: "Please enter a valid email" }),
     password: passwordSchema,
     passwordConfirmation: z
@@ -54,19 +56,29 @@ export function SignUpForm() {
     resolver: zodResolver(signUpSchema),
     defaultValues: {
       name: "",
+      first_name: "",
+      last_name: "",
       email: "",
       password: "",
       passwordConfirmation: "",
     },
   });
 
-  async function onSubmit({ email, password, name }: SignUpValues) {
+  async function onSubmit({
+    email,
+    password,
+    name,
+    first_name,
+    last_name,
+  }: SignUpValues) {
     setError(null);
 
     const { error } = await authClient.signUp.email({
       email,
       password,
       name,
+      first_name,
+      last_name,
       callbackURL: "/email-verified",
     });
 
@@ -96,7 +108,7 @@ export function SignUpForm() {
               name="name"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Name</FormLabel>
+                  <FormLabel>Username</FormLabel>
                   <FormControl>
                     <Input placeholder="John Doe" {...field} />
                   </FormControl>
@@ -104,6 +116,35 @@ export function SignUpForm() {
                 </FormItem>
               )}
             />
+
+            <div className="flex w-full gap-4">
+              <FormField
+                control={form.control}
+                name="first_name"
+                render={({ field }) => (
+                  <FormItem className="flex-1">
+                    <FormLabel>First Name</FormLabel>
+                    <FormControl>
+                      <Input placeholder="John" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="last_name"
+                render={({ field }) => (
+                  <FormItem className="flex-1">
+                    <FormLabel>Last Name</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Doe" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
 
             <FormField
               control={form.control}

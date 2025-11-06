@@ -15,6 +15,13 @@
       "when": 1762346873115,
       "tag": "0001_lethal_rockslide",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "5",
+      "when": 1762423869635,
+      "tag": "0002_keen_bulldozer",
+      "breakpoints": true
     }
   ]
 }
