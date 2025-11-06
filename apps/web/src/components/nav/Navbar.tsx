@@ -2,14 +2,6 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import {
-  MapPin,
-  ShoppingBasket,
-  Handshake,
-  Home,
-  Tag,
-  UserIcon,
-} from "lucide-react";
 import { MapPin, Package, Home, Store, Tag, UserIcon } from "lucide-react";
 import Logo from "@/assets/logo/Logo.png";
 import { UserDropdown } from "./user-dropdown";
