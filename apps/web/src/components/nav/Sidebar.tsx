@@ -52,10 +52,10 @@ const items = [
   
   export function AppSidebar() {
     return (
-      <Sidebar className="mt-15 ">
+      <Sidebar  className="fixed top-0 left-0 h-screen flex flex-col justify-between">
         
-      <SidebarContent>
-        <SidebarGroup>
+      <SidebarContent className="flex-1 overflow-y-auto mt-18">
+        <SidebarGroup >
           <SidebarGroupLabel>BUYANI</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
@@ -75,32 +75,36 @@ const items = [
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
-        <SidebarFooter>
-  <SidebarMenu>
-    <SidebarMenuItem>
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <SidebarMenuButton>
-            <User2 /> Username
-            <ChevronUp className="ml-auto" />
-          </SidebarMenuButton>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent
-          side="top"
-          className="w-[--radix-popper-anchor-width]"
-        >
-          <DropdownMenuItem>
-            <span>Account</span>
-          </DropdownMenuItem>
-          <DropdownMenuItem>
-            <span>Sign out</span>
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
-    </SidebarMenuItem>
-  </SidebarMenu>
-</SidebarFooter>
+        
       </SidebarContent>
+
+      <SidebarFooter className="border-t ">
+          <SidebarMenu>
+            <SidebarMenuItem>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <SidebarMenuButton>
+                    <User2 /> Username
+                    <ChevronUp className="ml-auto" />
+                  </SidebarMenuButton>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent
+                  side="top"
+                  align="start"
+                  sideOffset={8}
+                  className="w-[--radix-popper-anchor-width] z-[9999]"
+                >
+                  <DropdownMenuItem>
+                    <span>Account</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem>
+                    <span>Sign out</span>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </SidebarMenuItem>
+          </SidebarMenu>
+        </SidebarFooter>
     </Sidebar>
  
     )
