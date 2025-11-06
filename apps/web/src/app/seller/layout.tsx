@@ -2,7 +2,6 @@ import Navbar from "@/components/nav/ASNavbar";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/nav/Sidebar";
 import { ReactNode } from "react";
-import { Sidebar } from "lucide-react";
 
 export default function SellerLayout({ children }: { children: ReactNode }) {
   return (
@@ -19,7 +18,7 @@ export default function SellerLayout({ children }: { children: ReactNode }) {
               <SidebarTrigger/>
           </div>
         {/* Main Page Content */}
-        <main className="flex-1 p-6">
+        <main className="flex-1 p-6 bg-#EBFEEC">
           {/* Sidebar trigger at top (optional) */}
           
           {children}

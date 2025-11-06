@@ -1,5 +1,5 @@
 "use client"
-
+import Link from "next/link"
 import {
     Sidebar,
     SidebarContent,
@@ -22,30 +22,30 @@ import {
 import { Home, ShoppingCart, Store, Package, Inbox, ChevronUp, User2 } from "lucide-react"
 
   // Menu items.
-const items = [
+  const items = [
     {
       title: "Home",
-      url: "#",
+      url: "/seller",
       icon: Home,
     },
     {
-      title: "Shop",
-      url: "#",
-      icon: Store,
-    },
-    {
       title: "Orders",
-      url: "#",
-      icon: Package,
-    },
-    {
-      title: "Cart",
-      url: "#",
+      url: "/seller/orders",
       icon: ShoppingCart,
     },
     {
+      title: "POS",
+      url: "/seller/POS",
+      icon: Store,
+    },
+    {
+      title: "Products",
+      url: "/seller/products",
+      icon: Package,
+    },
+    {
       title: "Inbox",
-      url: "#",
+      url: "/seller/inbox",
       icon: Inbox,
     },
   ]
@@ -62,13 +62,13 @@ const items = [
               {items.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild>
-                    <a
+                    <Link
                       href={item.url}
                       className="flex items-center gap-2 hover:text-green-500"
                     >
                       <item.icon className="w-4 h-4" />
                       <span>{item.title}</span>
-                    </a>
+                    </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
