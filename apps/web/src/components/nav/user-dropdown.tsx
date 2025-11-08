@@ -1,6 +1,13 @@
 "use client";
 
-import { LogOutIcon, ShieldIcon, UserIcon, Store } from "lucide-react";
+import {
+  LogOutIcon,
+  ShieldIcon,
+  UserIcon,
+  Store,
+  ChevronDown,
+  ShieldCheck,
+} from "lucide-react";
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -31,11 +38,14 @@ export function UserDropdown({ user }: UserDropdownProps) {
       <DropdownMenuTrigger asChild>
         <Button variant="outline">
           <UserAvatar name={user.name} image={user.image} className="w-6 h-6" />
-          <span className="max-w-48 truncate">{user.name}</span>
+          <span className="max-w-48 truncate ">{user.name}</span>
+          <ChevronDown />
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-56">
-        <DropdownMenuLabel>{user.email}</DropdownMenuLabel>
+        <DropdownMenuLabel>
+          <div className="flex flex-col gap-1">{user.email}</div>
+        </DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuItem asChild>
           <Link href="/profile" className="flex items-center gap-2">
