@@ -1,5 +1,5 @@
 import * as React from "react"
-
+import { Search } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 function Input({ className, type, ...props }: React.ComponentProps<"input">) {
@@ -18,4 +18,27 @@ function Input({ className, type, ...props }: React.ComponentProps<"input">) {
   )
 }
 
-export { Input }
+export { Input}
+
+export const SearchInput = React.forwardRef<
+  HTMLInputElement,
+  React.ComponentProps<"input">
+>(({ className, type = "text", ...props }, ref) => (
+  <div className="relative w-full">
+    {/* Icon */}
+    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+
+    {/* Input */}
+    <input
+      type={type}
+      ref={ref}
+      className={cn(
+        "pl-10 pr-3 placeholder:text-muted-foreground selection:bg-primary selection:text-primary-foreground dark:bg-input/30 border-input h-9 w-full min-w-0 rounded-md border bg-transparent text-base shadow-sm transition-colors outline-none file:hidden disabled:pointer-events-none disabled:opacity-50 md:text-sm",
+        "focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]",
+        className
+      )}
+      {...props}
+    />
+  </div>
+))
+SearchInput.displayName = "SearchInput"
