@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import Backdrop from "@/assets/backdrop.png";
+import Backdrop from "@/assets/customer/backdrop.png";
 import Autoplay from "embla-carousel-autoplay";
 import { useRef } from "react";
 import {

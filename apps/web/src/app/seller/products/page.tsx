@@ -3,8 +3,8 @@
 export default function Products() {
 
   return (
-    <section className="relative min-h-screen space-y-12 mt-18 mx-3">
-      <h1 className="text-2xl font-bold">Products</h1>
+    <section className="relative min-h-screen min-w-full overflow-hidden space-y-5 mt-18 mx-3">
+      <h1 className="text-xl font-bold text-[#2E7D32]">Products</h1>
 
     </section>
   )
