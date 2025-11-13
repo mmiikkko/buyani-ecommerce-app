@@ -28,11 +28,11 @@ export function Footer() {
             </p>
             <div className="space-y-2">
               <div className="flex items-center gap-2 text-sm text-green-100">
-                <MapPin className="h-4 w-4 flex-shrink-0" />
+                <MapPin className="h-4 w-4 shrink-0" />
                 <span>CNSC Campus, Daet</span>
               </div>
               <div className="flex items-center gap-2 text-sm text-green-100">
-                <Phone className="h-4 w-4 flex-shrink-0" />
+                <Phone className="h-4 w-4 shrink-0" />
                 <span>+63 123 456 7890</span>
               </div>
             </div>
