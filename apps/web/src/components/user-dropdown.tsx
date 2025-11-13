@@ -36,7 +36,7 @@ export function UserDropdown({ user }: UserDropdownProps) {
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button variant="outline">
-          <UserAvatar name={user.name} image={user.image} className="w-6 h-6" />
+          <UserAvatar name={user.name} image={user.image} className="h-6 w-6" />
           <span className="max-w-48 truncate ">{user.name}</span>
           <ChevronDown />
         </Button>
@@ -74,7 +74,7 @@ function AdminItem() {
 function SellerItem() {
   return (
     <DropdownMenuItem asChild>
-      <Link href="/seller-center">
+      <Link href="/seller">
         <DropdownMenuItemIcon icon={Store} />
         <span>Seller Center</span>
       </Link>

@@ -16,8 +16,6 @@ export default async function AdminLayout({
   if (user) {
     if (!user.role.includes(USER_ROLES.ADMIN)) {
       unauthorized();
-    } else {
-      redirect("/admin");
     }
   }
 

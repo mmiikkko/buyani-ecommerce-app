@@ -19,8 +19,6 @@ export default async function SellerLayout({
   if (user) {
     if (!user.role.includes(USER_ROLES.SELLER)) {
       unauthorized();
-    } else {
-      redirect("/seller");
     }
   }
 
