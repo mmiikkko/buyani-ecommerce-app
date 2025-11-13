@@ -3,10 +3,9 @@
 import {
   LogOutIcon,
   ShieldIcon,
-  UserIcon,
+  Settings,
   Store,
   ChevronDown,
-  ShieldCheck,
 } from "lucide-react";
 
 import Link from "next/link";
@@ -25,7 +24,7 @@ import {
 import { authClient } from "@/server/auth-client";
 import { toast } from "sonner";
 import { User } from "@/server/auth-types";
-import { UserAvatar } from "../user-avatar";
+import { UserAvatar } from "./user-avatar";
 import { USER_ROLES } from "@/server/schema/auth-schema";
 
 interface UserDropdownProps {
@@ -48,9 +47,9 @@ export function UserDropdown({ user }: UserDropdownProps) {
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuItem asChild>
-          <Link href="/profile" className="flex items-center gap-2">
-            <DropdownMenuItemIcon icon={UserIcon} />
-            <span>Profile</span>
+          <Link href="/settings/profile" className="flex items-center gap-2">
+            <DropdownMenuItemIcon icon={Settings} />
+            <span>Settings</span>
           </Link>
         </DropdownMenuItem>
         {user.role.includes(USER_ROLES.ADMIN) && <AdminItem />}

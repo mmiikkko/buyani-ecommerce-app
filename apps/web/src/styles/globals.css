@@ -193,6 +193,8 @@
     @apply bg-background text-foreground;
   }
 
+  /* shadcn active state fix, which scrollbar disappears */
+
   :root {
     body[data-scroll-locked][data-scroll-locked] {
       overflow: auto !important;

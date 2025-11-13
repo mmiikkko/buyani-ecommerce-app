@@ -22,9 +22,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body
-        className={`${roboto.className} antialiased [scrollbar-gutter:stable] scroll-smooth`}
-      >
+      <body className={`${roboto.className} antialiased scroll-smooth`}>
         <main>{children}</main>
       </body>
     </html>
