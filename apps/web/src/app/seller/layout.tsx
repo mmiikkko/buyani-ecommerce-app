@@ -18,7 +18,7 @@ export default async function SellerLayout({
 
   if (user) {
     if (!user.role.includes(USER_ROLES.SELLER)) {
-      unauthorized();
+      //unauthorized();
     }
   }
 
@@ -27,9 +27,6 @@ export default async function SellerLayout({
       <div className="flex min-h-screen overflow-hidden">
         {/* Sidebar */}
         <AppSidebar />
-        <div className="flex min-h-screen">
-          {/* Sidebar */}
-          <AppSidebar />
 
           {/* Main Content Area */}
           <div className="flex-1 flex flex-col">
@@ -45,6 +42,5 @@ export default async function SellerLayout({
             {children}
           </main>
           </div>
-      </div>
       </div>
     </SidebarProvider>);}
