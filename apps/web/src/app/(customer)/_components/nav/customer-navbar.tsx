@@ -10,7 +10,16 @@ import { authClient } from "@/server/auth-client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
-import { MapPin, Package, Home, Handshake, Tag, UserIcon } from "lucide-react";
+import {
+  MapPin,
+  Package,
+  Home,
+  Handshake,
+  Tag,
+  UserIcon,
+  Carrot,
+  ShoppingCart,
+} from "lucide-react";
 
 interface NavbarProps {
   className?: string;
@@ -51,57 +60,65 @@ export default function Navbar({ className }: NavbarProps) {
 
           {/* Middle Section */}
           <div className="w-full flex flex-col space-between mt-2">
-            <div className="flex justify-between">
-              <ul className="flex space-x-8 items-center text-sm font-medium ">
-                <li className="flex items-center space-x-2 transition">
-                  <Home size={16} />
-                  <Link href="/">Home</Link>
-                </li>
-                <li className="flex items-center space-x-4 transition">
-                  <Package size={16} />
-                  <Link href="/shops">Shops</Link>
-                </li>
-                <li className="flex items-center space-x-2 transition">
-                  <Tag size={16} />
-                  <Link href="/categories">Categories</Link>
-                </li>
-              </ul>
+            <div className="flex flex-col h-full space-y-4">
+              <div className="flex justify-between">
+                <ul className="flex space-x-8 items-center text-sm font-medium ">
+                  <li className="flex items-center space-x-2 transition">
+                    <Home size={16} />
+                    <Link href="/">Home</Link>
+                  </li>
+                  <li className="flex items-center space-x-4 transition">
+                    <Package size={16} />
+                    <Link href="/shops">Shops</Link>
+                  </li>
+                  <li className="flex items-center space-x-2 transition">
+                    <Tag size={16} />
+                    <Link href="/categories">Categories</Link>
+                  </li>
+                </ul>
+                <div className="flex items-center space-x-3">
+                  <Button className="bg-secondary">
+                    <Handshake />
+                    <span>Become a Seller</span>
+                  </Button>
+                  <Button variant="outline">
+                    <MapPin />
+                    <span>CNSC</span>
+                  </Button>
+                </div>
+              </div>
 
-              <div className="flex items-center space-x-3">
-                <Button className="bg-secondary">
-                  <Handshake />
-                  <span>Become a Seller</span>
-                </Button>
-                <Button variant="outline">
-                  <MapPin />
-                  <span>CNSC</span>
-                </Button>
+              <div className="flex space-x-4 ">
+                <Input
+                  type="text"
+                  placeholder="Search for products or vendors"
+                  className="flex-1  bg-white"
+                />
+
+                <div className="flex items-center justify-between space-x-4 mt-auto">
+                  {/* User Section */}
+                  <div className="flex items-end space-x-4 text-black">
+                    {isLoading ? (
+                      <Skeleton className="h-9 w-[100px] rounded-md" />
+                    ) : isAuthenticated ? (
+                      <div className="flex items-center space-x-4">
+                        <UserDropdown user={user!} />
+                        <Button>
+                          <ShoppingCart />
+                        </Button>
+                      </div>
+                    ) : (
+                      <Link href="/sign-in" className="text-sm font-medium">
+                        <Button className="flex items-center space-x-2 ">
+                          <UserIcon />
+                          <span>Log in</span>
+                        </Button>
+                      </Link>
+                    )}
+                  </div>
+                </div>
               </div>
             </div>
-
-            <div className="flex items-center justify-between space-x-4 mt-auto">
-              <Input
-                type="text"
-                placeholder="Search for products or vendors"
-                className="flex-1  bg-white"
-              />
-            </div>
-          </div>
-
-          {/* User Section */}
-          <div className="flex items-end space-x-4 text-black">
-            {isLoading ? (
-              <Skeleton className="h-9 w-[100px] rounded-md" />
-            ) : isAuthenticated ? (
-              <UserDropdown user={user!} />
-            ) : (
-              <Link href="/sign-in" className="text-sm font-medium">
-                <Button className="flex items-center space-x-2 ">
-                  <UserIcon />
-                  <span>Log in</span>
-                </Button>
-              </Link>
-            )}
           </div>
         </div>
       </div>

@@ -15,15 +15,12 @@ export default async function AuthLayout({
 
   if (user) {
     if (user.role.includes(USER_ROLES.ADMIN)) {
-      redirect("/admin/dashboard");
+      redirect("/admin");
     } else if (user.role.includes(USER_ROLES.SELLER)) {
-      redirect("/seller/dashboard");
+      redirect("/seller");
     } else if (user.role.includes(USER_ROLES.CUSTOMER)) {
       redirect("/");
     }
-  } else {
-    // to handle reroute just for safety
-    unauthorized();
   }
 
   return children;
