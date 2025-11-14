@@ -14,10 +14,10 @@ import Package from "@/assets/seller-imgs/package-symbol.png";
 export function CardActivity(){
 
     return(
-        <div className=" min-w-[100%] max-w-[150%] flex gap-4 items-center justify-center mb-5">
-            <div className="min-w-[20%] max-w-[25%]">
+        <div className="min-w-[100%] max-w-[150%] flex flex-row gap-5 items-center justify-center mb-5">
+            <div className="min-w-[22%] max-w-[30%]">
             {/* Cash */}
-            <Card className="w-full min-w-[390px] max-w-[530px] min-h-[220px] flex flex-col justify-between">
+            <Card className="w-full min-w-[300px] max-w-[530px] min-h-[180px] flex flex-col justify-between">
             <CardHeader>
                 <div className="flex flex-row">
                 <Image
@@ -36,9 +36,9 @@ export function CardActivity(){
             </Card>
             </div>
 
-            <div className="min-w-[20%] max-w-[25%]">
+            <div className="min-w-[22%] max-w-[30%]">
             {/* Orders */}
-            <Card className="w-full min-w-[390px] max-w-[530px] min-h-[220px] flex flex-col justify-between">
+            <Card className="w-full min-w-[300px] max-w-[530px] min-h-[180px] flex flex-col justify-between">
             <CardHeader>
             <div className="flex flex-row">
             <Image
@@ -57,9 +57,9 @@ export function CardActivity(){
             </Card>
             </div>
 
-            <div className="min-w-[20%] max-w-[25%]">
+            <div className="min-w-[22%] max-w-[30%]">
             {/* Pending */}
-            <Card className="w-full min-w-[390px] max-w-[530px] min-h-[220px] flex flex-col justify-between">
+            <Card className="w-full min-w-[300px] max-w-[530px] min-h-[180px] flex flex-col justify-between">
             <CardHeader>
             <div className="flex flex-row">
             <Image
@@ -79,9 +79,9 @@ export function CardActivity(){
             </Card>
             </div>
 
-            <div className="min-w-[20%] max-w-[25%]">
+            <div className="min-w-[22%] max-w-[30%]">
             {/* Products */}
-            <Card className="w-full min-w-[390px] max-w-[530px] min-h-[220px] flex flex-col justify-between">
+            <Card className="w-full min-w-[300px] max-w-[530px] min-h-[180px] flex flex-col justify-between">
             <CardHeader>
             <div className="flex flex-row">
             <Image
