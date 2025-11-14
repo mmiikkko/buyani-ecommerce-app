@@ -4,7 +4,7 @@ import { AppSidebar } from "@/app/seller/_components/nav/seller-sidebar";
 import { ReactNode } from "react";
 import { getServerSession } from "@/server/session";
 import { USER_ROLES } from "@/server/schema/auth-schema";
-import { redirect, unauthorized } from "next/navigation";
+import { unauthorized } from "next/navigation";
 
 export default async function SellerLayout({
   children,
@@ -18,7 +18,7 @@ export default async function SellerLayout({
 
   if (user) {
     if (!user.role.includes(USER_ROLES.SELLER)) {
-      //unauthorized();
+      unauthorized();
     }
   }
 
@@ -28,19 +28,21 @@ export default async function SellerLayout({
         {/* Sidebar */}
         <AppSidebar />
 
-          {/* Main Content Area */}
-          <div className="flex-1 flex flex-col">
-            {/* Navbar */}
-            <Navbar />
-            <div className="fixed mt-18 ml-2">
-              <SidebarTrigger />
-            </div>
+        {/* Main Content Area */}
+        <div className="flex-1 flex flex-col">
+          {/* Navbar */}
+          <Navbar />
+          <div className="fixed mt-18 ml-2">
+            <SidebarTrigger />
+          </div>
           {/* Main Page Content */}
           <main className="flex-1 min-w-screen self-center overflow-hidden self-center p-6 bg-#EBFEEC">
             {/* Sidebar trigger at top (optional) */}
-            
+
             {children}
           </main>
-          </div>
+        </div>
       </div>
-    </SidebarProvider>);}
+    </SidebarProvider>
+  );
+}

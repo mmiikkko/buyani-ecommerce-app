@@ -1,5 +1,5 @@
 import { getServerSession } from "@/server/session";
-import { redirect, unauthorized } from "next/navigation";
+import { unauthorized } from "next/navigation";
 import { ReactNode } from "react";
 import { USER_ROLES } from "@/server/schema/auth-schema";
 
