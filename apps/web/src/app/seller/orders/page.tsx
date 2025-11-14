@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button"; // ✅ Add this import for a cl
 
 export default function Orders() {
   return (
-    <section className="relative min-h-screen min-w-full overflow-hidden space-y-5 mt-18 mx-3">
+    <section className="relative min-h-screen min-w-[80%] max-w-[100%] overflow-hidden space-y-5 mt-18 mx-3">
       <div className="flex flex-row justify-between">
         <div className="flex flex-col">
           <h1 className="text-xl mb-1 font-bold text-[#2E7D32]">Orders</h1>
@@ -28,10 +28,10 @@ export default function Orders() {
         </div>
       </div>
       
-      <div className="flex flex-row gap-2 justify-between space-x-4 mt-auto p-5 bg-white rounded-md shadow-md">
+      <div className="flex flex-row justify-center gap-3 space-x-4 mt-auto p-5 bg-white rounded-md shadow-md">
 
-        <div className="flex flex-row bg-[#f3f3f5] rounded-md">
-          <SearchInput placeholder="Search by order ID or customer name" className="bg-[#f3f3f5]" />
+        <div className="flex flex-row min-w-[90%] max-w-[100%] bg-[#f3f3f5] rounded-md">
+          <SearchInput placeholder="Search by order ID or customer name" className="min-w-[100%] max-w-[120%] bg-[#f3f3f5]" />
         </div>
 
         <DropdownMenu>

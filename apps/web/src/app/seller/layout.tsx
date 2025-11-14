@@ -6,7 +6,7 @@ import { ReactNode } from "react";
 export default function SellerLayout({ children }: { children: ReactNode }) {
   return (
     <SidebarProvider>
-    <div className="flex min-h-screen">
+    <div className="flex min-h-screen overflow-hidden">
       {/* Sidebar */}
       <AppSidebar />
 
@@ -18,7 +18,7 @@ export default function SellerLayout({ children }: { children: ReactNode }) {
               <SidebarTrigger/>
           </div>
         {/* Main Page Content */}
-        <main className="flex-1 p-6 bg-#EBFEEC">
+        <main className="flex-1 min-w-screen self-center overflow-hidden self-center p-6 bg-#EBFEEC">
           {/* Sidebar trigger at top (optional) */}
           
           {children}

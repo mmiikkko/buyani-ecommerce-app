@@ -12,17 +12,17 @@ export default function SellerDashboard() {
       <p> Here&apos;s what&apos;s happening with your store today. </p>
 
       {/* Activity*/}
-      <section className="flex flex-wrap min-h-[50%] justify-center">
+      <section className="flex flex-wrap min-h-[50%] min-w-[90%] max-w-[100%] justify-center">
       <CardActivity />
       </section>
       
       {/* Recent Orders*/}
-      <section  className="flex flex-wrap min-h-[50%] justify-center">
+      <section  className="flex flex-wrap min-h-[50%] min-w-[90%] max-w-[100%] justify-center">
         <RecentOrders />
       </section>
       
       {/* Charts and Stats*/}
-      <section className="flex min-h-[50%] justify-center gap-5">
+      <section className="flex min-h-[50%] min-w-[90%] max-w-[100%] justify-center gap-5">
           <ChartAreaIcons />
           <FrequentBought />
       </section>

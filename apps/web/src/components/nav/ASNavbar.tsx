@@ -20,8 +20,8 @@ export default function ASNavbar() {
             />
 
             <div className="flex flex-col items-center ml-2">
-                <div className="text-[#2E7D32] mb-0 text-center">BUYANI</div>
-                <div className="text-[#6A7282] text-xs mt-0 text-center">Seller Center</div>
+                <div className="cursor-pointer text-[#2E7D32] mb-0 text-center">BUYANI</div>
+                <div className="cursor-pointer text-[#6A7282] text-xs mt-0 text-center">Seller Center</div>
             </div>
             
         </div>
