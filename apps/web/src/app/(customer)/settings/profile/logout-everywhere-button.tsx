@@ -12,7 +12,6 @@ export function LogoutEverywhereButton() {
   const router = useRouter();
 
   async function handleLogoutEverywhere() {
-    // TODO: Handle logout everywhere
     setLoading(true);
 
     const { error } = await authClient.revokeSessions();

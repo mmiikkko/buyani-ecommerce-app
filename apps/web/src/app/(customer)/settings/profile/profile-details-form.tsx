@@ -62,21 +62,11 @@ export function ProfileDetailsForm({ user }: ProfileDetailsFormProps) {
     }
   }, [user, form]);
 
-  async function onSubmit({
-    name,
-    first_name,
-    last_name,
-    image,
-  }: UpdateProfileValues) {
+  async function onSubmit(values: UpdateProfileValues) {
     setStatus(null);
     setError(null);
 
-    const { error } = await authClient.updateUser({
-      name,
-      first_name,
-      last_name,
-      image,
-    });
+    const { error } = await authClient.updateUser(values);
 
     if (error) {
       setError(error.message || "Failed to update profile");
@@ -88,28 +78,31 @@ export function ProfileDetailsForm({ user }: ProfileDetailsFormProps) {
 
   function handleImageChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        const base64 = reader.result as string;
-        form.setValue("image", base64, { shouldDirty: true });
-      };
-      reader.readAsDataURL(file);
-    }
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      const base64 = reader.result as string;
+      form.setValue("image", base64, { shouldDirty: true });
+    };
+    reader.readAsDataURL(file);
   }
 
   const imagePreview = form.watch("image");
-
   const loading = form.formState.isSubmitting;
 
   return (
-    <Card>
+    <Card className="flex flex-col ">
       <CardHeader>
         <CardTitle>Profile Details</CardTitle>
       </CardHeader>
-      <CardContent>
+      {/* Make CardContent stretch and use flex layout */}
+      <CardContent className="flex flex-col flex-1">
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-4">
+          <form
+            onSubmit={form.handleSubmit(onSubmit)}
+            className="flex flex-col flex-1 gap-4"
+          >
             <FormField
               control={form.control}
               name="name"
@@ -157,12 +150,12 @@ export function ProfileDetailsForm({ user }: ProfileDetailsFormProps) {
               name="image"
               render={() => (
                 <FormItem>
-                  <FormLabel>Profile image</FormLabel>
+                  <FormLabel>Profile Image</FormLabel>
                   <FormControl>
                     <Input
                       type="file"
                       accept="image/*"
-                      onChange={(e) => handleImageChange(e)}
+                      onChange={handleImageChange}
                     />
                   </FormControl>
                   <FormMessage />
@@ -199,7 +192,8 @@ export function ProfileDetailsForm({ user }: ProfileDetailsFormProps) {
                 {status}
               </div>
             )}
-            <LoadingButton type="submit" loading={loading}>
+
+            <LoadingButton className="mt-auto" type="submit" loading={loading}>
               Save changes
             </LoadingButton>
           </form>

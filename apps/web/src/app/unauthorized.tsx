@@ -12,11 +12,13 @@ export default function UnauthorizedPage() {
       <div className="space-y-6">
         <div className="space-y-2">
           <h1 className="text-2xl font-semibold">401 - Unauthorized</h1>
-          <p className="text-muted-foreground">Please sign in to continue.</p>
+          <p className="text-muted-foreground">
+            You are forbidden to access this page
+          </p>
         </div>
         <div>
           <Button asChild>
-            <Link href={`/sign-in?redirect=${pathname}`}>Sign in</Link>
+            <Link href={`/`}>Go back to home</Link>
           </Button>
         </div>
       </div>

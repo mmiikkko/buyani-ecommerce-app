@@ -1,6 +1,12 @@
 "use client";
 
-import { LogOutIcon, ShieldIcon, UserIcon, Store } from "lucide-react";
+import {
+  LogOutIcon,
+  ShieldIcon,
+  Settings,
+  Store,
+  ChevronDown,
+} from "lucide-react";
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -18,7 +24,7 @@ import {
 import { authClient } from "@/server/auth-client";
 import { toast } from "sonner";
 import { User } from "@/server/auth-types";
-import { UserAvatar } from "../user-avatar";
+import { UserAvatar } from "./user-avatar";
 import { USER_ROLES } from "@/server/schema/auth-schema";
 
 interface UserDropdownProps {
@@ -30,17 +36,20 @@ export function UserDropdown({ user }: UserDropdownProps) {
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button variant="outline">
-          <UserAvatar name={user.name} image={user.image} className="w-6 h-6" />
-          <span className="max-w-48 truncate">{user.name}</span>
+          <UserAvatar name={user.name} image={user.image} className="h-6 w-6" />
+          <span className="max-w-48 truncate ">{user.name}</span>
+          <ChevronDown />
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-56">
-        <DropdownMenuLabel>{user.email}</DropdownMenuLabel>
+        <DropdownMenuLabel>
+          <div className="flex flex-col gap-1">{user.email}</div>
+        </DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuItem asChild>
-          <Link href="/profile" className="flex items-center gap-2">
-            <DropdownMenuItemIcon icon={UserIcon} />
-            <span>Profile</span>
+          <Link href="/settings/profile" className="flex items-center gap-2">
+            <DropdownMenuItemIcon icon={Settings} />
+            <span>Settings</span>
           </Link>
         </DropdownMenuItem>
         {user.role.includes(USER_ROLES.ADMIN) && <AdminItem />}
@@ -65,7 +74,7 @@ function AdminItem() {
 function SellerItem() {
   return (
     <DropdownMenuItem asChild>
-      <Link href="/seller-center">
+      <Link href="/seller">
         <DropdownMenuItemIcon icon={Store} />
         <span>Seller Center</span>
       </Link>

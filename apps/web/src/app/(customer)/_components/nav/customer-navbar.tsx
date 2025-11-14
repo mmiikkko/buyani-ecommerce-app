@@ -1,15 +1,16 @@
 "use client";
 
+import Logo from "@/assets/logo/Logo.png";
 import Image from "next/image";
 import Link from "next/link";
-import { MapPin, Package, Home, Handshake, Tag, UserIcon } from "lucide-react";
-import Logo from "@/assets/logo/Logo.png";
-import { UserDropdown } from "./user-dropdown";
+import clsx from "clsx";
+
+import { UserDropdown } from "@/components/user-dropdown";
 import { authClient } from "@/server/auth-client";
 import { Button } from "@/components/ui/button";
-import { Input } from "../ui/input";
-import clsx from "clsx";
-import { Skeleton } from "../ui/skeleton";
+import { Input } from "@/components/ui/input";
+import { Skeleton } from "@/components/ui/skeleton";
+import { MapPin, Package, Home, Handshake, Tag, UserIcon } from "lucide-react";
 
 interface NavbarProps {
   className?: string;
