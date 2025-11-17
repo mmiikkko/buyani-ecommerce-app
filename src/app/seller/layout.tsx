@@ -23,22 +23,22 @@ export default async function SellerLayout({
   }
 
   return (
-    <SidebarProvider>
+    <SidebarProvider defaultOpen={false} >
       <div className="flex min-h-screen overflow-hidden">
         {/* Sidebar */}
         <AppSidebar />
 
-        {/* Main Content Area */}
-        <div className="flex-1 flex flex-col">
-          {/* Navbar */}
-          <Navbar />
-          <div className="fixed mt-18 ml-2">
-            <SidebarTrigger />
-          </div>
+          {/* Main Content Area */}
+          <div className="flex-1 flex flex-col">
+            {/* Navbar */}
+            <Navbar />
+            <div className="fixed mt-18 ml-2">
+              <SidebarTrigger />
+            </div>
           {/* Main Page Content */}
           <main className="flex-1 min-w-screen self-center overflow-hidden self-center p-6 bg-#EBFEEC">
             {/* Sidebar trigger at top (optional) */}
-
+            
             {children}
           </main>
         </div>

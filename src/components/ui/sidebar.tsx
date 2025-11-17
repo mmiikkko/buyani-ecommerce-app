@@ -4,7 +4,8 @@ import * as React from "react"
 import { Slot } from "@radix-ui/react-slot"
 import { cva, type VariantProps } from "class-variance-authority"
 import { Menu } from "lucide-react"
-
+import { usePathname } from "next/navigation"   // ✅ ADDED
+import { useEffect } from "react" 
 import { useIsMobile } from "@/hooks/use-mobile"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -53,6 +54,7 @@ function useSidebar() {
   return context
 }
 
+
 function SidebarProvider({
   defaultOpen = true,
   open: openProp,
@@ -66,11 +68,12 @@ function SidebarProvider({
   open?: boolean
   onOpenChange?: (open: boolean) => void
 }) {
+  const pathname = usePathname()   // ✅ ADDED
+
   const isMobile = useIsMobile()
   const [openMobile, setOpenMobile] = React.useState(false)
 
-  // This is the internal state of the sidebar.
-  // We use openProp and setOpenProp for control from outside the component.
+  // sidebar internal state
   const [_open, _setOpen] = React.useState(defaultOpen)
   const open = openProp ?? _open
   const setOpen = React.useCallback(
@@ -82,18 +85,17 @@ function SidebarProvider({
         _setOpen(openState)
       }
 
-      // This sets the cookie to keep the sidebar state.
       document.cookie = `${SIDEBAR_COOKIE_NAME}=${openState}; path=/; max-age=${SIDEBAR_COOKIE_MAX_AGE}`
     },
     [setOpenProp, open]
   )
 
-  // Helper to toggle the sidebar.
+  // toggle helper
   const toggleSidebar = React.useCallback(() => {
     return isMobile ? setOpenMobile((open) => !open) : setOpen((open) => !open)
   }, [isMobile, setOpen, setOpenMobile])
 
-  // Adds a keyboard shortcut to toggle the sidebar.
+  // keyboard shortcut
   React.useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       if (
@@ -109,8 +111,15 @@ function SidebarProvider({
     return () => window.removeEventListener("keydown", handleKeyDown)
   }, [toggleSidebar])
 
-  // We add a state so that we can do data-state="expanded" or "collapsed".
-  // This makes it easier to style the sidebar with Tailwind classes.
+  // -------------------------------------------------------
+  //  ✅ CLOSE SIDEBAR WHEN ROUTE CHANGES
+  // -------------------------------------------------------
+  useEffect(() => {
+    setOpen(false)
+    setOpenMobile(false)
+  }, [pathname])
+  // -------------------------------------------------------
+
   const state = open ? "expanded" : "collapsed"
 
   const contextValue = React.useMemo<SidebarContextProps>(
@@ -139,7 +148,7 @@ function SidebarProvider({
             } as React.CSSProperties
           }
           className={cn(
-            "group/sidebar-wrapper has-data-[variant=inset]:bg-sidebar flex min-h-svh w-full",
+            "group/sidebar-wrapper has-data-[variant=inset]:bg-sidebar flex min-h-screen w-full",
             className
           )}
           {...props}
@@ -150,6 +159,7 @@ function SidebarProvider({
     </SidebarContext.Provider>
   )
 }
+
 
 function Sidebar({
   side = "left",
@@ -163,7 +173,14 @@ function Sidebar({
   variant?: "sidebar" | "floating" | "inset"
   collapsible?: "offcanvas" | "icon" | "none"
 }) {
-  const { isMobile, state, openMobile, setOpenMobile } = useSidebar()
+  const {
+    isMobile,
+    state,
+    open,
+    setOpen,
+    openMobile,
+    setOpenMobile,
+  } = useSidebar()
 
   if (collapsible === "none") {
     return (
@@ -205,6 +222,9 @@ function Sidebar({
     )
   }
 
+  // ----------------------------
+  // DESKTOP SIDEBAR (Modified)
+  // ----------------------------
   return (
     <div
       className="group peer text-sidebar-foreground hidden md:block"
@@ -214,29 +234,28 @@ function Sidebar({
       data-side={side}
       data-slot="sidebar"
     >
-      {/* This is what handles the sidebar gap on desktop */}
-      <div
-        data-slot="sidebar-gap"
-        className={cn(
-          "relative w-(--sidebar-width) bg-transparent transition-[width] duration-200 ease-linear",
-          "group-data-[collapsible=offcanvas]:w-0",
-          "group-data-[side=right]:rotate-180",
-          variant === "floating" || variant === "inset"
-            ? "group-data-[collapsible=icon]:w-[calc(var(--sidebar-width-icon)+(--spacing(4)))]"
-            : "group-data-[collapsible=icon]:w-(--sidebar-width-icon)"
-        )}
-      />
+      {/* 1. OVERLAY (only for floating) */}
+      {variant === "floating" && open && (
+        <div
+          data-slot="sidebar-overlay"
+          className="fixed inset-0 z-40 bg-black/30"
+          onClick={() => setOpen(false)}
+        />
+      )}
+
+      {/* 2. SIDEBAR CONTAINER */}
       <div
         data-slot="sidebar-container"
         className={cn(
-          "fixed inset-y-0 z-10 hidden h-svh w-(--sidebar-width) transition-[left,right,width] duration-200 ease-linear md:flex",
+          "fixed inset-y-0 z-50 hidden h-svh w-(--sidebar-width) transition-[left,right,width] duration-200 ease-linear md:flex",
           side === "left"
             ? "left-0 group-data-[collapsible=offcanvas]:left-[calc(var(--sidebar-width)*-1)]"
             : "right-0 group-data-[collapsible=offcanvas]:right-[calc(var(--sidebar-width)*-1)]",
-          // Adjust the padding for floating and inset variants.
+
           variant === "floating" || variant === "inset"
             ? "p-2 group-data-[collapsible=icon]:w-[calc(var(--sidebar-width-icon)+(--spacing(4))+2px)]"
             : "group-data-[collapsible=icon]:w-(--sidebar-width-icon) group-data-[side=left]:border-r group-data-[side=right]:border-l",
+
           className
         )}
         {...props}
@@ -249,6 +268,22 @@ function Sidebar({
           {children}
         </div>
       </div>
+
+      {/* 3. GAP (HIDDEN FOR FLOATING MODE) */}
+      <div
+        data-slot="sidebar-gap"
+        className={cn(
+          variant === "floating"
+            ? "hidden"
+            : "relative w-(--sidebar-width) bg-transparent transition-[width] duration-200 ease-linear",
+
+          "group-data-[collapsible=offcanvas]:w-0",
+          "group-data-[side=right]:rotate-180",
+          variant === "floating" || variant === "inset"
+            ? "group-data-[collapsible=icon]:w-[calc(var(--sidebar-width-icon)+(--spacing(4)))]"
+            : "group-data-[collapsible=icon]:w-(--sidebar-width-icon)"
+        )}
+      />
     </div>
   )
 }
@@ -266,7 +301,7 @@ function SidebarTrigger({
       data-slot="sidebar-trigger"
       variant="ghost"
       size="icon"
-      className={cn("size-7", className)}
+      className={cn("size-7 cursor-pointer", className)}
       onClick={(event) => {
         onClick?.(event)
         toggleSidebar()
@@ -697,6 +732,7 @@ function SidebarMenuSubButton({
     />
   )
 }
+
 
 export {
   Sidebar,

@@ -60,7 +60,7 @@ const items = [
 
 export function AppSidebar() {
   return (
-    <Sidebar className="fixed top-0 left-0 h-screen flex flex-col justify-between">
+    <Sidebar variant="floating" className="fixed top-0 left-0 h-screen flex flex-col justify-between">
       <SidebarContent className="flex-1 overflow-y-auto mt-18">
         <SidebarGroup>
           <SidebarGroupLabel>BUYANI</SidebarGroupLabel>
