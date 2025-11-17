@@ -1,7 +1,0 @@
-{
-  "version": 3,
-  "sources": [],
-  "sections": [
-    {"offset": {"line": 4, "column": 0}, "map": {"version":3,"sources":["file:///C:/Users/jaece/buyani-ecommerce-app/apps/web/src/app/seller/page.tsx"],"sourcesContent":["\"use client\";\r\n\r\n\r\n\r\nexport default function SellerDashboard() {\r\n\r\n  return (\r\n    <main className=\"relative min-h-screen space-y-12\">\r\n      <h1 className=\"text-2xl font-bold\">Seller Dashboard</h1>\r\n\r\n    </main>\r\n  )\r\n}\r\n"],"names":[],"mappings":";;;;;AAAA;;AAIe,SAAS;IAEtB,qBACE,mTAAC;QAAK,WAAU;kBACd,cAAA,mTAAC;YAAG,WAAU;sBAAqB;;;;;;;;;;;AAIzC","debugId":null}},
-    {"offset": {"line": 32, "column": 0}, "map": {"version":3,"sources":["file:///C:/Users/jaece/buyani-ecommerce-app/node_modules/.bun/next%4016.0.1%2Bf98dd74b6b4c2783/node_modules/next/src/server/route-modules/app-page/vendored/ssr/react-jsx-dev-runtime.ts"],"sourcesContent":["module.exports = (\n  require('../../module.compiled') as typeof import('../../module.compiled')\n).vendored['react-ssr']!.ReactJsxDevRuntime\n"],"names":["module","exports","require","vendored","ReactJsxDevRuntime"],"mappings":"AAAAA,OAAOC,OAAO,GACZC,QAAQ,2KACRC,QAAQ,CAAC,YAAY,CAAEC,kBAAkB","ignoreList":[0],"debugId":null}}]
-}

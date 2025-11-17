@@ -1,6 +1,0 @@
-{
-  "version": 3,
-  "sources": [],
-  "sections": [
-    {"offset": {"line": 4, "column": 0}, "map": {"version":3,"sources":["file:///C:/Users/jaece/buyani-ecommerce-app/apps/web/src/app/seller/POS/page.tsx"],"sourcesContent":["\"use client\";\r\nimport { Input } from \"@/components/ui/input\";\r\n\r\nexport default function POS() {\r\n\r\n  return (\r\n\r\n    <section className=\"relative min-h-screen min-w-[80%] max-w-[100%] overflow-hidden space-y-5 mt-18 mx-3\">\r\n      <div className=\"flex flex-row justify-between\">\r\n        <div className=\"flex flex-col\">\r\n          <h1 className=\"text-xl mb-1 font-bold text-[#2E7D32]\">POS</h1>\r\n          <p>Process in-store transactions</p>\r\n        </div>\r\n        \r\n      </div>\r\n      \r\n      \r\n    </section>\r\n\r\n\r\n  )\r\n}\r\n"],"names":[],"mappings":";;;;;AAAA;;AAGe,SAAS;IAEtB,qBAEE,kQAAC;QAAQ,WAAU;kBACjB,cAAA,kQAAC;YAAI,WAAU;sBACb,cAAA,kQAAC;gBAAI,WAAU;;kCACb,kQAAC;wBAAG,WAAU;kCAAwC;;;;;;kCACtD,kQAAC;kCAAE;;;;;;;;;;;;;;;;;;;;;;AAUb;KAlBwB","debugId":null}}]
-}

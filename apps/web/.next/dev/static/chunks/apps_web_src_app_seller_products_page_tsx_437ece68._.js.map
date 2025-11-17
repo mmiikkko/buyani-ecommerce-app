@@ -1,6 +1,0 @@
-{
-  "version": 3,
-  "sources": [],
-  "sections": [
-    {"offset": {"line": 4, "column": 0}, "map": {"version":3,"sources":["file:///C:/Users/jaece/buyani-ecommerce-app/apps/web/src/app/seller/products/page.tsx"],"sourcesContent":["\"use client\";\r\n\r\nexport default function Products() {\r\n\r\n  return (\r\n    <section className=\"relative min-h-screen min-w-full overflow-hidden space-y-5 mt-18 mx-3\">\r\n      <h1 className=\"text-xl font-bold text-[#2E7D32]\">Products</h1>\r\n\r\n    </section>\r\n  )\r\n}\r\n"],"names":[],"mappings":";;;;;AAAA;;AAEe,SAAS;IAEtB,qBACE,kQAAC;QAAQ,WAAU;kBACjB,cAAA,kQAAC;YAAG,WAAU;sBAAmC;;;;;;;;;;;AAIvD;KARwB","debugId":null}}]
-}
