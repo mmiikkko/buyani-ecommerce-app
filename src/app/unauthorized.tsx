@@ -2,11 +2,8 @@
 
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
 
 export default function UnauthorizedPage() {
-  const pathname = usePathname();
-
   return (
     <main className="flex grow items-center justify-center px-4 text-center h-screen">
       <div className="space-y-6">
