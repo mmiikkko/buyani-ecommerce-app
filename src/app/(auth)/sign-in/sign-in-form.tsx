@@ -77,7 +77,7 @@ export function SignInForm() {
       setError(error.message || "Something went wrong");
     } else {
       toast.success("Signed in successfully!");
-      router.push(redirect ?? "/profile");
+      router.push(redirect ?? "/");
     }
   }
 

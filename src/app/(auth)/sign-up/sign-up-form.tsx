@@ -86,7 +86,7 @@ export function SignUpForm() {
       setError(error.message || "Something went wrong");
     } else {
       toast.success("Account Successfully Created!");
-      router.push("/profile");
+      router.push("/");
     }
   }
 
