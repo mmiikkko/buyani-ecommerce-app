@@ -1,0 +1,6 @@
+{
+  "version": 3,
+  "sources": [],
+  "sections": [
+    {"offset": {"line": 4, "column": 0}, "map": {"version":3,"sources":["file:///C:/Users/jaece/buyani-ecommerce-app/apps/web/src/app/seller/orders/page.tsx"],"sourcesContent":["\"use client\";\r\nimport { Input } from \"@/components/ui/input\";\r\nimport { Search } from \"lucide-react\";\r\n \r\n\r\nexport default function Orders() {\r\n\r\n  return (\r\n    <section className=\"relative min-h-screen min-w-full overflow-hidden space-y-5 mt-18 mx-3\">\r\n      <h1 className=\"text-xl font-bold text-[#2E7D32]\">Orders</h1>\r\n      <div className=\"flex flex-row gap-2 justify-between space-x-4 mt-auto p-5 bg-white rounded-md shadow-md\">\r\n              <Input\r\n                type=\"text\"\r\n                placeholder=\"Search for products or vendors\"\r\n                className=\"flex-1  bg-[#f3f3f5]\"\r\n              />\r\n\r\n\r\n            </div>\r\n    </section>\r\n  )\r\n}\r\n"],"names":[],"mappings":";;;;;AACA;AADA;;;AAKe,SAAS;IAEtB,qBACE,mTAAC;QAAQ,WAAU;;0BACjB,mTAAC;gBAAG,WAAU;0BAAmC;;;;;;0BACjD,mTAAC;gBAAI,WAAU;0BACP,cAAA,mTAAC,yJAAK;oBACJ,MAAK;oBACL,aAAY;oBACZ,WAAU;;;;;;;;;;;;;;;;;AAO1B","debugId":null}}]
+}

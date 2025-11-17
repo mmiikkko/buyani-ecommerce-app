@@ -1,0 +1,6 @@
+{
+  "version": 3,
+  "sources": [],
+  "sections": [
+    {"offset": {"line": 4, "column": 0}, "map": {"version":3,"sources":["file:///C:/Users/jaece/buyani-ecommerce-app/apps/web/src/app/seller/page.tsx"],"sourcesContent":["\"use client\";\r\n\r\nexport default function SellerDashboard() {\r\n\r\n  return (\r\n    <section className=\"relative min-h-screen space-y-12 mt-18 mx-3\">\r\n      <h1 className=\"text-xl font-bold\">Welcome back &#40;Hardcoded&#41;</h1>\r\n      \r\n    </section>\r\n  )\r\n}\r\n"],"names":[],"mappings":";;;;;AAAA;;AAEe,SAAS;IAEtB,qBACE,mTAAC;QAAQ,WAAU;kBACjB,cAAA,mTAAC;YAAG,WAAU;sBAAoB;;;;;;;;;;;AAIxC","debugId":null}}]
+}

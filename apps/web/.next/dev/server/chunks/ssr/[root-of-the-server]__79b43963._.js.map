@@ -1,0 +1,6 @@
+{
+  "version": 3,
+  "sources": [],
+  "sections": [
+    {"offset": {"line": 30, "column": 0}, "map": {"version":3,"sources":["file:///C:/Users/jaece/buyani-ecommerce-app/apps/web/src/app/%28auth%29/email-verified/page.tsx"],"sourcesContent":["import { Button } from \"@/components/ui/button\";\r\nimport Link from \"next/link\";\r\n\r\nexport default function EmailVerifiedPage() {\r\n  return (\r\n    <main className=\"min-h-[calc(100vh-3rem)] flex flex-1 items-center justify-center px-4 text-center\">\r\n      <div className=\"space-y-6\">\r\n        <div className=\"space-y-2\">\r\n          <h1 className=\"text-2xl font-semibold\">Email verified</h1>\r\n          <p className=\"text-muted-foreground\">\r\n            Your email has been verified successfully.\r\n          </p>\r\n        </div>\r\n        <Button asChild>\r\n          <Link href=\"/dashboard\">Go to dashboard</Link>\r\n        </Button>\r\n      </div>\r\n    </main>\r\n  );\r\n}\r\n"],"names":[],"mappings":";;;;;AAAA;AACA;;;;AAEe,SAAS;IACtB,qBACE,mTAAC;QAAK,WAAU;kBACd,cAAA,mTAAC;YAAI,WAAU;;8BACb,mTAAC;oBAAI,WAAU;;sCACb,mTAAC;4BAAG,WAAU;sCAAyB;;;;;;sCACvC,mTAAC;4BAAE,WAAU;sCAAwB;;;;;;;;;;;;8BAIvC,mTAAC,2JAAM;oBAAC,OAAO;8BACb,cAAA,mTAAC,+PAAI;wBAAC,MAAK;kCAAa;;;;;;;;;;;;;;;;;;;;;;AAKlC","debugId":null}}]
+}
