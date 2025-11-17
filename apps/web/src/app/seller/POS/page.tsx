@@ -1,5 +1,5 @@
 "use client";
-import { Input } from "@/components/ui/input";
+import { CardsPosProd } from "../_components/cards-pos-prod";
 
 export default function POS() {
 
@@ -13,7 +13,9 @@ export default function POS() {
         </div>
         
       </div>
-      
+      <div className="flex flex-row gap-1">
+        <CardsPosProd />
+      </div>
       
     </section>
 

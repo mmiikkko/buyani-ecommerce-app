@@ -34,7 +34,7 @@ export default function ASNavbar() {
             <Button
               className="flex items-center space-x-1 bg-white text-[#2E7D32] 
                         border border-[#2E7D32] hover:bg-[#2E7D32] hover:text-white 
-                        transition px-3 py-2 rounded-md"
+                        transition px-3 py-2 rounded-md cursor-pointer"
             >
               <Store size={16} />
               <Link href={"/"}>Back to Marketplace</Link>
