@@ -1,5 +1,6 @@
 "use client";
 import { CardsPosProd } from "../_components/cards-pos-prod";
+import { CardsPosTransac } from "../_components/cards-pos-transac";
 
 export default function POS() {
   return (
@@ -12,6 +13,7 @@ export default function POS() {
       </div>
       <div className="flex flex-row gap-1">
         <CardsPosProd />
+        <CardsPosTransac />
       </div>
     </section>
   );
