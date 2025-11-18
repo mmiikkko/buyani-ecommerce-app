@@ -5,12 +5,13 @@ import Link from "next/link";
 import Logo from "@/assets/logo/Logo.png";
 import { Store } from "lucide-react";
 import { Button } from "../../../../components/ui/button";
-
-export default function ASNavbar() {
+import { ReactNode } from "react";
+export default function ASNavbar( { children }: { children?: ReactNode } ) {
   return (
-    <nav className="flex justify-between items-center fixed top-0 left-0 right-0 z-50 shadow-md h-16 bg-white pl-5 pr-5">
+    <nav className="flex justify-between items-center fixed top-0 left-0 right-0 z-50 shadow-md h-16 bg-white pl-3 pr-5">
       {/* Left side */}
       <div className="flex items-center px-4 py-2 bg-white">
+          {children}
         <Image
           src={Logo}
           alt="BuyAni Logo"
