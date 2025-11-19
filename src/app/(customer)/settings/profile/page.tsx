@@ -14,7 +14,7 @@ export default async function ProfilePage() {
   if (!user) unauthorized();
 
   return (
-    <main className="mx-auto w-full max-w-6xl px-4 py-12 h-screen">
+    <main className="mx-auto w-full max-w-6xl px-4 py-20 h-screen">
       <div className="space-y-6">
         <div className="space-y-2">
           <h1 className="text-2xl font-semibold">Profile</h1>
