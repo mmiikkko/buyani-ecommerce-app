@@ -28,6 +28,7 @@ import {
   ChevronUp,
   User2,
 } from "lucide-react";
+import { url } from "inspector";
 
 // Menu items.
 const items = [
@@ -100,8 +101,12 @@ export function AppSidebar() {
                 sideOffset={8}
                 className="w-[--radix-popper-anchor-width] z-9999"
               >
-                <DropdownMenuItem>
-                  <span>Account</span>
+                <DropdownMenuItem asChild>
+                  <Link
+                    href={"/seller/account_settings"}
+                    className="flex items-center gap-2 hover:text-green-500">
+                        Account
+                  </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem>
                   <span>Sign out</span>
