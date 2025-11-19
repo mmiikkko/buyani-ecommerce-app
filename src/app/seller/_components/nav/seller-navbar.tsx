@@ -42,9 +42,7 @@ export default function ASNavbar( { children }: { children?: ReactNode } ) {
             </Button>
           </li>
 
-          <li>
-            <div className="flex flex-col items-center"></div>
-          </li>
+          
         </ul>
       </div>
     </nav>

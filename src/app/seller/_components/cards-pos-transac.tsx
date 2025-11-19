@@ -21,10 +21,7 @@ type CartItem = {
 export function CardsPosTransac() {
   const [collapsed, setCollapsed] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState("Cash");
-  const [cartItems, setCartItems] = useState<CartItem[]>([
-    // sample dynamic data (will be filled by your add-to-cart function)
-    { id: 1, name: "Pineapple Treats", price: 95, qty: 1 },
-  ]);
+  const [cartItems, setCartItems] = useState<CartItem[]>([ /* HARDCODED*/ ]);
 
   const removeItem = (id: number) => {
     setCartItems((prev) => prev.filter((item) => item.id !== id));
