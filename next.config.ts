@@ -8,11 +8,6 @@ const nextConfig: NextConfig = {
     authInterrupts: true,
   },
 
-  // @ts-expect-error
-  eslint: {
-    ignoreDuringBuilds: true,
-  },
-
   images: {
     remotePatterns: [
       {
