@@ -16,7 +16,11 @@ export default function Products() {
   return (
     <section className="relative min-h-screen min-w-full overflow-hidden space-y-5 mt-18 ">
       <div className="flex flex-row justify-between items-center px-3">
+        <div className="flex flex-col">
         <h1 className="text-xl font-bold text-[#2E7D32]">Products</h1>
+        <p>Manage your product inventory and pricing</p>
+        </div>
+        
         <AddProducts onAdd={(newProduct) => setProducts(prev => [...prev, newProduct])}/>
       </div>
        {/* Flow Layout */}
