@@ -11,13 +11,13 @@ export default async function AdminLayout({
   const session = await getServerSession();
   const user = session?.user;
 
-  // block the authentication page if logged in
-
-  if (user) {
-    if (!user.role.includes(USER_ROLES.ADMIN)) {
-      unauthorized();
-    }
+  if (user && !user.role.includes(USER_ROLES.ADMIN)) {
+    unauthorized();
   }
 
-  return children;
+  return (
+    <div className="flex">
+      <main className="flex-1">{children}</main>
+    </div>
+  );
 }
