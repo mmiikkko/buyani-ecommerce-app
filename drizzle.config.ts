@@ -1,5 +1,5 @@
 import { defineConfig } from "drizzle-kit";
-import { env } from "@repo/env";
+import { env } from "@/lib/env";
 
 export default defineConfig({
   dialect: "mysql",
