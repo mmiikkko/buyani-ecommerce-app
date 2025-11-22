@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { Roboto } from "next/font/google";
-import "@/styles/globals.css";
+import "@/app/globals.css";
 import icon from "@/assets/logo/favicon.ico";
 
 export const metadata: Metadata = {
