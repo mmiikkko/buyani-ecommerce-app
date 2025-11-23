@@ -228,7 +228,7 @@ export const orders = mysqlTable("orders", {
 
   addressId: varchar("address_id", { length: 36 })
     .notNull()
-    .references(() => addresses.id, { onDelete: "set null" }),
+    .references(() => addresses.id, { onDelete: "cascade" }),
 
   total: decimal("price", { precision: 10, scale: 2 }),
 

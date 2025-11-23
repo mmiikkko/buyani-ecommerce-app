@@ -22,6 +22,20 @@
       "when": 1762423869635,
       "tag": "0002_keen_bulldozer",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "5",
+      "when": 1763910396867,
+      "tag": "0003_new_slapstick",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "5",
+      "when": 1763910710144,
+      "tag": "0004_kind_pretty_boy",
+      "breakpoints": true
     }
   ]
 }
