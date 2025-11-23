@@ -16,7 +16,12 @@ export type Order = {
   id: string;
   customer: string;
   date: string;
-  products: number;
+
+  // NEW FIELDS
+  productName: string;
+  img: string;
+  quantity: number;
+
   amount: string;
   payment: string;
   status: "pending" | "confirmed" | "shipped" | "delivered" | "cancelled";
@@ -53,12 +58,13 @@ function OrdersTable({
     // FILTER by status
     if (filter !== "all" && order.status !== filter) return false;
 
-    // SEARCH by order id or customer
+    // SEARCH by id, customer, product name
     if (search.trim() !== "") {
       const s = search.toLowerCase();
       if (
         !order.id.toLowerCase().includes(s) &&
-        !order.customer.toLowerCase().includes(s)
+        !order.customer.toLowerCase().includes(s) &&
+        !order.productName.toLowerCase().includes(s)
       ) {
         return false;
       }
@@ -102,7 +108,8 @@ function OrdersTable({
             <TableRow>
               <TableHead>Order ID</TableHead>
               <TableHead>Customer</TableHead>
-              <TableHead>Products</TableHead>
+              <TableHead>Product</TableHead>
+              <TableHead>Qty</TableHead>
               <TableHead>Amount</TableHead>
               <TableHead>Payment</TableHead>
               <TableHead>Status</TableHead>
@@ -125,7 +132,21 @@ function OrdersTable({
                   </div>
                 </TableCell>
 
-                <TableCell>{order.products} item(s)</TableCell>
+                {/* PRODUCT NAME + IMAGE */}
+                <TableCell>
+                  <div className="flex items-center gap-2">
+                    <img
+                      src={order.img}
+                      alt={order.productName}
+                      className="w-10 h-10 rounded-md object-cover border"
+                    />
+                    <span className="font-medium">{order.productName}</span>
+                  </div>
+                </TableCell>
+
+                {/* QUANTITY */}
+                <TableCell>{order.quantity}</TableCell>
+
                 <TableCell>{order.amount}</TableCell>
                 <TableCell>{order.payment}</TableCell>
 
@@ -155,7 +176,7 @@ function OrdersTable({
 
                 <TableCell className="flex gap-2 items-center">
                   <Button variant="ghost" size="icon" className="cursor-pointer">
-                    <Eye className="h-4 w-4 " />
+                    <Eye className="h-4 w-4" />
                   </Button>
 
                   {order.status === "pending" && (

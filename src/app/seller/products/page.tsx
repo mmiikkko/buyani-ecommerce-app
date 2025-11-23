@@ -41,7 +41,9 @@ export default function Products() {
             lg:grid-cols-3 
             xl:grid-cols-4 
             gap-5 
-            px-3
+            px-5
+            pt-8
+            
           "
         >
           {products.map((item) => (
