@@ -1,10 +1,58 @@
-"use client"
+"use client";
 
-export function ProductCard(){
-    return(
-        <div className="min-w-[93%] max-w-[250%] flex flex-wrap gap-4 items-center justify-center mb-5 shadow-md p-5 rounded-lg">
-            <h1>Product</h1>
-        </div>
+import Image from "next/image";
+import { Star, PenLine, Trash2 } from "lucide-react";
+import type { Product } from "@/types/products";
 
-    )
+export function ProductCard({ product }: { product: Product }) {
+  return (
+    <div className="w-full max-w-sm shadow-md rounded-lg space-y-4 overflow-hidden bg-white">
+
+      {/* IMAGE */}
+      <div className="w-full h-40 bg-gray-200 overflow-hidden">
+        {product.images?.length ? (
+          <Image
+            src={product.images[0]}
+            alt={product.name}
+            width={400}
+            height={160}
+            className="w-full h-full object-cover"
+          />
+        ) : (
+          <span className="text-gray-400 text-sm flex items-center justify-center h-full">
+            No Image
+          </span>
+        )}
+      </div>
+
+      {/* PRODUCT INFO */}
+      <div className="px-5 space-y-1">
+        <h1 className="font-semibold text-lg">{product.name}</h1>
+        <p className="text-green-700 font-bold">₱{product.price}</p>
+        <p className="text-gray-600 text-sm">Stock: {product.stock}</p>
+      </div>
+
+      {/* ACTION BUTTONS */}
+      <div className="flex items-center justify-between px-5 pb-4 pt-3 border-t">
+
+        {/* Feature */}
+        <button className="flex items-center gap-1 text-yellow-600 hover:text-yellow-700 text-sm font-medium border rounded-md px-3 py-2 cursor-pointer">
+          <Star size={18} />
+          Feature
+        </button>
+
+        {/* Edit */}
+        <button className="flex items-center gap-1 text-blue-600 hover:text-blue-700 text-sm font-medium border rounded-md px-3 py-2 cursor-pointer">
+          <PenLine size={18} />
+          Edit
+        </button>
+
+        {/* Remove */}
+        <button className="flex items-center gap-1 text-red-600 hover:text-red-700 text-sm font-medium border rounded-md px-3 py-2 cursor-pointer">
+          <Trash2 size={18} />
+          Remove
+        </button>
+      </div>
+    </div>
+  );
 }

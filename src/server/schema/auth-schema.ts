@@ -219,6 +219,15 @@ export const productInventory = mysqlTable("product_inventory", {
   updatedAt: timestamp("updated_at", { fsp: 3 }).$onUpdate(() => new Date()),
 });
 
+export const productImages = mysqlTable("product_images", {
+  id: varchar("id", { length: 36 }).primaryKey(),
+  productId: varchar("product_id", { length: 36 })
+  .notNull()
+  .references(() => products.id, { onDelete: "cascade" }),
+  url: text("url").notNull(),
+});
+
+
 export const orders = mysqlTable("orders", {
   id: varchar("id", { length: 36 }).primaryKey(),
 
@@ -227,8 +236,7 @@ export const orders = mysqlTable("orders", {
     .references(() => user.id, { onDelete: "cascade" }),
 
   addressId: varchar("address_id", { length: 36 })
-    .notNull()
-    .references(() => addresses.id, { onDelete: "cascade" }),
+    .references(() => addresses.id, { onDelete: "set null" }),
 
   total: decimal("price", { precision: 10, scale: 2 }),
 

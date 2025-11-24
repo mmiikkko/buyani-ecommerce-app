@@ -2,14 +2,7 @@
 import { AddProducts } from "../_components/list-product";
 import { ProductCard } from "../_components/product-card";
 import { useState } from "react";
-
-export type Product = {
-  id: string;
-  name: string;
-  price: number;
-  stock: number;
-  image?: string;
-};
+import type { Product } from "@/types/products";
 
 export default function Products() {
   const [products, setProducts] = useState<Product[]>([]);
@@ -43,13 +36,12 @@ export default function Products() {
             gap-5 
             px-5
             pt-8
-            
           "
         >
           {products.map((item) => (
             <ProductCard 
               key={item.id}
-              {...item}
+              product={item}  
             />
           ))}
         </div>
