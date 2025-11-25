@@ -11,22 +11,7 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Eye } from "lucide-react";
-
-export type Order = {
-  id: string;
-  customer: string;
-  date: string;
-
-  // NEW FIELDS
-  productName: string;
-  img: string;
-  quantity: number;
-
-  amount: string;
-  payment: string;
-  status: "pending" | "confirmed" | "shipped" | "delivered" | "cancelled";
-  type: string;
-};
+import type { Order } from "@/types/orders";
 
 export function OrdersTabsTable({
   ordersData,
@@ -53,18 +38,20 @@ function OrdersTable({
   filter: string;
   search: string;
 }) {
-  // Apply filtering + search
+  // Prepare search-friendly fields
   const filteredOrders = (orders ?? []).filter((order) => {
-    // FILTER by status
+    const firstItem = order.items[0];
+    const productName = firstItem?.product?.productName ?? "";
+    const customer = order.buyerId; // since no customer name exists
+
     if (filter !== "all" && order.status !== filter) return false;
 
-    // SEARCH by id, customer, product name
     if (search.trim() !== "") {
       const s = search.toLowerCase();
       if (
         !order.id.toLowerCase().includes(s) &&
-        !order.customer.toLowerCase().includes(s) &&
-        !order.productName.toLowerCase().includes(s)
+        !customer.toLowerCase().includes(s) &&
+        !productName.toLowerCase().includes(s)
       ) {
         return false;
       }
@@ -73,7 +60,6 @@ function OrdersTable({
     return true;
   });
 
-  // Pagination logic
   const [currentPage, setCurrentPage] = useState(1);
   const rowsPerPage = 8;
 
@@ -94,14 +80,12 @@ function OrdersTable({
 
   return (
     <div className="space-y-3">
-      {/* EMPTY STATE */}
       {filteredOrders.length === 0 && (
         <div className="w-full text-center py-6 text-muted-foreground border rounded-md bg-white">
           No orders found.
         </div>
       )}
 
-      {/* TABLE */}
       {filteredOrders.length > 0 && (
         <Table className="bg-white rounded-xl shadow-sm">
           <TableHeader>
@@ -119,84 +103,99 @@ function OrdersTable({
           </TableHeader>
 
           <TableBody>
-            {currentRows.map((order) => (
-              <TableRow key={order.id}>
-                <TableCell className="font-medium">{order.id}</TableCell>
+            {currentRows.map((order) => {
+              const firstItem = order.items[0];
+              const product = firstItem?.product;
+              const img = product?.images?.[0]?.image_url?.[0];
+              const productName = product?.productName ?? "Unknown";
 
-                <TableCell>
-                  <div className="flex flex-col">
-                    <span>{order.customer}</span>
-                    <span className="text-xs text-muted-foreground">
-                      {order.date}
+              return (
+                <TableRow key={order.id}>
+                  <TableCell className="font-medium">{order.id}</TableCell>
+
+                  {/* CUSTOMER = buyerId (you do not have customer table yet) */}
+                  <TableCell>
+                    <div className="flex flex-col">
+                      <span>{order.buyerId}</span>
+                      <span className="text-xs text-muted-foreground">
+                        {new Date(order.createdAt).toLocaleDateString()}
+                      </span>
+                    </div>
+                  </TableCell>
+
+                  {/* PRODUCT */}
+                  <TableCell>
+                    <div className="flex items-center gap-2">
+                      {img && (
+                        <img
+                          src={img}
+                          alt={productName}
+                          className="w-10 h-10 rounded-md object-cover border"
+                        />
+                      )}
+                      <span className="font-medium">{productName}</span>
+                    </div>
+                  </TableCell>
+
+                  {/* QUANTITY */}
+                  <TableCell>{firstItem?.quantity ?? 0}</TableCell>
+
+                  {/* TOTAL AMOUNT */}
+                  <TableCell>{order.total ?? 0}</TableCell>
+
+                  {/* PAYMENT */}
+                  <TableCell>
+                    {order.payment?.paymentMethod ?? "N/A"}
+                  </TableCell>
+
+                  {/* STATUS */}
+                  <TableCell>
+                    <span
+                      className={`text-xs px-2 py-1 rounded-full capitalize ${
+                        order.status === "pending"
+                          ? "bg-orange-100 text-orange-700"
+                          : order.status === "shipped"
+                          ? "bg-blue-100 text-blue-700"
+                          : order.status === "confirmed"
+                          ? "bg-yellow-100 text-yellow-700"
+                          : order.status === "cancelled"
+                          ? "bg-red-100 text-red-700"
+                          : "bg-green-100 text-green-700"
+                      }`}
+                    >
+                      {order.status}
                     </span>
-                  </div>
-                </TableCell>
+                  </TableCell>
 
-                {/* PRODUCT NAME + IMAGE */}
-                <TableCell>
-                  <div className="flex items-center gap-2">
-                    <img
-                      src={order.img}
-                      alt={order.productName}
-                      className="w-10 h-10 rounded-md object-cover border"
-                    />
-                    <span className="font-medium">{order.productName}</span>
-                  </div>
-                </TableCell>
+                  <TableCell>
+                    <span className="text-xs bg-black text-white px-2 py-1 rounded-full">
+                      {order.type}
+                    </span>
+                  </TableCell>
 
-                {/* QUANTITY */}
-                <TableCell>{order.quantity}</TableCell>
+                  <TableCell className="flex gap-2 items-center">
+                    <Button variant="ghost" size="icon">
+                      <Eye className="h-4 w-4" />
+                    </Button>
 
-                <TableCell>{order.amount}</TableCell>
-                <TableCell>{order.payment}</TableCell>
-
-                <TableCell>
-                  <span
-                    className={`text-xs px-2 py-1 rounded-full capitalize ${
-                      order.status === "pending"
-                        ? "bg-orange-100 text-orange-700"
-                        : order.status === "shipped"
-                        ? "bg-blue-100 text-blue-700"
-                        : order.status === "confirmed"
-                        ? "bg-yellow-100 text-yellow-700"
-                        : order.status === "cancelled"
-                        ? "bg-red-100 text-red-700"
-                        : "bg-green-100 text-green-700"
-                    }`}
-                  >
-                    {order.status}
-                  </span>
-                </TableCell>
-
-                <TableCell>
-                  <span className="text-xs bg-black text-white px-2 py-1 rounded-full">
-                    {order.type}
-                  </span>
-                </TableCell>
-
-                <TableCell className="flex gap-2 items-center">
-                  <Button variant="ghost" size="icon" className="cursor-pointer">
-                    <Eye className="h-4 w-4" />
-                  </Button>
-
-                  {order.status === "pending" && (
-                    <>
-                      <Button className="bg-green-600 hover:bg-green-700 text-white text-xs px-3 py-1 cursor-pointer">
-                        Confirm
-                      </Button>
-                      <Button className="bg-red-600 hover:bg-red-700 text-white text-xs px-3 py-1 cursor-pointer">
-                        Cancel
-                      </Button>
-                    </>
-                  )}
-                </TableCell>
-              </TableRow>
-            ))}
+                    {order.status === "pending" && (
+                      <>
+                        <Button className="bg-green-600 hover:bg-green-700 text-white text-xs px-3 py-1">
+                          Confirm
+                        </Button>
+                        <Button className="bg-red-600 hover:bg-red-700 text-white text-xs px-3 py-1">
+                          Cancel
+                        </Button>
+                      </>
+                    )}
+                  </TableCell>
+                </TableRow>
+              );
+            })}
           </TableBody>
         </Table>
       )}
 
-      {/* PAGINATION */}
       <div className="flex justify-between items-center mt-2">
         <Button
           variant="outline"

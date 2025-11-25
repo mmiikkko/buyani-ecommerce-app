@@ -78,66 +78,12 @@ export const verification = mysqlTable("verification", {
     .notNull(),
 });
 
-//Seller
-export const sellerProfile = mysqlTable("seller_profile", {
-  id: varchar("id", { length: 36 }).primaryKey(),
-  userId: varchar("user_id", { length: 36 })
-    .notNull()
-    .references(() => user.id, { onDelete: "cascade" })
-    .unique(),
-
-  businessAddress: text("business_address"),
-
-  createdAt: timestamp("created_at", { fsp: 3 }).defaultNow().notNull(),
-  updatedAt: timestamp("updated_at", { fsp: 3 })
-    .$onUpdate(() => new Date())
-    .notNull(),
-});
-
-//Admin
-export const ADMIN_STATUS = {
-  ACTIVE: "Active",
-  SUSPENDED: "Suspended",
-  RESIGNED: "Resigned",
-};
-
-export const adminProfile = mysqlTable("admin_profile", {
-  id: varchar("id", { length: 36 }).primaryKey(),
-  userId: varchar("user_id", { length: 36 })
-    .notNull()
-    .references(() => user.id, { onDelete: "cascade" })
-    .unique(),
-
-  adminName: varchar("admin_name", { length: 255 }).unique(),
-  status: varchar("status", { length: 50 }).default(ADMIN_STATUS.ACTIVE),
-
-  createdAt: timestamp("created_at", { fsp: 3 }).defaultNow().notNull(),
-  updatedAt: timestamp("updated_at", { fsp: 3 })
-    .$onUpdate(() => new Date())
-    .notNull(),
-});
-
-//Customer
-export const customerProfile = mysqlTable("customer_profile", {
-  id: varchar("id", { length: 36 }).primaryKey(),
-
-  userId: varchar("user_id", { length: 36 })
-    .notNull()
-    .references(() => user.id, { onDelete: "cascade" }),
-
-  firstname: varchar("firstname", { length: 255 }),
-  lastname: varchar("lastname", { length: 255 }),
-
-  addedAt: timestamp("added_at", { fsp: 3 }).defaultNow(),
-});
-
-
 export const addresses = mysqlTable("addresses", {
   id: varchar("id", { length: 36 }).primaryKey(),
 
   customerProfileId: varchar("customer_profile_id", { length: 36 })
    .notNull()
-   .references(() => customerProfile.id, { onDelete: "cascade" }),
+   .references(() => user.id, { onDelete: "cascade" }),
 
   street: varchar("street", { length: 255 }),
   baranggay: varchar("baranggay", { length: 255 }),
@@ -157,7 +103,7 @@ export const shop = mysqlTable("shop", {
 
   sellerId: varchar("seller_id", { length: 36 })
     .notNull()
-    .references(() => sellerProfile.id, { onDelete: "cascade" }),
+    .references(() => user.id, { onDelete: "cascade" }),
 
   shopName: varchar("shop_name", { length: 255 }).unique().notNull(),
   shopRating: varchar("shop_rating", { length: 10 }),

@@ -12,8 +12,8 @@ export function ProductCard({ product }: { product: Product }) {
       <div className="w-full h-40 bg-gray-200 overflow-hidden">
         {product.images?.length ? (
           <Image
-            src={product.images[0]}
-            alt={product.name}
+            src={product.images[0].image_url[0]}
+            alt={product.productName}
             width={400}
             height={160}
             className="w-full h-full object-cover"
@@ -27,7 +27,7 @@ export function ProductCard({ product }: { product: Product }) {
 
       {/* PRODUCT INFO */}
       <div className="px-5 space-y-1">
-        <h1 className="font-semibold text-lg">{product.name}</h1>
+        <h1 className="font-semibold text-lg">{product.productName}</h1>
         <p className="text-green-700 font-bold">₱{product.price}</p>
         <p className="text-gray-600 text-sm">Stock: {product.stock}</p>
       </div>

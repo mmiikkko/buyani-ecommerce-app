@@ -4,10 +4,10 @@ export type Product = {
     categoryId: string;
   
     productName: string;
-    SKU?: string | null;
+    SKU: string;
     description?: string | null;
   
-    price: number;
+    price?: number;
     rating?: string | null;
     isAvailable: boolean;
     status: string;
@@ -19,13 +19,23 @@ export type Product = {
     images: ProductImage[] 
     createdAt: Date;
     updatedAt: Date;
+    shipping?: ShippingDetails;
   };
 
+export type ShippingDetails = {
+  weight?: number;
+  weightUnit?: string;
+  length?: number;
+  width?: number;
+  height?: number;
+  shippingFee?: number;
+
+}
 
 export type ProductImage = {
     id: string
     product_id: string
-    image_url: string
+    image_url: string[]
     is_primary: boolean
  } 
 
