@@ -16,7 +16,6 @@ export default function SellerDashboard() {
       <section className="flex flex-wrap min-h-[50%] min-w-[90%] max-w-[100%] justify-center">
       <CardActivity />
       </section>
-      <s></s>
 
       {/* Recent Orders*/}
       <section  className="flex flex-wrap min-h-[50%] min-w-[90%] max-w-[100%] justify-center">
