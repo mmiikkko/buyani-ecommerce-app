@@ -49,7 +49,7 @@ export function ResendVerificationButton({
 
       <LoadingButton
         onClick={resendVerificationEmail}
-        className="w-full"
+        className="w-full cursor-pointer"
         loading={isLoading}
       >
         Resend verification email

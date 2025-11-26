@@ -85,7 +85,7 @@ export function ForgotPasswordForm() {
               </div>
             )}
 
-            <LoadingButton type="submit" className="w-full" loading={loading}>
+            <LoadingButton type="submit" className="w-full cursor-pointer" loading={loading}>
               Send reset link
             </LoadingButton>
           </form>

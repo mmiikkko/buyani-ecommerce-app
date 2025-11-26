@@ -71,7 +71,7 @@ export function BackdropCarousel() {
                 absolute left-4 top-1/2 -translate-y-1/2 z-20 
                 flex h-10 w-10 items-center justify-center
                 rounded-full bg-white/70 hover:bg-white/90 text-gray-900 shadow-lg
-                transition duration-200 backdrop-blur-sm
+                transition duration-200 backdrop-blur-sm cursor-pointer
               "
             />
             <CarouselNext
@@ -79,7 +79,7 @@ export function BackdropCarousel() {
                 absolute right-4 top-1/2 -translate-y-1/2 z-20 
                 flex h-10 w-10 items-center justify-center
                 rounded-full bg-white/70 hover:bg-white/90 text-gray-900 shadow-lg
-                transition duration-200 backdrop-blur-sm
+                transition duration-200 backdrop-blur-sm cursor-pointer
               "
             />
           </Carousel>

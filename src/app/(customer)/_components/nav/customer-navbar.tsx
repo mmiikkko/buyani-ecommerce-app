@@ -17,7 +17,6 @@ import {
   Handshake,
   Tag,
   UserIcon,
-  Carrot,
   ShoppingCart,
 } from "lucide-react";
 
@@ -77,11 +76,11 @@ export default function Navbar({ className }: NavbarProps) {
                   </li>
                 </ul>
                 <div className="flex items-center space-x-3">
-                  <Button className="bg-secondary">
+                  <Button className="bg-secondary cursor-pointer">
                     <Handshake />
                     <span>Become a Seller</span>
                   </Button>
-                  <Button variant="outline">
+                  <Button variant="outline" className="cursor-pointer">
                     <MapPin />
                     <span>CNSC</span>
                   </Button>
@@ -109,7 +108,7 @@ export default function Navbar({ className }: NavbarProps) {
                       </div>
                     ) : (
                       <Link href="/sign-in" className="text-sm font-medium">
-                        <Button className="flex items-center space-x-2 ">
+                        <Button className="flex items-center space-x-2 cursor-pointer">
                           <UserIcon />
                           <span>Log in</span>
                         </Button>

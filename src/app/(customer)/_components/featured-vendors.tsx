@@ -120,7 +120,7 @@ export function FeaturedVendorsSection() {
               className="group relative bg-white rounded-2xl shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden border border-slate-100"
             >
               {/* Favorite Button */}
-              <button className="absolute top-4 right-4 z-10 p-2 rounded-full bg-white/90 hover:bg-white shadow-sm transition-colors duration-200">
+              <button className="absolute cursor-pointer top-4 right-4 z-10 p-2 rounded-full bg-white/90 hover:bg-white shadow-sm transition-colors duration-200">
                 <Heart className="size-4 text-slate-400 hover:text-red-500" />
               </button>
 
@@ -196,7 +196,7 @@ export function FeaturedVendorsSection() {
 
                 {/* Visit Store Button */}
                 <Link href={vendor.href} className="block">
-                  <button className="w-full bg-emerald-500 hover:bg-emerald-600 text-white font-medium py-3 px-4 rounded-xl transition-colors duration-200 flex items-center justify-center gap-2">
+                  <button className="w-full cursor-pointer bg-emerald-500 hover:bg-emerald-600 text-white font-medium py-3 px-4 rounded-xl transition-colors duration-200 flex items-center justify-center gap-2">
                     <Store className="size-4" />
                     Visit Store
                   </button>

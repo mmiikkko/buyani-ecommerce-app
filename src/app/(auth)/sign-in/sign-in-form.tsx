@@ -174,7 +174,7 @@ export function SignInForm() {
               </div>
             )}
 
-            <LoadingButton type="submit" className="w-full" loading={loading}>
+            <LoadingButton type="submit" className="w-full cursor-pointer" loading={loading}>
               Login
             </LoadingButton>
 
@@ -182,7 +182,7 @@ export function SignInForm() {
               <Button
                 type="button"
                 variant="outline"
-                className="w-full gap-2"
+                className="w-full gap-2 cursor-pointer"
                 disabled={loading}
                 onClick={() => handleSocialSignIn("google")}
               >

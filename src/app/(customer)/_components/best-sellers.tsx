@@ -1,5 +1,4 @@
 import { ArrowRight, Heart, Star } from "lucide-react";
-import Image from "next/image";
 import Link from "next/link";
 
 interface BestSellerProduct {
@@ -165,7 +164,7 @@ export function BestSellersSection() {
                 </p>
 
                 {/* Add to Cart Button */}
-                <button className="w-full bg-emerald-500 hover:bg-emerald-600 text-white font-medium py-2.5 px-4 rounded-lg transition-colors duration-200">
+                <button className="w-full cursor-pointer bg-emerald-500 hover:bg-emerald-600 text-white font-medium py-2.5 px-4 rounded-lg transition-colors duration-200">
                   Add to Cart
                 </button>
               </div>

@@ -28,7 +28,6 @@ import {
   ChevronUp,
   User2,
 } from "lucide-react";
-import { url } from "inspector";
 
 // Menu items.
 const items = [
