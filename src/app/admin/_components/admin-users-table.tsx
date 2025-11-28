@@ -44,6 +44,7 @@ export function AdminUsersTable({
         return false;
       }
     }
+
     return true;
   });
 
@@ -88,19 +89,11 @@ export function AdminUsersTable({
             <TableBody>
               {currentRows.map((user) => (
                 <TableRow key={user.id}>
-                  {/* USER ID */}
                   <TableCell className="font-medium">{user.id}</TableCell>
-
-                  {/* NAME */}
                   <TableCell>{user.fullName}</TableCell>
-
-                  {/* ROLE */}
                   <TableCell>{user.role}</TableCell>
-
-                  {/* AMOUNT */}
                   <TableCell>₱{user.amount}</TableCell>
 
-                  {/* ONLINE STATUS */}
                   <TableCell>
                     <span
                       className={`w-3 h-3 rounded-full inline-block ${
@@ -109,7 +102,6 @@ export function AdminUsersTable({
                     ></span>
                   </TableCell>
 
-                  {/* STATUS BADGE */}
                   <TableCell>
                     <span
                       className={`text-xs px-2 py-1 rounded-full capitalize
@@ -125,17 +117,15 @@ export function AdminUsersTable({
                     </span>
                   </TableCell>
 
-                  {/* DATE ADDED */}
                   <TableCell className="text-sm text-muted-foreground">
                     {new Date(user.dateAdded).toLocaleString()}
                   </TableCell>
 
-                  {/* ACTIONS */}
                   <TableCell className="flex items-center gap-2">
-                    <Button variant="ghost" size="icon" className="cursor-pointer">
+                    <Button variant="ghost" size="icon">
                       <Eye className="h-4 w-4" />
                     </Button>
-                    <Button className="bg-red-600 cursor-pointer hover:bg-red-700 text-white text-xs px-3 py-1">
+                    <Button className="bg-red-600 hover:bg-red-700 text-white text-xs px-3 py-1">
                       Suspend
                     </Button>
                   </TableCell>
@@ -145,7 +135,6 @@ export function AdminUsersTable({
           </Table>
         )}
 
-        {/* PAGINATION */}
         <div className="flex justify-between items-center mt-2">
           <Button
             variant="outline"
