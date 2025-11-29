@@ -6,7 +6,7 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import  Image from "next/image";
-import { AdminSearchbar } from "./admin-users-searchbar";
+import { AdminSearchbar } from "../_components/admin-users-searchbar";
 import { useState } from "react";
 
 export function AdminShops() {
