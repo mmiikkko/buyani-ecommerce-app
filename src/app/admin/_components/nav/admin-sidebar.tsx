@@ -59,7 +59,7 @@ const items = [
   },
   {
     title: "Site Settings",
-    url: "/admin/site",
+    url: "/admin/site-settings",
     icon: Layout,
   },
 ];

@@ -17,7 +17,7 @@ export default function AdminDashboard() {
       </section>
 
       {/* Pending Seller Approvals and Recent Activities */}
-      <section className="flex min-h-[50%] min-w-[90%] max-w-[100%] justify-center gap-5">
+      <section className="flex min-h-[50%] min-w-[90%] max-w-[100%] justify-center items-center gap-8">
         <PendingApprovals />
         <RecentActivity />
       </section>

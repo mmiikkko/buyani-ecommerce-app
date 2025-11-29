@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { AdminUsersSearchbar } from "../_components/admin-users-searchbar";
+import { AdminSearchbar } from "../_components/admin-users-searchbar";
 import { AdminUsersTable } from "../_components/admin-users-table";
 
 export default function AdminUsersPage() {
@@ -36,10 +36,19 @@ export default function AdminUsersPage() {
       </h1>
       <p>Manage user accounts and user privileges</p>
 
-      <AdminUsersSearchbar
-        onFilterChange={setFilter}
-        onSearchChange={setSearch}
-      />
+      <AdminSearchbar
+      placeholder="Search by user ID or name"
+      filterOptions={[
+        { value: "all", label: "All" },
+        { value: "active", label: "Active" },
+        { value: "pending", label: "Pending" },
+        { value: "inactive", label: "Inactive" },
+        { value: "suspended", label: "Suspended" },
+      ]}
+      onFilterChange={(val) => setFilter(val)}
+      onSearchChange={(val) => setSearch(val)}
+    />
+
 
 
     </section>

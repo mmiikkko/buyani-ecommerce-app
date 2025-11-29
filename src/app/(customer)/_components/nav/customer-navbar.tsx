@@ -76,10 +76,10 @@ export default function Navbar({ className }: NavbarProps) {
                   </li>
                 </ul>
                 <div className="flex items-center space-x-3">
-                  <Button className="bg-secondary cursor-pointer">
-                    <Handshake />
+                  <Link className="flex flex-row p-2 items-center gap-1 text-white bg-secondary cursor-pointer rounded-lg" href="./seller">
+                    <Handshake size={16}/>
                     <span>Become a Seller</span>
-                  </Button>
+                  </Link>
                   <Button variant="outline" className="cursor-pointer">
                     <MapPin />
                     <span>CNSC</span>

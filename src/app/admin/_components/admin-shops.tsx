@@ -4,8 +4,10 @@ import {
   Card,
   CardContent,
 } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import  Image from "next/image";
+import { AdminSearchbar } from "./admin-users-searchbar";
+import { useState } from "react";
 
 export function AdminShops() {
   const approvedShops = [
@@ -34,17 +36,28 @@ export function AdminShops() {
 
   const pendingShops: unknown[] = [];
 
+    const [filter, setFilter] = useState<string>("all");
+    const [search, setSearch] = useState<string>("");
+
   return (
-    <div className="p-6 w-full min-h-screen bg-green-50 rounded-xl">
+    <div className="px-5 w-full min-h-screen bg-green-50 rounded-xl">
       {/* SEARCH BAR */}
-      <Input
-        placeholder="Search shops by name or SKU"
-        className="w-full mb-6 bg-white"
-      />
+      <AdminSearchbar
+      placeholder="Search by shop name or owner"
+      filterOptions={[
+        { value: "all", label: "All Shops" },
+        { value: "approved", label: "Approved" },
+        { value: "unverified", label: "Unverified" },
+        { value: "suspended", label: "Suspended" },
+      ]}
+      onFilterChange={(val) => setFilter(val)}
+      onSearchChange={(val) => setSearch(val)}
+    />
+
 
       {/* APPROVED SHOPS */}
-      <h2 className="text-lg font-semibold mb-2">
-        Approved Shops ({approvedShops.length})
+      <h2 className="text-lg font-semibold my-2">
+        Shops ({approvedShops.length})
       </h2>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-10">
@@ -52,9 +65,11 @@ export function AdminShops() {
           <Card key={shop.id} className="rounded-xl overflow-hidden shadow-sm border">
             {/* IMAGE */}
             <div className="h-32 w-full overflow-hidden">
-              <img
+              <Image
                 src={shop.image}
                 alt={shop.name}
+                width={400}
+                height={128}
                 className="h-full w-full object-cover"
               />
             </div>
@@ -65,7 +80,7 @@ export function AdminShops() {
 
               {/* OWNER */}
               <p className="text-sm text-gray-500 mt-1">
-                Store owner: {shop.owner}
+                Shop owner: {shop.owner}
               </p>
 
               {/* STATUS */}
@@ -77,14 +92,14 @@ export function AdminShops() {
               <div className="flex gap-2 mt-3">
                 <Button
                   variant="outline"
-                  className="text-gray-600 border-gray-300"
+                  className="text-gray-600 border-gray-300 cursor-pointer"
                 >
                   View Details
                 </Button>
 
                 <Button
-                  variant="outline"
-                  className="border-red-500 text-red-500 hover:bg-red-50"
+                  variant="destructive"
+                  className="text-white cursor-pointer"
                 >
                   Suspend
                 </Button>

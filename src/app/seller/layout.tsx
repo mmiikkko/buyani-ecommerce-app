@@ -15,7 +15,6 @@ export default async function SellerLayout({
   const user = session?.user;
 
   // block the authentication page if logged in
-
   if (user) {
     if (!user.role.includes(USER_ROLES.SELLER)) {
       unauthorized();

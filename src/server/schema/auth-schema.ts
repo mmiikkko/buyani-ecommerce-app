@@ -315,7 +315,7 @@ export const reviews = mysqlTable("reviews", {
     .notNull()
     .references(() => user.id, { onDelete: "cascade" }),
 
-  comment: text("comment"),
+  comment: varchar("comment", { length: 355 }),
   rating: int("rating").notNull(),
   createdAt: timestamp("created_at", { fsp: 3 }).defaultNow(),
   updatedAt: timestamp("updated_at", { fsp: 3 })
