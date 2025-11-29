@@ -1,9 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { AdminUsersSearchbar } from "../_components/admin-users-searchbar";
-import { AdminUsersTable } from "../_components/admin-users-table";
-
+import { AdminUsersSearchbar } from "./admin-users-searchbar";
+import { AdminUsersTable } from "./admin-users-table";
 
  //id: string;
   //fullName: string;

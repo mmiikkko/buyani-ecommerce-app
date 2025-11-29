@@ -1,15 +1,10 @@
 "use client";
 
-import {
-  Card,
-  CardContent,
-  CardHeader,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import Image from "next/image";
-import Cart from "@/assets/seller-imgs/cart-symbol.png";
-import Cash from "@/assets/seller-imgs/cash-symbol.png";
-import People from "@/assets/admin/people.png";
-import Shop from "@/assets/admin/shop.png";
+// import Cart from "@/assets/seller-imgs/cart-symbol.png";
+// import People from "@/assets/admin/people.png";
+// import Shop from "@/assets/admin/shop.png";
 
 interface CardActivityProps {
   totalRevenue?: number | string;
@@ -19,15 +14,13 @@ interface CardActivityProps {
 }
 
 export function CardActivity({
-    totalRevenue,
-    totalOrders,
-    activeUsers,
-    activeSellers,
+  totalRevenue,
+  totalOrders,
+  activeUsers,
+  activeSellers,
 }: CardActivityProps) {
-
   return (
     <div className="min-w-[100%] max-w-[150%] flex flex-row gap-5 items-center justify-center mb-5">
-
       {/* Cash / Sales */}
       <div className="min-w-[22%] max-w-[30%]">
         <Card className="w-full min-w-[300px] max-w-[530px] min-h-[180px] flex flex-col justify-between">
@@ -79,7 +72,6 @@ export function CardActivity({
           </CardContent>
         </Card>
       </div>
-
     </div>
   );
 }
