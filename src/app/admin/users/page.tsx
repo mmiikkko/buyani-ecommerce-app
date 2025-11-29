@@ -2,10 +2,9 @@
 
 import { useState } from "react";
 import { AdminSearchbar } from "../_components/admin-users-searchbar";
-import { AdminUsersTable } from "../_components/admin-users-table";
 
 export default function AdminUsersPage() {
-  const demoUsers= [
+  const demoUsers = [
     {
       id: "1",
       fullName: "John Doe",
