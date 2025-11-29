@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { AdminSearchbar } from "../_components/admin-users-searchbar";
+import { AdminSearchbar } from "./admin-users-searchbar";
 
 export default function AdminUsersPage() {
   const demoUsers = [

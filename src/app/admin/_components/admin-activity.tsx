@@ -2,9 +2,10 @@
 
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import Image from "next/image";
-// import Cart from "@/assets/seller-imgs/cart-symbol.png";
-// import People from "@/assets/admin/people.png";
-// import Shop from "@/assets/admin/shop.png";
+import Cart from "@/assets/seller-imgs/cart-symbol.png";
+import Cash from "@/assets/seller-imgs/cash-symbol.png";
+import People from "@/assets/admin/people.png";
+import Shop from "@/assets/admin/shop.png";
 
 interface CardActivityProps {
   totalRevenue?: number | string;
