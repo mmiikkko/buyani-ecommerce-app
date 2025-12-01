@@ -35,7 +35,7 @@ export function UserDropdown({ user }: UserDropdownProps) {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="outline">
+        <Button className="cursor-pointer" variant="outline">
           <UserAvatar name={user.name} image={user.image} className="h-6 w-6" />
           <span className="max-w-48 truncate ">{user.name}</span>
           <ChevronDown />
@@ -46,7 +46,7 @@ export function UserDropdown({ user }: UserDropdownProps) {
           <div className="flex flex-col gap-1">{user.email}</div>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
-        <DropdownMenuItem asChild>
+        <DropdownMenuItem className="cursor-pointer" asChild>
           <Link href="/settings/profile" className="flex items-center gap-2">
             <DropdownMenuItemIcon icon={Settings} />
             <span>Settings</span>
@@ -62,7 +62,7 @@ export function UserDropdown({ user }: UserDropdownProps) {
 
 function AdminItem() {
   return (
-    <DropdownMenuItem asChild>
+    <DropdownMenuItem asChild className="cursor-pointer">
       <Link href="/admin">
         <DropdownMenuItemIcon icon={ShieldIcon} />
         <span>Admin</span>
@@ -73,7 +73,7 @@ function AdminItem() {
 
 function SellerItem() {
   return (
-    <DropdownMenuItem asChild>
+    <DropdownMenuItem asChild className="cursor-pointer">
       <Link href="/seller">
         <DropdownMenuItemIcon icon={Store} />
         <span>Seller Center</span>
@@ -101,7 +101,7 @@ function SignOutItem() {
   }
 
   return (
-    <DropdownMenuItem onClick={handleSignOut}>
+    <DropdownMenuItem className="cursor-pointer" onClick={handleSignOut}>
       <DropdownMenuItemIcon icon={LogOutIcon} />
       <span>Sign out</span>
     </DropdownMenuItem>

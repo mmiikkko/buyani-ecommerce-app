@@ -1,14 +1,13 @@
+import Logo from "@/assets/logo/Logo.png";
 import {
+  ChevronDown,
+  Facebook,
   MapPin,
   Phone,
-  Facebook,
-  Mail,
-  ChevronDown,
-  ShieldCheck,
+  ShieldCheck
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import Logo from "@/assets/logo/Logo.png";
 
 export function Footer() {
   return (
@@ -29,7 +28,7 @@ export function Footer() {
             <div className="space-y-2">
               <div className="flex items-center gap-2 text-sm text-green-100">
                 <MapPin className="h-4 w-4 shrink-0" />
-                <span>CNSC Campus, Daet</span>
+                <span>CNSC Main Campus, Daet</span>
               </div>
               <div className="flex items-center gap-2 text-sm text-green-100">
                 <Phone className="h-4 w-4 shrink-0" />
@@ -68,14 +67,6 @@ export function Footer() {
               </li>
               <li>
                 <Link
-                  href="/flash-deals"
-                  className="flex items-center gap-2 text-sm text-green-100 hover:text-white transition-colors"
-                >
-                  <ChevronDown className="h-4 w-4" /> Flash Deals
-                </Link>
-              </li>
-              <li>
-                <Link
                   href="/blog"
                   className="flex items-center gap-2 text-sm text-green-100 hover:text-white transition-colors"
                 >
@@ -99,14 +90,6 @@ export function Footer() {
               </li>
               <li>
                 <Link
-                  href="/returns"
-                  className="flex items-center gap-2 text-sm text-green-100 hover:text-white transition-colors"
-                >
-                  <ChevronDown className="h-4 w-4" /> Returns & Refunds
-                </Link>
-              </li>
-              <li>
-                <Link
                   href="/shipping"
                   className="flex items-center gap-2 text-sm text-green-100 hover:text-white transition-colors"
                 >
@@ -121,14 +104,6 @@ export function Footer() {
                   <ChevronDown className="h-4 w-4" /> Terms & Conditions
                 </Link>
               </li>
-              <li>
-                <Link
-                  href="/privacy"
-                  className="flex items-center gap-2 text-sm text-green-100 hover:text-white transition-colors"
-                >
-                  <ChevronDown className="h-4 w-4" /> Privacy Policy
-                </Link>
-              </li>
             </ul>
           </div>
 
@@ -139,14 +114,6 @@ export function Footer() {
               Subscribe to get special offers, free giveaways, and updates.
             </p>
             <div className="flex gap-2">
-              <input
-                type="email"
-                placeholder="Your email"
-                className="flex-1 rounded-lg border border-green-600 bg-green-700 px-3 py-2 text-sm text-white placeholder-green-200 focus:border-green-500 focus:outline-none focus:ring-1 focus:ring-green-500"
-              />
-              <button className="rounded-lg bg-orange-500 px-4 py-2 text-sm font-medium text-white hover:bg-orange-600 transition-colors">
-                <Mail className="h-4 w-4" />
-              </button>
             </div>
             <div className="space-y-2">
               <p className="text-sm font-medium">Follow Us:</p>
@@ -156,37 +123,6 @@ export function Footer() {
               >
                 <Facebook className="h-4 w-4" />
               </Link>
-            </div>
-          </div>
-        </div>
-
-        {/* Payment and Delivery Section */}
-        <div className="mt-12 border-t border-green-700 pt-8">
-          <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
-            {/* Payment Methods */}
-            <div className="space-y-2">
-              <p className="text-sm font-medium">We Accept:</p>
-              <div className="flex items-center gap-3">
-                <div className="rounded-lg bg-white px-3 py-1 text-gray-800">
-                  <span className="text-xs font-semibold">GCash</span>
-                </div>
-                <div className="rounded-lg bg-white px-3 py-1 text-gray-800">
-                  <span className="text-xs font-semibold">PayMaya</span>
-                </div>
-                <div className="rounded-lg bg-white px-3 py-1 text-gray-800">
-                  <span className="text-xs font-semibold">COD</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Delivery Partners */}
-            <div className="space-y-2">
-              <p className="text-sm font-medium">Delivery Partners:</p>
-              <div className="flex items-center gap-3">
-                <div className="rounded-lg bg-white px-3 py-1 text-gray-800">
-                  <span className="text-xs font-semibold">Pickup</span>
-                </div>
-              </div>
             </div>
           </div>
         </div>
