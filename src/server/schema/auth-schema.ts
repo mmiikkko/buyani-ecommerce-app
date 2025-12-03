@@ -106,7 +106,7 @@ export const shop = mysqlTable("shop", {
     .references(() => user.id, { onDelete: "cascade" }),
 
   shopName: varchar("shop_name", { length: 255 }).unique().notNull(),
-  imageURL: text("image").notNull(),
+  imageURL: text("image"),
   status: varchar("status", { length: 50 }).default("pending").notNull(),
   shopRating: varchar("shop_rating", { length: 10 }),
   description: text("description"),
@@ -172,7 +172,7 @@ export const productImages = mysqlTable("product_images", {
   productId: varchar("product_id", { length: 36 })
   .notNull()
   .references(() => products.id, { onDelete: "cascade" }),
-  url: text("url").notNull(),
+  url: text("url"),
 });
 
 
