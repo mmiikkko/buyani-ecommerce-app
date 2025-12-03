@@ -1,3 +1,4 @@
+import { is } from "drizzle-orm";
 import {
   mysqlTable,
   varchar,
@@ -143,6 +144,7 @@ export const products = mysqlTable("products", {
 
   isAvailable: boolean("is_available").default(true),
   status: varchar("status", { length: 50 }).default("Available"),
+  isFeatured: boolean("is_featured").default(false),
 
   createdAt: timestamp("created_at", { fsp: 3 }).defaultNow().notNull(),
   updatedAt: timestamp("updated_at", { fsp: 3 })

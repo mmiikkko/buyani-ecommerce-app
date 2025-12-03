@@ -5,61 +5,29 @@ import Image from "next/image";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { v4 as uuidv4 } from "uuid";
-import type { Product, Variant } from "@/types/products";
+import type { Product } from "@/types/products";
 
 interface AddProductsProps {
   onAdd: (product: Product) => void;
 }
 
-/* --- Helper: cartesian product to generate variant combos --- */
-function cartesianProduct(arrays: string[][]): string[][] {
-  if (!arrays.length) return [];
-  return arrays.reduce<string[][]>(
-    (a, b) => a.flatMap(d => b.map(e => [...d, e])),
-    [[]]
-  );
-}
-
 export function AddProducts({ onAdd }: AddProductsProps) {
   const [categories, setCategories] = useState<{ id: string; categoryName: string }[]>([]);
   const [loadingCategories, setLoadingCategories] = useState(true);
+
   // BASIC
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
 
   // IMAGES
-  const [imagePreviews, setImagePreviews] = useState<string[]>(["/mnt/data/cd282b9a-854b-424e-8299-1e421d8c3b67.png"]);
+  const [imagePreviews, setImagePreviews] = useState<string[]>([
+    "/mnt/data/cd282b9a-854b-424e-8299-1e421d8c3b67.png",
+  ]);
 
   // CATEGORY
   const [categoryId, setCategoryId] = useState<string>("");
 
-  // Fetch categories
-  useEffect(() => {
-    async function fetchCategories() {
-      try {
-        setLoadingCategories(true);
-        const res = await fetch("/api/categories");
-        if (res.ok) {
-          const data = await res.json();
-          setCategories(data);
-          if (data.length > 0) {
-            setCategoryId(data[0].id);
-          }
-        }
-      } catch (err) {
-        console.error("Failed to fetch categories:", err);
-      } finally {
-        setLoadingCategories(false);
-      }
-    }
-    fetchCategories();
-  }, []);
-
-  // VARIATIONS
-  const [variationGroups, setVariationGroups] = useState<{ id: string; name: string; options: string[] }[]>([]);
-  const [variants, setVariants] = useState<Variant[]>([]);
-
-  // PRICING & STOCK
+  // PRICING & STOCK (simple version)
   const [price, setPrice] = useState("");
   const [stock, setStock] = useState("");
   const [status, setStatus] = useState("Available");
@@ -75,80 +43,51 @@ export function AddProducts({ onAdd }: AddProductsProps) {
   // ERROR
   const [error, setError] = useState("");
 
-  /* --- Variation handlers --- */
-  const addVariationGroup = () =>
-    setVariationGroups(prev => [...prev, { id: uuidv4(), name: "New Variation", options: [] }]);
-  const removeVariationGroup = (id: string) =>
-    setVariationGroups(prev => prev.filter(g => g.id !== id));
-  const updateVariationName = (id: string, nameVal: string) =>
-    setVariationGroups(prev => prev.map(g => g.id === id ? { ...g, name: nameVal } : g));
-  const addOptionToGroup = (id: string, option: string) =>
-    setVariationGroups(prev => prev.map(g => g.id === id ? { ...g, options: [...g.options, option] } : g));
-  const removeOptionFromGroup = (groupId: string, optIdx: number) =>
-    setVariationGroups(prev => prev.map(g => g.id === groupId ? { ...g, options: g.options.filter((_, i) => i !== optIdx) } : g));
-
-  // Generate variants whenever groups/options change
+  // Fetch categories
   useEffect(() => {
-    if (!variationGroups.length || variationGroups.some(g => g.options.length === 0)) {
-      setVariants([]);
-      return;
+    async function fetchCategories() {
+      try {
+        setLoadingCategories(true);
+        const res = await fetch("/api/categories");
+        if (res.ok) {
+          const data = await res.json();
+          setCategories(data);
+          if (data.length > 0) setCategoryId(data[0].id);
+        }
+      } catch (err) {
+        console.error("Failed to fetch categories:", err);
+      } finally {
+        setLoadingCategories(false);
+      }
     }
-
-    const optionsArrays = variationGroups.map(g => g.options);
-    const combos = cartesianProduct(optionsArrays);
-
-    const generated: Variant[] = combos.map(combo => {
-      const initials = combo.map(opt => opt.split(" ").map(w => w[0]?.toUpperCase() || "").join("")).join("-");
-      const skuBase = (name || "PRD").replace(/\s+/g, "").toUpperCase().slice(0, 6);
-      const sku = `${skuBase}-${initials}-${Math.random().toString(36).slice(2,6).toUpperCase()}`;
-      return { id: uuidv4(), sku, optionCombo: combo, price: price ? Number(price) : 0, stock: 0 };
-    });
-
-    setVariants(generated);
-  }, [variationGroups, name, price]);
-
-  const updateVariant = (id: string, patch: Partial<Variant>) =>
-    setVariants(prev => prev.map(v => v.id === id ? { ...v, ...patch } : v));
+    fetchCategories();
+  }, []);
 
   /* --- Submit --- */
   const handleSubmit = () => {
     if (!name.trim()) return setError("Product name is required.");
     if (!categoryId) return setError("Please select a category.");
-    if (!variants.length) {
-      if (!price.trim() || isNaN(Number(price)) || Number(price) <= 0) return setError("Enter a valid price.");
-      if (!stock.trim() || isNaN(Number(stock)) || Number(stock) < 0) return setError("Enter valid stock quantity.");
-    } else {
-      for (const v of variants) {
-        if (isNaN(v.price) || v.price < 0) return setError("Every variant needs a valid price.");
-        if (isNaN(v.stock) || v.stock < 0) return setError("Every variant needs a valid stock value.");
-      }
-    }
+    if (!price.trim() || Number(price) <= 0) return setError("Enter a valid price.");
+    if (!stock.trim() || Number(stock) < 0) return setError("Enter valid stock quantity.");
 
     setError("");
 
     const productId = uuidv4();
-    const totalStock = variants.length ? variants.reduce((s, v) => s + Number(v.stock || 0), 0) : Number(stock || 0);
     const skuBase = (name || "PRD").replace(/\s+/g, "").toUpperCase().slice(0, 6);
-
-    // For variant-based products, use the minimum variant price or first variant price
-    // For non-variant products, use the entered price
-    const productPrice = variants.length 
-      ? Math.min(...variants.map(v => v.price || 0)) 
-      : Number(price) || 0;
 
     const product: Product = {
       id: productId,
       productName: name,
       description,
-      price: productPrice, // Always provide a price (required by schema)
-      stock: totalStock,
+      price: Number(price),
+      stock: Number(stock),
       images: imagePreviews.map((img, idx) => ({
         id: uuidv4(),
         product_id: productId,
         image_url: [img],
         is_primary: idx === 0,
       })),
-      categoryId: categoryId || "",
+      categoryId,
       SKU: skuBase,
       shipping: {
         weight: weight ? Number(weight) : undefined,
@@ -159,18 +98,27 @@ export function AddProducts({ onAdd }: AddProductsProps) {
         shippingFee: shippingFee ? Number(shippingFee) : undefined,
       },
       status,
-      shopId: "", // Will be set by API
-      isAvailable: status === "Available", // Set based on status
+      shopId: "",
+      isAvailable: status === "Available",
       createdAt: new Date(),
-      updatedAt: new Date()
+      updatedAt: new Date(),
     };
 
     onAdd(product);
 
-    // reset
-    setName(""); setDescription(""); setImagePreviews(["/mnt/data/cd282b9a-854b-424e-8299-1e421d8c3b67.png"]);
-    if (categories.length > 0) setCategoryId(categories[0].id); setVariationGroups([]); setVariants([]);
-    setPrice(""); setStock(""); setWeight(""); setWeightUnit("kg"); setLengthVal(""); setWidthVal(""); setHeightVal(""); setShippingFee("");
+    // RESET
+    setName("");
+    setDescription("");
+    setImagePreviews(["/mnt/data/cd282b9a-854b-424e-8299-1e421d8c3b67.png"]);
+    if (categories.length > 0) setCategoryId(categories[0].id);
+    setPrice("");
+    setStock("");
+    setWeight("");
+    setWeightUnit("kg");
+    setLengthVal("");
+    setWidthVal("");
+    setHeightVal("");
+    setShippingFee("");
   };
 
   return (
@@ -193,7 +141,6 @@ export function AddProducts({ onAdd }: AddProductsProps) {
             <TabsTrigger value="basic">Basic Information</TabsTrigger>
             <TabsTrigger value="images">Product Images</TabsTrigger>
             <TabsTrigger value="category">Category</TabsTrigger>
-            <TabsTrigger value="variations">Variations</TabsTrigger>
             <TabsTrigger value="pricing">Pricing</TabsTrigger>
             <TabsTrigger value="shipping">Shipping Info</TabsTrigger>
           </TabsList>
@@ -201,23 +148,24 @@ export function AddProducts({ onAdd }: AddProductsProps) {
           {/* BASIC */}
           <TabsContent value="basic" className="mt-4 space-y-4">
             {error && <p className="text-red-500 text-sm font-medium">{error}</p>}
-            <input type="text" placeholder="Product Name" value={name} onChange={(e)=>setName(e.target.value)} className="w-full border rounded-md px-3 py-2"/>
-            <textarea placeholder="Product Description" value={description} onChange={(e)=>setDescription(e.target.value)} className="w-full border rounded-md px-3 py-2 min-h-[100px]"/>
-            {!variants.length && <input type="number" placeholder="Stock" value={stock} onChange={(e)=>setStock(e.target.value)} className="w-full border rounded-md px-3 py-2"/>}
+            <input type="text" placeholder="Product Name" value={name} onChange={(e) => setName(e.target.value)} className="w-full border rounded-md px-3 py-2" />
+            <textarea placeholder="Product Description" value={description} onChange={(e) => setDescription(e.target.value)} className="w-full border rounded-md px-3 py-2 min-h-[100px]" />
+            <input type="number" placeholder="Stock" value={stock} onChange={(e) => setStock(e.target.value)} className="w-full border rounded-md px-3 py-2" />
           </TabsContent>
 
           {/* IMAGES */}
           <TabsContent value="images" className="mt-4">
             <div className="border p-4 rounded-md space-y-3">
-              <input type="file" accept="image/*" multiple onChange={(e)=>{
-                const files = e.target.files; if(!files) return; 
-                setImagePreviews(prev => [...prev, ...Array.from(files).map(f=>URL.createObjectURL(f))]);
+              <input type="file" accept="image/*" multiple onChange={(e) => {
+                const files = e.target.files;
+                if (!files) return;
+                setImagePreviews(prev => [...prev, ...Array.from(files).map(f => URL.createObjectURL(f))]);
               }} />
               <div className="mt-3 grid grid-cols-4 gap-3">
                 {imagePreviews.map((src, idx) => (
                   <div key={idx} className="relative border rounded-md overflow-hidden">
-                    <Image src={src} alt={`preview-${idx}`} width={200} height={200} className="object-cover"/>
-                    <button onClick={()=>setImagePreviews(prev=>prev.filter((_,i)=>i!==idx))} className="absolute top-1 right-1 bg-black/50 text-white text-xs px-2 py-1 rounded" type="button">Remove</button>
+                    <Image src={src} alt={`preview-${idx}`} width={200} height={200} className="object-cover" />
+                    <button onClick={() => setImagePreviews(prev => prev.filter((_, i) => i !== idx))} className="absolute top-1 right-1 bg-black/50 text-white text-xs px-2 py-1 rounded" type="button">Remove</button>
                   </div>
                 ))}
               </div>
@@ -231,79 +179,39 @@ export function AddProducts({ onAdd }: AddProductsProps) {
               {loadingCategories ? (
                 <p className="text-sm text-gray-500">Loading categories...</p>
               ) : (
-                <select 
-                  value={categoryId} 
-                  onChange={(e)=>setCategoryId(e.target.value)} 
-                  className="w-full border rounded-md px-3 py-2"
-                  disabled={categories.length === 0}
-                >
-                  {categories.length === 0 ? (
-                    <option>No categories available</option>
-                  ) : (
-                    categories.map(cat=><option key={cat.id} value={cat.id}>{cat.categoryName}</option>)
-                  )}
+                <select value={categoryId} onChange={(e) => setCategoryId(e.target.value)} className="w-full border rounded-md px-3 py-2">
+                  {categories?.map(cat => <option key={cat.id} value={cat.id}>{cat.categoryName}</option>)}
                 </select>
               )}
             </div>
           </TabsContent>
 
-          {/* VARIATIONS */}
-          <TabsContent value="variations" className="mt-4">
-            <div className="border p-4 rounded-md space-y-4">
-              {variationGroups.map((g) => (
-                <div key={g.id} className="border rounded p-3">
-                  <div className="flex gap-2 items-center mb-2">
-                    <input value={g.name} onChange={(e)=>updateVariationName(g.id, e.target.value)} className="flex-1 border rounded px-2 py-1"/>
-                    <button onClick={()=>removeVariationGroup(g.id)} className="px-2 py-1 bg-red-500 text-white rounded">Remove Group</button>
-                  </div>
-                  <div className="space-y-2">
-                    <div className="flex gap-2">
-                      <input placeholder="New option" id={`opt-${g.id}`} className="flex-1 border rounded px-2 py-1"/>
-                      <button onClick={()=>{
-                        const el = document.getElementById(`opt-${g.id}`) as HTMLInputElement|null;
-                        if(!el) return; const val=el.value.trim(); if(!val) return; addOptionToGroup(g.id,val); el.value="";
-                      }} className="px-3 py-1 bg-green-600 text-white rounded">Add Option</button>
-                    </div>
-                    <div className="flex flex-wrap gap-2">{g.options.map((opt, oi)=>(
-                      <div key={oi} className="bg-gray-100 px-2 py-1 rounded flex items-center gap-2"><span className="text-sm">{opt}</span><button onClick={()=>removeOptionFromGroup(g.id,oi)} className="text-xs text-red-500">x</button></div>
-                    ))}</div>
-                  </div>
-                </div>
-              ))}
-              <div className="flex gap-2">
-                <button onClick={addVariationGroup} className="px-3 py-2 bg-blue-600 text-white rounded">+ Add Variation Group</button>
-                <div className="text-sm text-gray-500 self-center">{variants.length ? `${variants.length} variants generated` : 'No variant combos yet'}</div>
-              </div>
-
-              {variants.length>0 && <div className="mt-3 space-y-2">
-                <h4 className="font-medium">Variants</h4>
-                <div className="space-y-2">{variants.map(v=>(
-                  <div key={v.id} className="flex gap-2 items-center">
-                    <div className="flex-1"><div className="text-sm">{v.optionCombo.join(" / ")}</div><div className="text-xs text-muted-foreground">{v.sku}</div></div>
-                    <input type="number" value={String(v.price)} onChange={(e)=>updateVariant(v.id,{price:Number(e.target.value)})} className="w-28 border rounded px-2 py-1" placeholder="Price"/>
-                    <input type="number" value={String(v.stock)} onChange={(e)=>updateVariant(v.id,{stock:Number(e.target.value)})} className="w-24 border rounded px-2 py-1" placeholder="Stock"/>
-                  </div>
-                ))}</div>
-              </div>}
-            </div>
-          </TabsContent>
-
           {/* PRICING */}
           <TabsContent value="pricing" className="mt-4">
-            {!variants.length && <input type="number" placeholder="Price" value={price} onChange={(e)=>setPrice(e.target.value)} className="w-full border rounded-md px-3 py-2"/>}
+            <input type="number" placeholder="Price" value={price} onChange={(e) => setPrice(e.target.value)} className="w-full border rounded-md px-3 py-2" />
             <label className="block text-sm mt-2">Status</label>
-            <select value={status} onChange={(e)=>setStatus(e.target.value)} className="w-full border rounded px-3 py-2"><option>Available</option><option>Draft</option><option>Out of stock</option><option>Discontinued</option></select>
+            <select value={status} onChange={(e) => setStatus(e.target.value)} className="w-full border rounded px-3 py-2">
+              <option>Available</option>
+              <option>Draft</option>
+              <option>Out of stock</option>
+              <option>Discontinued</option>
+            </select>
           </TabsContent>
 
           {/* SHIPPING */}
           <TabsContent value="shipping" className="mt-4">
             <div className="grid grid-cols-3 gap-3">
-              <input type="number" placeholder="Weight" value={weight} onChange={e=>setWeight(e.target.value)} className="border rounded px-2 py-1"/>
-              <select value={weightUnit} onChange={e=>setWeightUnit(e.target.value)} className="border rounded px-2 py-1"><option value="kg">kg</option><option value="g">g</option><option value="lb">lb</option></select>
-              <input type="number" placeholder="Shipping Fee" value={shippingFee} onChange={e=>setShippingFee(e.target.value)} className="border rounded px-2 py-1"/>
-              <input type="number" placeholder="Length" value={lengthVal} onChange={e=>setLengthVal(e.target.value)} className="border rounded px-2 py-1"/>
-              <input type="number" placeholder="Width" value={widthVal} onChange={e=>setWidthVal(e.target.value)} className="border rounded px-2 py-1"/>
-              <input type="number" placeholder="Height" value={heightVal} onChange={e=>setHeightVal(e.target.value)} className="border rounded px-2 py-1"/>
+              <input type="number" placeholder="Weight" value={weight} onChange={(e) => setWeight(e.target.value)} className="border rounded px-2 py-1" />
+              <select value={weightUnit} onChange={(e) => setWeightUnit(e.target.value)} className="border rounded px-2 py-1">
+                <option value="kg">kg</option>
+                <option value="g">g</option>
+                <option value="lb">lb</option>
+              </select>
+              <input type="number" placeholder="Shipping Fee" value={shippingFee} onChange={(e) => setShippingFee(e.target.value)} className="border rounded px-2 py-1" />
+
+              <input type="number" placeholder="Length" value={lengthVal} onChange={(e) => setLengthVal(e.target.value)} className="border rounded px-2 py-1" />
+              <input type="number" placeholder="Width" value={widthVal} onChange={(e) => setWidthVal(e.target.value)} className="border rounded px-2 py-1" />
+              <input type="number" placeholder="Height" value={heightVal} onChange={(e) => setHeightVal(e.target.value)} className="border rounded px-2 py-1" />
             </div>
           </TabsContent>
         </Tabs>
