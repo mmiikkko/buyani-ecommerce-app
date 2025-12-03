@@ -17,14 +17,21 @@ export function OrdersTabsTable({
   ordersData,
   filter,
   search,
+  onStatusUpdate,
 }: {
   ordersData: Order[];
   filter: string;
   search: string;
+  onStatusUpdate?: (orderId: string, newStatus: string) => void;
 }) {
   return (
     <div className="w-full p-6 bg-green-50 min-h-screen">
-      <OrdersTable orders={ordersData} filter={filter} search={search} />
+      <OrdersTable 
+        orders={ordersData} 
+        filter={filter} 
+        search={search}
+        onStatusUpdate={onStatusUpdate}
+      />
     </div>
   );
 }
@@ -33,10 +40,12 @@ function OrdersTable({
   orders,
   filter,
   search,
+  onStatusUpdate,
 }: {
   orders: Order[];
   filter: string;
   search: string;
+  onStatusUpdate?: (orderId: string, newStatus: string) => void;
 }) {
   // Prepare search-friendly fields
   const filteredOrders = (orders ?? []).filter((order) => {
@@ -180,13 +189,35 @@ function OrdersTable({
 
                     {order.status === "pending" && (
                       <>
-                        <Button className="bg-green-600 hover:bg-green-700 text-white text-xs px-3 py-1">
+                        <Button 
+                          className="bg-green-600 hover:bg-green-700 text-white text-xs px-3 py-1"
+                          onClick={() => onStatusUpdate?.(order.id, "confirmed")}
+                        >
                           Confirm
                         </Button>
-                        <Button className="bg-red-600 hover:bg-red-700 text-white text-xs px-3 py-1">
+                        <Button 
+                          className="bg-red-600 hover:bg-red-700 text-white text-xs px-3 py-1"
+                          onClick={() => onStatusUpdate?.(order.id, "cancelled")}
+                        >
                           Cancel
                         </Button>
                       </>
+                    )}
+                    {order.status === "confirmed" && (
+                      <Button 
+                        className="bg-blue-600 hover:bg-blue-700 text-white text-xs px-3 py-1"
+                        onClick={() => onStatusUpdate?.(order.id, "shipped")}
+                      >
+                        Ship
+                      </Button>
+                    )}
+                    {order.status === "shipped" && (
+                      <Button 
+                        className="bg-purple-600 hover:bg-purple-700 text-white text-xs px-3 py-1"
+                        onClick={() => onStatusUpdate?.(order.id, "delivered")}
+                      >
+                        Mark Delivered
+                      </Button>
                     )}
                   </TableCell>
                 </TableRow>

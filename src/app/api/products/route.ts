@@ -5,6 +5,7 @@ import { eq } from 'drizzle-orm';
 import { v4 as uuidv4 } from 'uuid';
 
 // GET /api/products
+// Note: This returns ALL products. For seller-specific products, use /api/sellers/products
 export async function GET(req: NextRequest) {
   const list = await db.select().from(products);
   return NextResponse.json(list);

@@ -64,6 +64,7 @@ export const auth = betterAuth({
       },
     },
   },
+  
 
   hooks: {
     before: createAuthMiddleware(async (ctx) => {

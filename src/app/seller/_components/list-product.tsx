@@ -20,15 +20,9 @@ function cartesianProduct(arrays: string[][]): string[][] {
   );
 }
 
-/* --- Default categories --- */
-const demoCategories = [
-  { id: "cat-fruits", name: "Fruits" },
-  { id: "cat-vegetables", name: "Vegetables" },
-  { id: "cat-electronics", name: "Electronics" },
-  { id: "cat-apparel", name: "Apparel" },
-];
-
 export function AddProducts({ onAdd }: AddProductsProps) {
+  const [categories, setCategories] = useState<{ id: string; categoryName: string }[]>([]);
+  const [loadingCategories, setLoadingCategories] = useState(true);
   // BASIC
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
@@ -37,7 +31,29 @@ export function AddProducts({ onAdd }: AddProductsProps) {
   const [imagePreviews, setImagePreviews] = useState<string[]>(["/mnt/data/cd282b9a-854b-424e-8299-1e421d8c3b67.png"]);
 
   // CATEGORY
-  const [categoryId, setCategoryId] = useState<string>(demoCategories[0].id);
+  const [categoryId, setCategoryId] = useState<string>("");
+
+  // Fetch categories
+  useEffect(() => {
+    async function fetchCategories() {
+      try {
+        setLoadingCategories(true);
+        const res = await fetch("/api/categories");
+        if (res.ok) {
+          const data = await res.json();
+          setCategories(data);
+          if (data.length > 0) {
+            setCategoryId(data[0].id);
+          }
+        }
+      } catch (err) {
+        console.error("Failed to fetch categories:", err);
+      } finally {
+        setLoadingCategories(false);
+      }
+    }
+    fetchCategories();
+  }, []);
 
   // VARIATIONS
   const [variationGroups, setVariationGroups] = useState<{ id: string; name: string; options: string[] }[]>([]);
@@ -74,7 +90,6 @@ export function AddProducts({ onAdd }: AddProductsProps) {
   // Generate variants whenever groups/options change
   useEffect(() => {
     if (!variationGroups.length || variationGroups.some(g => g.options.length === 0)) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       setVariants([]);
       return;
     }
@@ -98,6 +113,7 @@ export function AddProducts({ onAdd }: AddProductsProps) {
   /* --- Submit --- */
   const handleSubmit = () => {
     if (!name.trim()) return setError("Product name is required.");
+    if (!categoryId) return setError("Please select a category.");
     if (!variants.length) {
       if (!price.trim() || isNaN(Number(price)) || Number(price) <= 0) return setError("Enter a valid price.");
       if (!stock.trim() || isNaN(Number(stock)) || Number(stock) < 0) return setError("Enter valid stock quantity.");
@@ -114,11 +130,17 @@ export function AddProducts({ onAdd }: AddProductsProps) {
     const totalStock = variants.length ? variants.reduce((s, v) => s + Number(v.stock || 0), 0) : Number(stock || 0);
     const skuBase = (name || "PRD").replace(/\s+/g, "").toUpperCase().slice(0, 6);
 
+    // For variant-based products, use the minimum variant price or first variant price
+    // For non-variant products, use the entered price
+    const productPrice = variants.length 
+      ? Math.min(...variants.map(v => v.price || 0)) 
+      : Number(price) || 0;
+
     const product: Product = {
       id: productId,
       productName: name,
       description,
-      price: variants.length ? undefined : Number(price),
+      price: productPrice, // Always provide a price (required by schema)
       stock: totalStock,
       images: imagePreviews.map((img, idx) => ({
         id: uuidv4(),
@@ -137,8 +159,8 @@ export function AddProducts({ onAdd }: AddProductsProps) {
         shippingFee: shippingFee ? Number(shippingFee) : undefined,
       },
       status,
-      shopId: "",
-      isAvailable: false,
+      shopId: "", // Will be set by API
+      isAvailable: status === "Available", // Set based on status
       createdAt: new Date(),
       updatedAt: new Date()
     };
@@ -147,7 +169,7 @@ export function AddProducts({ onAdd }: AddProductsProps) {
 
     // reset
     setName(""); setDescription(""); setImagePreviews(["/mnt/data/cd282b9a-854b-424e-8299-1e421d8c3b67.png"]);
-    setCategoryId(demoCategories[0].id); setVariationGroups([]); setVariants([]);
+    if (categories.length > 0) setCategoryId(categories[0].id); setVariationGroups([]); setVariants([]);
     setPrice(""); setStock(""); setWeight(""); setWeightUnit("kg"); setLengthVal(""); setWidthVal(""); setHeightVal(""); setShippingFee("");
   };
 
@@ -206,9 +228,22 @@ export function AddProducts({ onAdd }: AddProductsProps) {
           <TabsContent value="category" className="mt-4">
             <div className="border p-4 rounded-md">
               <label className="block text-sm font-medium mb-2">Select Category</label>
-              <select value={categoryId} onChange={(e)=>setCategoryId(e.target.value)} className="w-full border rounded-md px-3 py-2">
-                {demoCategories.map(cat=><option key={cat.id} value={cat.id}>{cat.name}</option>)}
-              </select>
+              {loadingCategories ? (
+                <p className="text-sm text-gray-500">Loading categories...</p>
+              ) : (
+                <select 
+                  value={categoryId} 
+                  onChange={(e)=>setCategoryId(e.target.value)} 
+                  className="w-full border rounded-md px-3 py-2"
+                  disabled={categories.length === 0}
+                >
+                  {categories.length === 0 ? (
+                    <option>No categories available</option>
+                  ) : (
+                    categories.map(cat=><option key={cat.id} value={cat.id}>{cat.categoryName}</option>)
+                  )}
+                </select>
+              )}
             </div>
           </TabsContent>
 

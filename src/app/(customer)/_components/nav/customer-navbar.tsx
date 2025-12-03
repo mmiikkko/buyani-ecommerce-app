@@ -78,8 +78,8 @@ export default function Navbar({ className }: NavbarProps) {
                 <div className="flex items-center space-x-3">
                 {isAuthenticated && user?.role !== "seller" && (
                   <Link
-                    className="flex flex-row p-2 items-center gap-1 text-white bg-secondary cursor-pointer rounded-lg"
-                    href="/registration"
+                    className="flex flex-row p-2 items-center gap-1 text-white bg-secondary cursor-pointer rounded-lg cursor-pointer"
+                    href="/seller-registration"
                   >
                     <Handshake size={16} />
                     <span>Become a Seller</span>
@@ -107,8 +107,11 @@ export default function Navbar({ className }: NavbarProps) {
                     ) : isAuthenticated ? (
                       <div className="flex items-center space-x-4">
                         <UserDropdown user={user!} />
-                        <Button>
-                          <ShoppingCart />
+                        <Button className="cursor-pointer">
+                          <Link href={"/cart"}>
+                            <ShoppingCart />
+                          </Link>
+                          
                         </Button>
                       </div>
                     ) : (

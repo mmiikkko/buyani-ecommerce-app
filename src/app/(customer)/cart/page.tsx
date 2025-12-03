@@ -10,7 +10,7 @@ export default async function Cart() {
   if (!user) unauthorized();
 
   return (
-    <main className="relative min-h-screen ">
+    <main className="relative min-h-screen mt-35 py-8 px-5">
       <h1>Cart Page</h1>
     </main>
   );
