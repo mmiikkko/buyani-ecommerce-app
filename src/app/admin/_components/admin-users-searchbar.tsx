@@ -29,7 +29,7 @@ export function AdminSearchbar({
   onSearchChange,
 }: AdminSearchbarProps) {
   return (
-    <div className="flex items-center justify-center mb-0 gap-4 p-5 bg-white rounded-md shadow-md">
+    <div className="flex items-center justify-center mb-0 gap-4 p-5 mx-5 bg-white rounded-md shadow-md">
       {/* Search Bar */}
       <div className="flex flex-row w-full bg-[#f3f3f5] rounded-md">
         <SearchInput

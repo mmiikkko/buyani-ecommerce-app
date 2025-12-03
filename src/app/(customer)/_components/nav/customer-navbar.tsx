@@ -44,7 +44,8 @@ export default function Navbar({ className }: NavbarProps) {
         
         {/* Brand + primary links */}
         <div className="flex items-center gap-8">
-          <Link href="/" className="flex items-center gap-2">
+          <div className="flex items-center gap-2">
+            <Link href="/" className="flex items-center gap-2">
             <div className="relative h-9 w-9 overflow-hidden rounded-xl border border-emerald-100 bg-emerald-50/60">
               <Image
                 src={Logo}
@@ -58,7 +59,16 @@ export default function Navbar({ className }: NavbarProps) {
             <span className="hidden text-base font-semibold tracking-tight text-slate-900 sm:inline">
               Buyani
             </span>
-          </Link>
+            </Link>
+            {/* Mobile Become a Seller link */}
+            <Link
+              href="/seller"
+              className="inline-flex items-center gap-1.5 rounded-full bg-emerald-600 px-3 py-1.5 text-xs font-medium text-white shadow-sm hover:bg-emerald-700 transition-colors sm:hidden"
+            >
+              <Handshake size={14} />
+              <span>Become a seller</span>
+            </Link>
+          </div>
 
           <ul className="hidden items-center gap-5 text-sm font-medium text-slate-600 md:flex">
             <li>

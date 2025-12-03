@@ -4,7 +4,13 @@ import Image from "next/image";
 import { Star, PenLine, Trash2 } from "lucide-react";
 import type { Product } from "@/types/products";
 
-export function ProductCard({ product }: { product: Product }) {
+export function ProductCard({ 
+  product, 
+  onDelete 
+}: { 
+  product: Product;
+  onDelete?: (productId: string) => void;
+}) {
   return (
     <div className="w-full max-w-sm shadow-md rounded-lg space-y-4 overflow-hidden bg-white">
 
@@ -48,7 +54,10 @@ export function ProductCard({ product }: { product: Product }) {
         </button>
 
         {/* Remove */}
-        <button className="flex items-center gap-1 text-red-600 hover:text-red-700 text-sm font-medium border rounded-md px-3 py-2 cursor-pointer">
+        <button 
+          onClick={() => onDelete?.(product.id)}
+          className="flex items-center gap-1 text-red-600 hover:text-red-700 text-sm font-medium border rounded-md px-3 py-2 cursor-pointer"
+        >
           <Trash2 size={18} />
           Remove
         </button>

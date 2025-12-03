@@ -10,15 +10,15 @@ import { SearchInput } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Filter, ChevronDown, Check } from "lucide-react";
 
-type SellerProductsSearchbarProps = {
+type SellerOrdersSearchbarProps = {
   onFilterChange: (value: string) => void;
   onSearchChange: (value: string) => void;
 };
 
-export function SellerProductsSearchbar({
+export function SellerOrdersSearchbar({
   onFilterChange,
   onSearchChange,
-}: SellerProductsSearchbarProps) {
+}: SellerOrdersSearchbarProps) {
   return (
     <div className="flex items-center justify-center mb-0 gap-4 p-5 bg-white rounded-md shadow-md">
       {/* Search Bar */}

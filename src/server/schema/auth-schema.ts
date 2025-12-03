@@ -106,6 +106,8 @@ export const shop = mysqlTable("shop", {
     .references(() => user.id, { onDelete: "cascade" }),
 
   shopName: varchar("shop_name", { length: 255 }).unique().notNull(),
+  imageURL: text("image").notNull(),
+  status: varchar("status", { length: 50 }).default("pending").notNull(),
   shopRating: varchar("shop_rating", { length: 10 }),
   description: text("description"),
 

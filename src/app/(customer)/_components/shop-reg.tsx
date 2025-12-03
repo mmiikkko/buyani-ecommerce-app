@@ -1,12 +1,14 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import Logo from "@/assets/logo/Logo.png";
 import { LoadingButton } from "@/components/loading-button";
 import {
   Card,
   CardContent,
   CardDescription,
+  CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
@@ -63,47 +65,35 @@ export function SellerRegisterForm() {
 
       toast.success("Seller profile created!");
       router.push("/seller/dashboard");
-    } catch (e: unknown) {
-        if (e instanceof Error) {
-            setError(e.message); // Access `message` only if `e` is an instance of Error
-          } else {
-            setError("An unknown error occurred");
-          }
-    }
+    } catch (e) {
+        const err = e as Error;
+        console.log(err.message);
+      }
   }
 
   const loading = form.formState.isSubmitting;
 
   return (
-    <div className="flex items-center justify-center w-full h-full">
+    <div className="flex items-center justify-center w-full h-full pt-53 pb-15">
       {/* LEFT SIDE LOGO */}
       <div className="flex flex-col hidden md:flex w-1/2 items-center justify-center">
         <Image
-            src={Logo}
-            alt="Logo"
-            priority
-            width={335}
-            height={335}
-            className="opacity-53"
+          src={Logo}
+          alt="Logo"
+          priority
+          className="w-64 h-auto opacity-90"
         />
-        <div className="text-left mb-8">
-            <h1 className="text-[3A3A3A] text-2xl font-bold">Sign up for an account</h1>
-            <h1 className="text-[3A3A3A] text-2xl font-bold">for <span className="text-[#FF6F00]">FREE</span></h1>
-            <p>Sell your products nationwide to millions </p>
-            <p>of customers 24/7</p>
-        </div>
-
-        </div>
+      </div>
 
       {/* RIGHT SIDE FORM */}
       <div className="w-full md:w-1/2 flex justify-center px-4">
-        <Card className="w-full max-w-md shadow-2xl rounded-3xl">
+        <Card className="w-full max-w-md">
           <CardHeader>
-            <CardTitle className="text-[#2E7D32] text-lg md:text-md">
-                Create Your Seller Account
+            <CardTitle className="text-lg md:text-xl">
+              Become a Seller
             </CardTitle>
             <CardDescription className="text-xs md:text-sm">
-                Join our growing community of local sellers
+              Create your shop to start selling on our platform
             </CardDescription>
           </CardHeader>
 
@@ -150,7 +140,7 @@ export function SellerRegisterForm() {
 
                 <LoadingButton
                   type="submit"
-                  className="w-full mt-5 cursor-pointer"
+                  className="w-full"
                   loading={loading}
                 >
                   Register Shop
@@ -158,6 +148,17 @@ export function SellerRegisterForm() {
               </form>
             </Form>
           </CardContent>
+
+          <CardFooter>
+            <div className="flex w-full justify-center border-t pt-4">
+              <p className="text-muted-foreground text-center text-xs">
+                Want to go back?{" "}
+                <Link href="/" className="underline">
+                  Return home
+                </Link>
+              </p>
+            </div>
+          </CardFooter>
         </Card>
       </div>
     </div>

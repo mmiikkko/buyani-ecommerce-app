@@ -1,15 +1,15 @@
 "use client";
 
+import { useEffect, useState, useMemo } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
 import { AdminSearchbar } from "./admin-users-searchbar";
 import { BadgeAlert, Undo2, Trash2, Check } from "lucide-react";
-import { useState, useMemo } from "react";
 
-// ----------------------------------------
+// ------------------------------------------------------------
 // PRODUCT TYPE
-// ----------------------------------------
+// ------------------------------------------------------------
 type Product = {
   id: string;
   name: string;
@@ -25,70 +25,64 @@ type Product = {
   image: string;
 };
 
-// ----------------------------------------
-// HARDCODED SAMPLE DATA (Future DB Fetch)
-// ----------------------------------------
-const SAMPLE_PRODUCTS: Product[] = [
-  {
-    id: "PRD-001",
-    name: "Pineapple",
-    shopOwner: "Daet Pineapple Farm",
-    description: "Locally grown pineapples from Daet",
-    category: "Food",
-    price: 120,
-    stock: 50,
-    dateAdded: "2025-01-08",
-    status: "normal",
-    image: "/pineapple.jpg",
-  },
-  {
-    id: "PRD-002",
-    name: "Crafts",
-    shopOwner: "Craft Masters",
-    description: "Traditional Filipino handwoven basket",
-    category: "Crafts",
-    price: 250,
-    stock: 15,
-    dateAdded: "2025-01-03",
-    status: "normal",
-    image: "/crafts.jpg",
-  },
-  {
-    id: "PRD-003",
-    name: "Spicy Snacks",
-    shopOwner: "Suspicious Store",
-    description: "Reported multiple times for misleading packaging",
-    category: "Snacks",
-    price: 999,
-    stock: 100,
-    dateAdded: "2025-01-07",
-    status: "flagged",
-    flags: 5,
-    reason: "Misleading description reported by users",
-    image: "/snacks.jpg",
-  },
-  {
-    id: "PRD-004",
-    name: "Wood Carving",
-    shopOwner: "Mountain Crafts",
-    description: "Unique wood carving handmade in Baguio",
-    category: "Handicrafts",
-    price: 850,
-    stock: 8,
-    dateAdded: "2025-01-01",
-    status: "removed",
-    image: "/wood.jpg",
-  }
-];
-
-// ----------------------------------------
+// ------------------------------------------------------------
 // MAIN COMPONENT
-// ----------------------------------------
+// ------------------------------------------------------------
 export function AdminProducts() {
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState("all");
   const [search, setSearch] = useState("");
 
-  // Determine "new" products (added within 7 days)
+  // ------------------------------------------------------------
+  // FETCH PRODUCTS (Dynamic)
+  // ------------------------------------------------------------
+  const fetchProducts = async () => {
+    try {
+      const res = await fetch("/api/products");
+      const data = await res.json();
+      setProducts(data);
+    } catch (err) {
+      console.error("Fetch products error:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchProducts();
+  }, []);
+
+  // ------------------------------------------------------------
+  // CRUD ACTIONS
+  // ------------------------------------------------------------
+
+  const createProduct = async (data: unknown) => {
+    await fetch("/api/products", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    });
+    fetchProducts();
+  };
+
+  const updateProduct = async (id: string, updates: unknown) => {
+    await fetch(`/api/products?id=${id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(updates),
+    });
+    fetchProducts();
+  };
+
+  const deleteProduct = async (id: string) => {
+    await fetch(`/api/products?id=${id}`, { method: "DELETE" });
+    fetchProducts();
+  };
+
+  // ------------------------------------------------------------
+  // "NEW PRODUCT" CHECK
+  // ------------------------------------------------------------
   const NEW_PRODUCT_DAYS = 7;
   const today = new Date();
 
@@ -99,10 +93,11 @@ export function AdminProducts() {
     return diff <= NEW_PRODUCT_DAYS;
   };
 
-  // Filtering + Searching
-  // eslint-disable-next-line react-hooks/preserve-manual-memoization
+  // ------------------------------------------------------------
+  // FILTERING + SEARCH
+  // ------------------------------------------------------------
   const filteredProducts = useMemo(() => {
-    return SAMPLE_PRODUCTS.filter((p) => {
+    return products.filter((p) => {
       const matchesSearch =
         p.name.toLowerCase().includes(search.toLowerCase()) ||
         p.shopOwner.toLowerCase().includes(search.toLowerCase());
@@ -115,11 +110,17 @@ export function AdminProducts() {
 
       return matchesSearch && matchesFilter;
     });
-  }, [filter, isNewProduct, search]);
+  }, [filter, search, products]);
+
+  // ------------------------------------------------------------
+  // RENDER
+  // ------------------------------------------------------------
+  if (loading) return <p className="p-4">Loading products...</p>;
 
   return (
     <div className="px-5 w-full min-h-screen bg-green-50 rounded-xl pb-10">
 
+      {/* SEARCH + FILTER BAR */}
       <AdminSearchbar
         placeholder="Search by product name or shop owner"
         filterOptions={[
@@ -132,7 +133,9 @@ export function AdminProducts() {
         onSearchChange={setSearch}
       />
 
-        <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6 items-start">        {filteredProducts.map((product) => (
+      {/* PRODUCT GRID */}
+      <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6 items-start">
+        {filteredProducts.map((product) => (
           <Card key={product.id} className="overflow-hidden shadow-sm">
             <div className="relative w-full h-48">
               <Image
@@ -185,15 +188,27 @@ export function AdminProducts() {
 
               {/* ACTION BUTTONS */}
               <div className="mt-4 flex flex-col gap-2">
-
                 {product.status === "flagged" && (
                   <>
-                    <Button size="sm" className="bg-green-600 hover:bg-green-700 cursor-pointer">
+                    <Button
+                      size="sm"
+                      className="bg-green-600 hover:bg-green-700 cursor-pointer"
+                      onClick={() =>
+                        updateProduct(product.id, { status: "normal", flags: 0 })
+                      }
+                    >
                       <Check className="w-4 h-4 mr-1" />
                       Mark as Safe
                     </Button>
 
-                    <Button size="sm" variant="destructive" className="cursor-pointer">
+                    <Button
+                      size="sm"
+                      variant="destructive"
+                      className="cursor-pointer"
+                      onClick={() =>
+                        updateProduct(product.id, { status: "removed" })
+                      }
+                    >
                       <Trash2 className="w-4 h-4 mr-1" />
                       Remove Product
                     </Button>
@@ -201,15 +216,32 @@ export function AdminProducts() {
                 )}
 
                 {product.status === "removed" && (
-                  <Button size="sm" variant="outline">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() =>
+                      updateProduct(product.id, { status: "normal" })
+                    }
+                  >
                     <Undo2 className="w-4 h-4 mr-1" />
                     Restore Product
                   </Button>
                 )}
               </div>
 
-              <Button variant="link" className="mt-2 w-full text-gray-600 cursor-pointer">
+              <Button
+                variant="link"
+                className="mt-2 w-full text-gray-600 cursor-pointer"
+              >
                 View Full Details
+              </Button>
+
+              {/* Delete button (always available) */}
+              <Button
+                className="w-full mt-2 bg-red-600 text-white cursor-pointer"
+                onClick={() => deleteProduct(product.id)}
+              >
+                Delete Permanently
               </Button>
             </CardContent>
           </Card>

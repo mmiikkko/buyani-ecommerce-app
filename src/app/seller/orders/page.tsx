@@ -1,153 +1,156 @@
 "use client";
-// Removed unused Download and Button imports
-import { SellerProductsSearchbar } from "../_components/seller-orders-searchbar";
-import { OrdersTabsTable } from "../_components/seller-orders-table";
-import { useState } from "react";
-import type { Order } from "../../../types/orders";
 
+import { SellerOrdersSearchbar } from "../_components/seller-orders-searchbar";
+import { OrdersTabsTable } from "../_components/seller-orders-table";
+import { useState, useEffect, useCallback } from "react";
+import type { Order } from "../../../types/orders";
+import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
+import { RefreshCw } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export default function Orders() {
-
-
-
-const demoOrders: Order[] = [
-  {
-    id: "1",
-    buyerId: "USER123",
-    addressId: "ADDR001",
-    total: 50,
-    createdAt: new Date("2023-10-01"),
-    updatedAt: new Date("2023-10-01"),
-
-    items: [
-      {
-        id: "OI-1",
-        orderId: "1",
-        productId: "P1",
-        quantity: 2,
-        subtotal: 50,
-        product: {
-          id: "P1",
-          productName: "Product A",
-          images: [
-            {
-              id: "IMG1",
-              product_id: "P1",
-              image_url: ["/images/product-a.jpg"],
-              is_primary: true,
-            },
-          ],
-        },
-      },
-    ],
-
-    payment: {
-      id: "PAY1",
-      orderId: "1",
-      paymentMethod: 1,
-      paymentReceived: 50,
-      change: 0,
-      status: "Paid",
-      createdAt: new Date("2023-10-01"),
-      updatedAt: new Date("2023-10-01"),
-    },
-
-    transactions: [
-      {
-        id: "TX1",
-        userId: "USER123",
-        orderId: "1",
-        transactionType: "online",
-        remarks: null,
-        createdAt: new Date("2023-10-01"),
-        updatedAt: new Date("2023-10-01"),
-      },
-    ],
-
-    status: "pending",
-    type: "online",
-  },
-
-  {
-    id: "2",
-    buyerId: "USER456",
-    addressId: "ADDR002",
-    total: 30,
-    createdAt: new Date("2023-10-02"),
-    updatedAt: new Date("2023-10-02"),
-
-    items: [
-      {
-        id: "OI-2",
-        orderId: "2",
-        productId: "P2",
-        quantity: 1,
-        subtotal: 30,
-        product: {
-          id: "P2",
-          productName: "Product B",
-          images: [
-            {
-              id: "IMG2",
-              product_id: "P2",
-              image_url: [
-                "https://images.unsplash.com/photo-1589308078054-8329c0c11a87",
-              ],
-              is_primary: true,
-            },
-          ],
-        },
-      },
-    ],
-
-    payment: {
-      id: "PAY2",
-      orderId: "2",
-      paymentMethod: 1,
-      paymentReceived: 30,
-      change: 0,
-      status: "Paid",
-      createdAt: new Date("2023-10-02"),
-      updatedAt: new Date("2023-10-02"),
-    },
-
-    transactions: [
-      {
-        id: "TX2",
-        userId: "USER456",
-        orderId: "2",
-        transactionType: "in-store",
-        remarks: null,
-        createdAt: new Date("2023-10-02"),
-        updatedAt: new Date("2023-10-02"),
-      },
-    ],
-
-    status: "shipped",
-    type: "in-store",
-  },
-];
-
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [refreshing, setRefreshing] = useState<boolean>(false);
+  const [error, setError] = useState<string | null>(null);
   const [filter, setFilter] = useState<string>("all");
   const [search, setSearch] = useState<string>("");
 
+  // Fetch orders from API
+  const fetchOrders = useCallback(async (showLoading = true) => {
+    try {
+      if (showLoading) {
+        setLoading(true);
+      } else {
+        setRefreshing(true);
+      }
+      setError(null);
+      
+      const res = await fetch("/api/sellers/orders");
+      
+      if (!res.ok) {
+        if (res.status === 401) {
+          throw new Error("Unauthorized. Please log in.");
+        }
+        throw new Error("Failed to fetch orders");
+      }
+      
+      const data: Order[] = await res.json();
+      setOrders(data);
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : "An unknown error occurred";
+      setError(errorMessage);
+      if (showLoading) {
+        toast.error(errorMessage);
+      }
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchOrders(true);
+  }, [fetchOrders]);
+
+  // Handle order status update
+  const handleOrderStatusUpdate = async (orderId: string, newStatus: string) => {
+    try {
+      // Update payment status (which determines order status)
+      const res = await fetch(`/api/payments?orderId=${orderId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: newStatus }),
+      });
+
+      if (!res.ok) {
+        throw new Error("Failed to update order status");
+      }
+
+      toast.success(`Order ${newStatus} successfully`);
+      
+      // Refetch orders to get the latest data
+      await fetchOrders(false);
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : "Failed to update order";
+      toast.error(errorMessage);
+    }
+  };
+
+  if (loading) {
+    return (
+      <section className="relative min-h-screen min-w-[80%] max-w-[100%] overflow-hidden space-y-5 mt-18 mx-3">
+        <div className="flex flex-row justify-between">
+          <div className="flex flex-col">
+            <h1 className="text-xl mb-1 font-bold text-[#2E7D32]">Orders</h1>
+            <p>Manage your online and in-store orders</p>
+          </div>
+        </div>
+        <div className="w-full p-6 bg-green-50 min-h-screen space-y-4">
+          <div className="bg-white rounded-xl shadow-sm p-6 space-y-4">
+            <Skeleton className="h-10 w-full" />
+            <Skeleton className="h-10 w-full" />
+            <Skeleton className="h-10 w-full" />
+            <Skeleton className="h-10 w-full" />
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  if (error) {
+    return (
+      <section className="relative min-h-screen min-w-[80%] max-w-[100%] overflow-hidden space-y-5 mt-18 mx-3">
+        <div className="flex flex-row justify-between">
+          <div className="flex flex-col">
+            <h1 className="text-xl mb-1 font-bold text-[#2E7D32]">Orders</h1>
+            <p>Manage your online and in-store orders</p>
+          </div>
+        </div>
+        <div className="flex items-center justify-center py-12">
+          <div className="text-center">
+            <p className="text-red-600 mb-2">Error: {error}</p>
+            <button
+              onClick={() => window.location.reload()}
+              className="text-sm text-blue-600 hover:underline"
+            >
+              Try again
+            </button>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
   return (
     <section className="relative min-h-screen min-w-[80%] max-w-[100%] overflow-hidden space-y-5 mt-18 mx-3">
-      <div className="flex flex-row justify-between">
+      <div className="flex flex-row justify-between items-start">
         <div className="flex flex-col">
           <h1 className="text-xl mb-1 font-bold text-[#2E7D32]">Orders</h1>
           <p>Manage your online and in-store orders</p>
         </div>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => fetchOrders(false)}
+          disabled={refreshing}
+          className="flex items-center gap-2"
+        >
+          <RefreshCw className={`h-4 w-4 ${refreshing ? "animate-spin" : ""}`} />
+          Refresh
+        </Button>
       </div>
       
-      <SellerProductsSearchbar
+      <SellerOrdersSearchbar
         onFilterChange={setFilter}
         onSearchChange={setSearch}
       />
       <OrdersTabsTable 
-        ordersData={demoOrders}
+        ordersData={orders}
         filter={filter}
         search={search}
+        onStatusUpdate={handleOrderStatusUpdate}
       />
     </section>
   );
