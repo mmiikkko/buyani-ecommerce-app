@@ -103,8 +103,9 @@ export function ProductClient({
       } else {
         toast.error(result.error || "Failed to add to cart");
       }
-    } catch {
-      toast.error("Something went wrong");
+    } catch (error) {
+      console.error("Error adding to cart:", error);
+      toast.error("Failed to add item to cart. Please try again.");
     } finally {
       setIsAddingToCart(false);
     }
@@ -129,8 +130,9 @@ export function ProductClient({
       } else {
         toast.error(result.error || "Failed to add to cart");
       }
-    } catch {
-      toast.error("Something went wrong");
+    } catch (error) {
+      console.error("Error during buy now:", error);
+      toast.error("Failed to process your request. Please try again.");
     } finally {
       setIsAddingToCart(false);
     }

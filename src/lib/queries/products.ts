@@ -1,6 +1,6 @@
 import { db } from "@/server/drizzle";
 import { products, productImages, productInventory, shop, user, categories } from "@/server/schema/auth-schema";
-import { eq, inArray } from "drizzle-orm";
+import { eq, inArray, and, ne } from "drizzle-orm";
 import { NextRequest, NextResponse } from "next/server";
 import { v4 as uuid } from "uuid";
 
@@ -104,7 +104,7 @@ export async function getProductById(productId: string) {
 }
 
 export async function getRelatedProducts(categoryId: string, excludeProductId: string, limit: number = 4) {
-  // Fetch products in the same category
+  // Fetch products in the same category, excluding the current product
   const relatedProducts = await db
     .select({
       id: products.id,
@@ -114,16 +114,14 @@ export async function getRelatedProducts(categoryId: string, excludeProductId: s
     })
     .from(products)
     .leftJoin(shop, eq(products.shopId, shop.id))
-    .where(eq(products.categoryId, categoryId))
-    .limit(limit + 1); // Get one extra to filter out the current product
-
-  // Filter out the current product and limit
-  const filtered = relatedProducts
-    .filter(p => p.id !== excludeProductId)
-    .slice(0, limit);
+    .where(and(
+      eq(products.categoryId, categoryId),
+      ne(products.id, excludeProductId)
+    ))
+    .limit(limit);
 
   // Get product IDs for image lookup
-  const productIds = filtered.map(p => p.id);
+  const productIds = relatedProducts.map(p => p.id);
   
   if (productIds.length === 0) {
     return [];
@@ -146,7 +144,7 @@ export async function getRelatedProducts(categoryId: string, excludeProductId: s
     }
   }
 
-  return filtered.map(product => ({
+  return relatedProducts.map(product => ({
     id: product.id,
     productName: product.productName,
     price: product.price ? parseFloat(String(product.price)) : 0,
