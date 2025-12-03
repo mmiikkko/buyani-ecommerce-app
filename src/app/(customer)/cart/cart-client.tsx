@@ -176,6 +176,7 @@ export function CartClient({ initialItems, userId }: CartClientProps) {
               <Button
                 className="w-full bg-emerald-600 hover:bg-emerald-700"
                 size="lg"
+                onClick={() => router.push("/checkout")}
               >
                 Proceed to Checkout
               </Button>

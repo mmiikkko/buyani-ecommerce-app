@@ -1,13 +1,69 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/server/drizzle';
-import { shop } from '@/server/schema/auth-schema';
-import { eq } from 'drizzle-orm';
+import { shop, user, products } from '@/server/schema/auth-schema';
+import { eq, and, sql } from 'drizzle-orm';
 import { v4 as uuidv4 } from 'uuid'; // For unique IDs
 
-// GET /api/shops - get all shops
+// GET /api/shops - get all approved shops
 export async function GET(req: NextRequest) {
-  const shops = await db.select().from(shop);
-  return NextResponse.json(shops);
+  try {
+    // Get approved shops with seller information
+    const shopsList = await db
+      .select({
+        id: shop.id,
+        sellerId: shop.sellerId,
+        shopName: shop.shopName,
+        shopRating: shop.shopRating,
+        description: shop.description,
+        imageURL: shop.imageURL,
+        status: shop.status,
+        createdAt: shop.createdAt,
+        updatedAt: shop.updatedAt,
+        ownerName: user.name,
+        ownerFirstName: user.first_name,
+        ownerLastName: user.last_name,
+      })
+      .from(shop)
+      .leftJoin(user, eq(shop.sellerId, user.id))
+      .where(eq(shop.status, "approved"));
+
+    // Get product counts for each shop
+    const shopsWithCounts = await Promise.all(
+      shopsList.map(async (shopItem) => {
+        const productCount = await db
+          .select({ count: sql<number>`count(*)` })
+          .from(products)
+          .where(and(
+            eq(products.shopId, shopItem.id),
+            eq(products.isAvailable, true)
+          ));
+
+        return {
+          id: shopItem.id,
+          seller_id: shopItem.sellerId,
+          shop_name: shopItem.shopName,
+          shop_rating: shopItem.shopRating,
+          description: shopItem.description,
+          image: shopItem.imageURL,
+          status: shopItem.status,
+          created_at: shopItem.createdAt,
+          updated_at: shopItem.updatedAt,
+          owner_name: shopItem.ownerName || 
+            `${shopItem.ownerFirstName || ""} ${shopItem.ownerLastName || ""}`.trim() ||
+            "Unknown",
+          products: Number(productCount[0]?.count || 0),
+        };
+      })
+    );
+
+    return NextResponse.json(shopsWithCounts);
+  } catch (error) {
+    console.error("Error fetching shops:", error);
+    return NextResponse.json(
+      { error: "Failed to fetch shops" },
+      { status: 500 }
+    );
+  }
 }
 
 // POST /api/shops - create a new shop

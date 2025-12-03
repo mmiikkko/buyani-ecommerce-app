@@ -1,9 +1,25 @@
 "use client";
 
-import Link from "next/link";
-import { FEATURED_VENDORS } from "../_components/featured-vendors";
+import { useEffect, useState } from "react";
+import { ShopCard } from "../_components/shop-card";
+import type { Shop } from "@/types/shops";
 
 export default function ShopsPage() {
+  const [shops, setShops] = useState<Shop[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetch("/api/shops")
+      .then((res) => res.json())
+      .then((data) => {
+        setShops(data);
+      })
+      .catch((err) => {
+        console.error("Error fetching shops:", err);
+      })
+      .finally(() => setLoading(false));
+  }, []);
+
   return (
     <main className="relative min-h-screen">
       <section className="py-12 bg-slate-50">
@@ -23,13 +39,19 @@ export default function ShopsPage() {
             </div>
           </header>
 
-          {FEATURED_VENDORS.length === 0 ? (
+          {loading ? (
+            <div className="text-center py-12">
+              <p className="text-slate-500">Loading shops...</p>
+            </div>
+          ) : shops.length === 0 ? (
             <div className="text-center py-12">
               <p className="text-slate-500">No shops available at the moment.</p>
             </div>
           ) : (
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-              {/* Shops will be rendered here when available */}
+              {shops.map((shop) => (
+                <ShopCard key={shop.id} shop={shop} />
+              ))}
             </div>
           )}
         </div>

@@ -11,6 +11,7 @@ export type Shop = {
     image?: string | null;
     status: "approved" | "pending" | "suspended";
     owner_name?: string; // from JOIN
+    products?: number; // product count
 }
 
 

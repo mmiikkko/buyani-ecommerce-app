@@ -20,6 +20,12 @@ export type Product = {
     createdAt: Date;
     updatedAt: Date;
     shipping?: ShippingDetails;
+    
+    // Additional fields from joins
+    shopName?: string | null;
+    shopStatus?: string | null;
+    categoryName?: string | null;
+    reviewCount?: number;
   };
 
 export type ShippingDetails = {
