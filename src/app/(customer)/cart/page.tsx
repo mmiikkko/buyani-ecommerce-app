@@ -1,7 +1,7 @@
-"use server";
-
 import { getServerSession } from "@/server/session";
 import { unauthorized } from "next/navigation";
+import { getCartItems } from "@/lib/queries/cart";
+import { CartClient } from "./cart-client";
 
 export default async function Cart() {
   const session = await getServerSession();
@@ -9,9 +9,11 @@ export default async function Cart() {
 
   if (!user) unauthorized();
 
+  const cartItems = await getCartItems(user.id);
+
   return (
-    <main className="relative min-h-screen ">
-      <h1>Cart Page</h1>
+    <main className="relative min-h-screen">
+      <CartClient initialItems={cartItems} userId={user.id} />
     </main>
   );
 }

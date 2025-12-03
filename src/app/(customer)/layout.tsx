@@ -4,9 +4,9 @@ import { ReactNode } from "react";
 
 export default function CustomerLayout({ children }: { children: ReactNode }) {
   return (
-    <div>
+    <div className="min-h-screen bg-slate-50">
       <Navbar />
-      <main>{children}</main>
+      <main className="pt-20 pb-10">{children}</main>
       <Footer />
     </div>
   );
