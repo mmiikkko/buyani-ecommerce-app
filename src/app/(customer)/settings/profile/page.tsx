@@ -2,6 +2,7 @@ import { EmailForm } from "./email-form";
 import { LogoutEverywhereButton } from "./logout-everywhere-button";
 import { PasswordForm } from "./password-form";
 import { ProfileDetailsForm } from "./profile-details-form";
+import { AddressesForm } from "./addresses-form";
 import { getServerSession } from "@/server/session";
 import { unauthorized } from "next/navigation";
 
@@ -31,6 +32,9 @@ export default async function ProfilePage() {
             <PasswordForm />
             <LogoutEverywhereButton />
           </div>
+        </div>
+        <div className="mt-6">
+          <AddressesForm />
         </div>
       </div>
     </main>

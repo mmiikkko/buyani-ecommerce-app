@@ -25,15 +25,6 @@ type User = {
   email: string | null;
 };
 
-type Address = {
-  id: string;
-  street: string | null;
-  city: string | null;
-  province: string | null;
-  zipcode: string | null;
-  region: string | null;
-  remarks: string | null;
-};
 
 type CheckoutData = {
   address: {
@@ -63,40 +54,7 @@ export function CheckoutClient({ cartItems, userId, user }: CheckoutClientProps)
     address: null,
     paymentMethod: null,
   });
-  const [savedAddresses, setSavedAddresses] = useState<Address[]>([]);
   const [loading, setLoading] = useState(false);
-
-  useEffect(() => {
-    // Fetch saved addresses
-    fetch("/api/addresses")
-      .then((res) => res.json())
-      .then((data) => {
-        if (Array.isArray(data)) {
-          setSavedAddresses(data);
-          // If user has a saved address, pre-fill it
-          if (data.length > 0) {
-            const addr = data[0];
-            // Parse street to separate street and apartment if needed
-            const streetParts = addr.street?.split(", ") || [];
-            setCheckoutData((prev) => ({
-              ...prev,
-              address: {
-                fullName: `${user.first_name || ""} ${user.last_name || ""}`.trim() || user.name || "",
-                street: streetParts[0] || "",
-                apartment: streetParts.slice(1).join(", ") || "",
-                city: addr.city || "",
-                province: addr.province || "",
-                zipcode: addr.zipcode || "",
-                country: addr.region || "Philippines",
-                contactNumber: "",
-                deliveryNotes: addr.remarks || "",
-              },
-            }));
-          }
-        }
-      })
-      .catch((err) => console.error("Error fetching addresses:", err));
-  }, [user]);
 
   const subtotal = cartItems.reduce(
     (sum, item) => sum + (item.price || 0) * item.quantity,
@@ -106,23 +64,16 @@ export function CheckoutClient({ cartItems, userId, user }: CheckoutClientProps)
   const total = subtotal + shippingFee;
 
   const handleAddressSubmit = async (addressData: CheckoutData["address"]) => {
+    if (!addressData) return;
+
     setLoading(true);
     try {
-      // Save address to database
-      const response = await fetch("/api/addresses", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(addressData),
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to save address");
-      }
-
+      // The DeliveryStep component handles address selection/creation
+      // We just need to store the address data and proceed
       setCheckoutData((prev) => ({ ...prev, address: addressData }));
       setCurrentStep(2);
     } catch (error) {
-      console.error("Error saving address:", error);
+      console.error("Error processing address:", error);
     } finally {
       setLoading(false);
     }
