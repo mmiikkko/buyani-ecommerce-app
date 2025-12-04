@@ -29,12 +29,13 @@ export function AdminUsersTable({
 }: {
   users: AdminUser[];
   search: string;
-  filter: string; // "all", "customer", "seller", "admin"
+  filter: string; // "all", "active", "pending", "inactive", "suspended"
 }) {
   const filtered = (users ?? []).filter((u) => {
-    if (filter !== "all" && u.role.toLowerCase() !== filter.toLowerCase())
-      return false;
+    // Filter by status (already filtered in parent, but keeping for consistency)
+    if (filter !== "all" && u.status !== filter) return false;
 
+    // Filter by search
     if (search.trim() !== "") {
       const s = search.toLowerCase();
       if (

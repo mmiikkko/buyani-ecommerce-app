@@ -4,28 +4,75 @@ import { shop, user, products } from '@/server/schema/auth-schema';
 import { eq, and, sql } from 'drizzle-orm';
 import { v4 as uuidv4 } from 'uuid'; // For unique IDs
 
-// GET /api/shops - get all approved shops
+// GET /api/shops - get all shops (with optional status filter)
 export async function GET(req: NextRequest) {
   try {
-    // Get approved shops with seller information
-    const shopsList = await db
-      .select({
-        id: shop.id,
-        sellerId: shop.sellerId,
-        shopName: shop.shopName,
-        shopRating: shop.shopRating,
-        description: shop.description,
-        imageURL: shop.imageURL,
-        status: shop.status,
-        createdAt: shop.createdAt,
-        updatedAt: shop.updatedAt,
-        ownerName: user.name,
-        ownerFirstName: user.first_name,
-        ownerLastName: user.last_name,
-      })
-      .from(shop)
-      .leftJoin(user, eq(shop.sellerId, user.id))
-      .where(eq(shop.status, "approved"));
+    const { searchParams } = new URL(req.url);
+    const statusFilter = searchParams.get("status"); // "approved", "pending", or null for all
+
+    // Build query with optional status filter
+    let shopsList;
+    if (statusFilter && statusFilter !== "all") {
+      shopsList = await db
+        .select({
+          id: shop.id,
+          sellerId: shop.sellerId,
+          shopName: shop.shopName,
+          shopRating: shop.shopRating,
+          description: shop.description,
+          imageURL: shop.imageURL,
+          status: shop.status,
+          createdAt: shop.createdAt,
+          updatedAt: shop.updatedAt,
+          ownerName: user.name,
+          ownerFirstName: user.first_name,
+          ownerLastName: user.last_name,
+        })
+        .from(shop)
+        .leftJoin(user, eq(shop.sellerId, user.id))
+        .where(eq(shop.status, statusFilter));
+    } else {
+      // Return all shops (for status=all or no filter, but default to approved for backward compatibility)
+      if (statusFilter === "all") {
+        shopsList = await db
+          .select({
+            id: shop.id,
+            sellerId: shop.sellerId,
+            shopName: shop.shopName,
+            shopRating: shop.shopRating,
+            description: shop.description,
+            imageURL: shop.imageURL,
+            status: shop.status,
+            createdAt: shop.createdAt,
+            updatedAt: shop.updatedAt,
+            ownerName: user.name,
+            ownerFirstName: user.first_name,
+            ownerLastName: user.last_name,
+          })
+          .from(shop)
+          .leftJoin(user, eq(shop.sellerId, user.id));
+      } else {
+        // Default: return approved shops only (for backward compatibility)
+        shopsList = await db
+          .select({
+            id: shop.id,
+            sellerId: shop.sellerId,
+            shopName: shop.shopName,
+            shopRating: shop.shopRating,
+            description: shop.description,
+            imageURL: shop.imageURL,
+            status: shop.status,
+            createdAt: shop.createdAt,
+            updatedAt: shop.updatedAt,
+            ownerName: user.name,
+            ownerFirstName: user.first_name,
+            ownerLastName: user.last_name,
+          })
+          .from(shop)
+          .leftJoin(user, eq(shop.sellerId, user.id))
+          .where(eq(shop.status, "approved"));
+      }
+    }
 
     // Get product counts for each shop
     const shopsWithCounts = await Promise.all(

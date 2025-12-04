@@ -9,10 +9,32 @@ export function AdminShops() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch("/api/shops")
-      .then((res) => res.json())
-      .then(setShops)
-      .finally(() => setLoading(false));
+    const fetchShops = async () => {
+      try {
+        // Fetch all shops (both approved and pending)
+        const res = await fetch("/api/shops?status=all");
+        if (!res.ok) {
+          // Fallback: try without status filter
+          const fallbackRes = await fetch("/api/shops");
+          const fallbackData = await fallbackRes.json();
+          setShops(fallbackData || []);
+        } else {
+          const data = await res.json();
+          setShops(data || []);
+        }
+      } catch (error) {
+        console.error("Error fetching shops:", error);
+        // Fallback: try default endpoint
+        fetch("/api/shops")
+          .then((res) => res.json())
+          .then(setShops)
+          .catch(console.error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchShops();
   }, []);
 
   // Example splitting logic (adjust field names as per your schema!):
@@ -60,7 +82,23 @@ export function AdminShops() {
                   <Button
                     variant="destructive"
                     className="text-white cursor-pointer"
-                    // onClick={() => suspendShop(shop.id)}
+                    onClick={async () => {
+                      try {
+                        const res = await fetch(`/api/shops?id=${shop.id}`, {
+                          method: "PUT",
+                          headers: { "Content-Type": "application/json" },
+                          body: JSON.stringify({ status: "suspended" }),
+                        });
+                        if (res.ok) {
+                          // Refresh shops list
+                          const refreshRes = await fetch("/api/shops?status=all");
+                          const refreshData = await refreshRes.json();
+                          setShops(refreshData || []);
+                        }
+                      } catch (error) {
+                        console.error("Error suspending shop:", error);
+                      }
+                    }}
                   >
                     Suspend
                   </Button>
@@ -106,15 +144,45 @@ export function AdminShops() {
                 <div className="flex gap-2 mt-3">
                   <Button
                     variant="outline"
-                    className="text-gray-600 border-gray-300 cursor-pointer"
-                    // onClick={() => approveShop(shop.id)}
+                    className="text-gray-600 border-gray-300 cursor-pointer bg-green-50 hover:bg-green-100"
+                    onClick={async () => {
+                      try {
+                        const res = await fetch(`/api/shops?id=${shop.id}`, {
+                          method: "PUT",
+                          headers: { "Content-Type": "application/json" },
+                          body: JSON.stringify({ status: "approved" }),
+                        });
+                        if (res.ok) {
+                          // Refresh shops list
+                          const refreshRes = await fetch("/api/shops?status=all");
+                          const refreshData = await refreshRes.json();
+                          setShops(refreshData || []);
+                        }
+                      } catch (error) {
+                        console.error("Error approving shop:", error);
+                      }
+                    }}
                   >
                     Approve
                   </Button>
                   <Button
                     variant="destructive"
                     className="text-white cursor-pointer"
-                    // onClick={() => deleteShop(shop.id)}
+                    onClick={async () => {
+                      try {
+                        const res = await fetch(`/api/shops?id=${shop.id}`, {
+                          method: "DELETE",
+                        });
+                        if (res.ok) {
+                          // Refresh shops list
+                          const refreshRes = await fetch("/api/shops?status=all");
+                          const refreshData = await refreshRes.json();
+                          setShops(refreshData || []);
+                        }
+                      } catch (error) {
+                        console.error("Error deleting shop:", error);
+                      }
+                    }}
                   >
                     Delete
                   </Button>

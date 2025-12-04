@@ -62,7 +62,7 @@ export default function Navbar({ className }: NavbarProps) {
             </Link>
             {/* Mobile Become a Seller link */}
             <Link
-              href="/seller"
+              href="/become-seller"
               className="inline-flex items-center gap-1.5 rounded-full bg-emerald-600 px-3 py-1.5 text-xs font-medium text-white shadow-sm hover:bg-emerald-700 transition-colors sm:hidden"
             >
               <Handshake size={14} />
@@ -115,7 +115,7 @@ export default function Navbar({ className }: NavbarProps) {
           </div>
 
           <Link
-            href="/seller"
+            href="/become-seller"
             className="hidden items-center gap-1.5 rounded-full bg-emerald-600 px-3 py-1.5 text-xs font-medium text-white shadow-sm hover:bg-emerald-700 transition-colors sm:inline-flex"
           >
             <Handshake size={14} />

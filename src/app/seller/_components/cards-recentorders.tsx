@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import {
   Card,
   CardContent,
@@ -29,9 +30,9 @@ export function RecentOrders({ orders = [] }: { orders?: Order[] }) {
           <h1 className="font-semibold text-lg text-green-900">
             Recent Orders
           </h1>
-          <button className="text-green-700 text-sm hover:underline cursor-pointer">
+          <Link href="/seller/orders" className="text-green-700 text-sm hover:underline cursor-pointer">
             View All
-          </button>
+          </Link>
         </CardHeader>
 
         <CardContent className="space-y-3 pb-6">
