@@ -59,12 +59,14 @@ export async function GET(req: NextRequest) {
       const productImagesList = imagesByProduct.get(product.id) || [];
       return {
         ...product,
-        images: productImagesList.map(img => ({
-          id: img.id,
-          product_id: img.productId,
-          image_url: [img.url],
-          is_primary: false,
-        })),
+        images: productImagesList
+          .filter(img => img.url && img.url.trim() !== "") // Filter out null/empty URLs
+          .map(img => ({
+            id: img.id,
+            product_id: img.productId,
+            image_url: [img.url!], // Non-null assertion since we filtered
+            is_primary: false,
+          })),
         price: product.price ? Number(product.price) : undefined,
         stock: product.stock ?? 0,
       };
