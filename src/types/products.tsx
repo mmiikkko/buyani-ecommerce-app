@@ -35,14 +35,6 @@ export type ShippingDetails = {
 export type ProductImage = {
     id: string
     product_id: string
-    image_url: string[]
+    image_url: string
     is_primary: boolean
  } 
-
-export type Variant = {
-    id: string;
-    sku: string;
-    optionCombo: string[]; // like ["Large", "Red"]
-    price: number;
-    stock: number;
-  };

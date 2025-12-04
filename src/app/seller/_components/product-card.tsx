@@ -4,13 +4,22 @@ import Image from "next/image";
 import { Star, PenLine, Trash2 } from "lucide-react";
 import type { Product } from "@/types/products";
 
-export function ProductCard({ 
-  product, 
-  onDelete 
-}: { 
+export function ProductCard({
+  product,
+  onDelete
+}: {
   product: Product;
   onDelete?: (productId: string) => void;
 }) {
+  const firstImage = product.images?.[0]?.image_url ?? "";
+
+  // Use only valid absolute URLs or public relative paths; otherwise use placeholder
+  const safeSrc =
+    firstImage &&
+    (firstImage.startsWith("http") || firstImage.startsWith("/"))
+      ? firstImage
+      : "/placeholder.png";
+
   return (
     <div className="w-full max-w-sm shadow-md rounded-lg space-y-4 overflow-hidden bg-white">
 
@@ -18,7 +27,7 @@ export function ProductCard({
       <div className="w-full h-40 bg-gray-200 overflow-hidden">
         {product.images?.length ? (
           <Image
-            src={product.images[0].image_url[0]}
+            src={safeSrc}
             alt={product.productName}
             width={400}
             height={160}
@@ -40,21 +49,17 @@ export function ProductCard({
 
       {/* ACTION BUTTONS */}
       <div className="flex items-center justify-between px-5 pb-4 pt-3 border-t">
-
-        {/* Feature */}
         <button className="flex items-center gap-1 text-yellow-600 hover:text-yellow-700 text-sm font-medium border rounded-md px-3 py-2 cursor-pointer">
           <Star size={18} />
           Feature
         </button>
 
-        {/* Edit */}
         <button className="flex items-center gap-1 text-blue-600 hover:text-blue-700 text-sm font-medium border rounded-md px-3 py-2 cursor-pointer">
           <PenLine size={18} />
           Edit
         </button>
 
-        {/* Remove */}
-        <button 
+        <button
           onClick={() => onDelete?.(product.id)}
           className="flex items-center gap-1 text-red-600 hover:text-red-700 text-sm font-medium border rounded-md px-3 py-2 cursor-pointer"
         >

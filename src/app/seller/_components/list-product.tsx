@@ -19,10 +19,8 @@ export function AddProducts({ onAdd }: AddProductsProps) {
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
 
-  // IMAGES
-  const [imagePreviews, setImagePreviews] = useState<string[]>([
-    "/mnt/data/cd282b9a-854b-424e-8299-1e421d8c3b67.png",
-  ]);
+  // IMAGES - default to placeholder (put a placeholder image in /public/placeholder.png)
+  const [imagePreviews, setImagePreviews] = useState<string[]>(["/placeholder.png"]);
 
   // CATEGORY
   const [categoryId, setCategoryId] = useState<string>("");
@@ -75,18 +73,28 @@ export function AddProducts({ onAdd }: AddProductsProps) {
     const productId = uuidv4();
     const skuBase = (name || "PRD").replace(/\s+/g, "").toUpperCase().slice(0, 6);
 
+    // SANITIZE image previews before sending:
+    // - If preview is an absolute URL (http/https) or a public relative path (startsWith '/'),
+    //   keep it
+    // - If preview is a blob: URL (created via URL.createObjectURL), DO NOT save it to DB.
+    //   Replace with empty string or placeholder. (You should upload files to storage instead.)
+    const sanitizedImages = imagePreviews.map((img, idx) => ({
+      id: uuidv4(),
+      product_id: productId,
+      image_url:
+        img && (img.startsWith("http") || img.startsWith("/"))
+          ? img
+          : "", // blob: previews won't be persisted — replace with empty string
+      is_primary: idx === 0,
+    }));
+
     const product: Product = {
       id: productId,
       productName: name,
       description,
       price: Number(price),
       stock: Number(stock),
-      images: imagePreviews.map((img, idx) => ({
-        id: uuidv4(),
-        product_id: productId,
-        image_url: [img],
-        is_primary: idx === 0,
-      })),
+      images: sanitizedImages,
       categoryId,
       SKU: skuBase,
       shipping: {
@@ -109,7 +117,7 @@ export function AddProducts({ onAdd }: AddProductsProps) {
     // RESET
     setName("");
     setDescription("");
-    setImagePreviews(["/mnt/data/cd282b9a-854b-424e-8299-1e421d8c3b67.png"]);
+    setImagePreviews(["/placeholder.png"]);
     if (categories.length > 0) setCategoryId(categories[0].id);
     setPrice("");
     setStock("");
@@ -169,6 +177,9 @@ export function AddProducts({ onAdd }: AddProductsProps) {
                   </div>
                 ))}
               </div>
+              <p className="text-xs text-gray-500 mt-2">
+                Note: local previews (blob:) are shown for preview only — uploading images to a CDN/storage is required for permanent product images.
+              </p>
             </div>
           </TabsContent>
 

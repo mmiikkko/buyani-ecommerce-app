@@ -68,7 +68,7 @@ export async function GET() {
         SKU: product.SKU || "",
         description: product.description || null,
         price: product.price ? Number(product.price) : undefined,
-        rating: product.rating || null,
+        rating: product.rating ?? null,
         isAvailable: product.isAvailable,
         status: product.status || "Available",
         stock: productInventoryData?.quantityInStock || 0,
@@ -76,7 +76,8 @@ export async function GET() {
         images: productImagesList.map((img) => ({
           id: img.id,
           product_id: img.productId,
-          image_url: [img.url],
+          // FIX: single string
+          image_url: img.url,
           is_primary: false,
         })),
         createdAt: product.createdAt,
@@ -140,16 +141,20 @@ export async function POST(req: NextRequest) {
       productName: body.productName,
       shopId: shopId,
       categoryId: body.categoryId,
-      price: String(body.price), // FIXED
+      price: String(body.price),
       SKU: body.SKU || undefined,
       description: body.description || "",
-      rating: body.rating || "",
+      rating:
+        body.rating === "" ||
+        body.rating === undefined ||
+        body.rating === null
+          ? null
+          : Number(body.rating),
       isAvailable: body.isAvailable ?? true,
       status: body.status || "Available",
       createdAt: new Date(),
       updatedAt: new Date(),
     };
-    
 
     await db.insert(products).values(newProduct);
 
@@ -164,12 +169,26 @@ export async function POST(req: NextRequest) {
     }
 
     // Create images if provided
+    // Expecting body.images to be an array of { image_url: string }
     if (body.images && Array.isArray(body.images)) {
-      const imageRows = body.images.map((img: { image_url: string[] }) => ({
-        id: uuidv4(),
-        productId: productId,
-        url: img.image_url[0] || "",
-      }));
+      // log to help debug invalid values if needed
+      // console.log("IMAGE PAYLOAD", body.images);
+
+      const imageRows = body.images.map((img: { image_url: string }) => {
+        // Ensure we only insert safe image strings (absolute http|https or relative starting with '/')
+        const candidate = typeof img.image_url === "string" ? img.image_url : "";
+        const safeUrl =
+          candidate && (candidate.startsWith("http") || candidate.startsWith("/"))
+            ? candidate
+            : ""; // don't insert blob: or first char
+
+        return {
+          id: uuidv4(),
+          productId: productId,
+          url: safeUrl,
+        };
+      });
+
       if (imageRows.length > 0) {
         await db.insert(productImages).values(imageRows);
       }
@@ -184,4 +203,3 @@ export async function POST(req: NextRequest) {
     );
   }
 }
-
