@@ -1,13 +1,50 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/server/drizzle";
-import { categories } from "@/server/schema/auth-schema";
-import { eq } from "drizzle-orm";
+import { categories, products, shop } from "@/server/schema/auth-schema";
+import { eq, and, sql } from "drizzle-orm";
 import { v4 as uuidv4 } from "uuid";
 
 // GET /api/categories
+// Optional query param: ?withCounts=true to include product counts
 export async function GET(req: NextRequest) {
-  const allCategories = await db.select().from(categories);
-  return NextResponse.json(allCategories);
+  try {
+    const { searchParams } = new URL(req.url);
+    const withCounts = searchParams.get("withCounts") === "true";
+
+    const allCategories = await db.select().from(categories);
+
+    if (withCounts) {
+      // Get product counts for each category
+      const categoriesWithCounts = await Promise.all(
+        allCategories.map(async (category) => {
+          const productCount = await db
+            .select({ count: sql<number>`count(*)` })
+            .from(products)
+            .leftJoin(shop, eq(products.shopId, shop.id))
+            .where(and(
+              eq(products.categoryId, category.id),
+              eq(products.isAvailable, true),
+              eq(shop.status, "approved")
+            ));
+
+          return {
+            ...category,
+            productCount: Number(productCount[0]?.count || 0),
+          };
+        })
+      );
+
+      return NextResponse.json(categoriesWithCounts);
+    }
+
+    return NextResponse.json(allCategories);
+  } catch (error) {
+    console.error("Error fetching categories:", error);
+    return NextResponse.json(
+      { error: "Failed to fetch categories" },
+      { status: 500 }
+    );
+  }
 }
 
 // POST /api/categories

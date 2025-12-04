@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/server/drizzle';
 import { shop, user, products } from '@/server/schema/auth-schema';
 import { eq, and, sql } from 'drizzle-orm';
+import { getServerSession } from '@/server/session';
 import { v4 as uuidv4 } from 'uuid'; // For unique IDs
 
 // GET /api/shops - get all shops (with optional status filter) or single shop by id
@@ -192,19 +193,73 @@ export async function POST(req: NextRequest) {
 
 // PUT /api/shops?id=xxx - update a shop
 export async function PUT(req: NextRequest) {
-  const { searchParams } = new URL(req.url);
-  const shopId = searchParams.get('id');
-  if (!shopId) return NextResponse.json({ error: 'Missing id' }, { status: 400 });
-  const updates = await req.json();
-  await db.update(shop).set(updates).where(eq(shop.id, shopId));
-  return NextResponse.json({ success: true });
+  try {
+    const session = await getServerSession();
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const { searchParams } = new URL(req.url);
+    const shopId = searchParams.get('id');
+    if (!shopId) {
+      return NextResponse.json({ error: 'Missing id' }, { status: 400 });
+    }
+
+    // Verify shop belongs to the seller
+    const shopData = await db
+      .select()
+      .from(shop)
+      .where(and(eq(shop.id, shopId), eq(shop.sellerId, session.user.id)))
+      .limit(1);
+
+    if (shopData.length === 0) {
+      return NextResponse.json({ error: "Shop not found or unauthorized" }, { status: 404 });
+    }
+
+    const updates = await req.json();
+    await db.update(shop).set(updates).where(eq(shop.id, shopId));
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error("Error updating shop:", error);
+    return NextResponse.json(
+      { error: "Failed to update shop" },
+      { status: 500 }
+    );
+  }
 }
 
 // DELETE /api/shops?id=xxx - delete a shop
 export async function DELETE(req: NextRequest) {
-  const { searchParams } = new URL(req.url);
-  const shopId = searchParams.get('id');
-  if (!shopId) return NextResponse.json({ error: 'Missing id' }, { status: 400 });
-  await db.delete(shop).where(eq(shop.id, shopId));
-  return NextResponse.json({ success: true });
+  try {
+    const session = await getServerSession();
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const { searchParams } = new URL(req.url);
+    const shopId = searchParams.get('id');
+    if (!shopId) {
+      return NextResponse.json({ error: 'Missing id' }, { status: 400 });
+    }
+
+    // Verify shop belongs to the seller
+    const shopData = await db
+      .select()
+      .from(shop)
+      .where(and(eq(shop.id, shopId), eq(shop.sellerId, session.user.id)))
+      .limit(1);
+
+    if (shopData.length === 0) {
+      return NextResponse.json({ error: "Shop not found or unauthorized" }, { status: 404 });
+    }
+
+    await db.delete(shop).where(eq(shop.id, shopId));
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error("Error deleting shop:", error);
+    return NextResponse.json(
+      { error: "Failed to delete shop" },
+      { status: 500 }
+    );
+  }
 }

@@ -5,9 +5,24 @@ import { eq, and, inArray } from 'drizzle-orm';
 import { v4 as uuidv4 } from 'uuid';
 
 // GET /api/products
+// Optional query param: ?categoryId=xxx to filter by category
 // Note: This returns ALL products. For seller-specific products, use /api/sellers/products
 export async function GET(req: NextRequest) {
   try {
+    const { searchParams } = new URL(req.url);
+    const categoryId = searchParams.get("categoryId");
+
+    // Build where conditions
+    const whereConditions = [
+      eq(products.isAvailable, true),
+      eq(shop.status, "approved")
+    ];
+
+    // Add category filter if provided
+    if (categoryId) {
+      whereConditions.push(eq(products.categoryId, categoryId));
+    }
+
     // Get all available products
     const productList = await db
       .select({
@@ -31,10 +46,7 @@ export async function GET(req: NextRequest) {
       .from(products)
       .leftJoin(productInventory, eq(productInventory.productId, products.id))
       .leftJoin(shop, eq(products.shopId, shop.id))
-      .where(and(
-        eq(products.isAvailable, true),
-        eq(shop.status, "approved")
-      ));
+      .where(and(...whereConditions));
 
     // Get all images for products
     const productIds = productList.map(p => p.id);
