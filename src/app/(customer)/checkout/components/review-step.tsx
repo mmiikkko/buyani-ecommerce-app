@@ -227,9 +227,17 @@ export function ReviewStep({
           type="button"
           onClick={handlePlaceOrder}
           disabled={isProcessing || !address || !paymentMethod}
-          className="flex-1 bg-orange-500 hover:bg-orange-600"
+          className={`flex-1 ${
+            paymentMethod === "cod"
+              ? "bg-emerald-600 hover:bg-emerald-700"
+              : "bg-orange-500 hover:bg-orange-600"
+          }`}
         >
-          {isProcessing ? "Processing..." : "Proceed to Payment"}
+          {isProcessing
+            ? "Processing..."
+            : paymentMethod === "cod"
+            ? "Place Order (Cash on Delivery)"
+            : "Proceed to Payment"}
         </Button>
       </div>
     </div>

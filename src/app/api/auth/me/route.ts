@@ -37,9 +37,12 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({
       id: currentUser.id,
       name: currentUser.name,
+      firstName: currentUser.first_name,
+      lastName: currentUser.last_name,
       email: currentUser.email,
       role: currentUser.role,
       emailVerified: currentUser.emailVerified,
+      image: currentUser.image,
       hasShop: userShop.length > 0,
       shop: userShop.length > 0 ? {
         id: userShop[0].id,

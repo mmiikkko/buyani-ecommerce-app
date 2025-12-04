@@ -108,7 +108,7 @@ export function AppSidebar() {
               >
                 <DropdownMenuItem asChild>
                   <Link
-                    href={"/seller/account_settings"}
+                    href={"/admin/account_settings"}
                     className="flex items-center gap-2 hover:text-green-500">
                         Account
                   </Link>
