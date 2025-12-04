@@ -4,11 +4,69 @@ import { shop, user, products } from '@/server/schema/auth-schema';
 import { eq, and, sql } from 'drizzle-orm';
 import { v4 as uuidv4 } from 'uuid'; // For unique IDs
 
-// GET /api/shops - get all shops (with optional status filter)
+// GET /api/shops - get all shops (with optional status filter) or single shop by id
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
+    const shopId = searchParams.get("id");
     const statusFilter = searchParams.get("status"); // "approved", "pending", or null for all
+
+    // If shopId is provided, return single shop
+    if (shopId) {
+      const shopItem = await db
+        .select({
+          id: shop.id,
+          sellerId: shop.sellerId,
+          shopName: shop.shopName,
+          shopRating: shop.shopRating,
+          description: shop.description,
+          imageURL: shop.imageURL,
+          status: shop.status,
+          createdAt: shop.createdAt,
+          updatedAt: shop.updatedAt,
+          ownerName: user.name,
+          ownerFirstName: user.first_name,
+          ownerLastName: user.last_name,
+        })
+        .from(shop)
+        .leftJoin(user, eq(shop.sellerId, user.id))
+        .where(eq(shop.id, shopId))
+        .limit(1);
+
+      if (!shopItem.length) {
+        return NextResponse.json(
+          { error: "Shop not found" },
+          { status: 404 }
+        );
+      }
+
+      const shopData = shopItem[0];
+      
+      // Get product count
+      const productCount = await db
+        .select({ count: sql<number>`count(*)` })
+        .from(products)
+        .where(and(
+          eq(products.shopId, shopData.id),
+          eq(products.isAvailable, true)
+        ));
+
+      return NextResponse.json({
+        id: shopData.id,
+        seller_id: shopData.sellerId,
+        shop_name: shopData.shopName,
+        shop_rating: shopData.shopRating,
+        description: shopData.description,
+        image: shopData.imageURL,
+        status: shopData.status,
+        created_at: shopData.createdAt,
+        updated_at: shopData.updatedAt,
+        owner_name: shopData.ownerName || 
+          `${shopData.ownerFirstName || ""} ${shopData.ownerLastName || ""}`.trim() ||
+          "Unknown",
+        products: Number(productCount[0]?.count || 0),
+      });
+    }
 
     // Build query with optional status filter
     let shopsList;

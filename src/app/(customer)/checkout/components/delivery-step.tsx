@@ -30,7 +30,6 @@ type SavedAddress = {
   region: string | null;
   zipcode: string | null;
   remarks: string | null;
-  isDefault: boolean;
 };
 
 type User = {
@@ -70,12 +69,8 @@ export function DeliveryStep({ initialData, user, onSubmit, loading }: DeliveryS
       .then((data) => {
         if (Array.isArray(data)) {
           setSavedAddresses(data);
-          // If there's a default address, select it
-          const defaultAddress = data.find((addr: SavedAddress) => addr.isDefault);
-          if (defaultAddress) {
-            handleSelectAddress(defaultAddress.id);
-          } else if (data.length > 0) {
-            // If no default but addresses exist, select first one
+          // If addresses exist, select the first one
+          if (data.length > 0) {
             handleSelectAddress(data[0].id);
           }
         }
@@ -134,7 +129,6 @@ export function DeliveryStep({ initialData, user, onSubmit, loading }: DeliveryS
           region: formData.country,
           zipcode: formData.zipcode,
           remarks: formData.deliveryNotes || null,
-          isDefault: savedAddresses.length === 0, // First address is default
         };
 
         const response = await fetch("/api/addresses", {
@@ -196,12 +190,6 @@ export function DeliveryStep({ initialData, user, onSubmit, loading }: DeliveryS
                     <div className="flex items-center gap-2">
                       <MapPin className="h-4 w-4 text-emerald-600" />
                       <span className="font-semibold">{address.receipientName}</span>
-                      {address.isDefault && (
-                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800">
-                          <Check className="h-3 w-3 mr-1" />
-                          Default
-                        </span>
-                      )}
                     </div>
                     <p className="text-sm text-muted-foreground">
                       {address.street}

@@ -38,7 +38,6 @@ type Address = {
   region: string | null;
   zipcode: string | null;
   remarks: string | null;
-  isDefault: boolean;
   addedAt: Date | null;
 };
 
@@ -51,7 +50,6 @@ type AddressFormData = {
   region: string;
   zipcode: string;
   remarks: string;
-  isDefault: boolean;
 };
 
 export function AddressesForm() {
@@ -69,7 +67,6 @@ export function AddressesForm() {
     region: "",
     zipcode: "",
     remarks: "",
-    isDefault: false,
   });
 
   useEffect(() => {
@@ -103,7 +100,6 @@ export function AddressesForm() {
         region: address.region || "",
         zipcode: address.zipcode || "",
         remarks: address.remarks || "",
-        isDefault: address.isDefault || false,
       });
     } else {
       setEditingAddress(null);
@@ -116,7 +112,6 @@ export function AddressesForm() {
         region: "",
         zipcode: "",
         remarks: "",
-        isDefault: addresses.length === 0, // First address is default
       });
     }
     setIsDialogOpen(true);
@@ -134,7 +129,6 @@ export function AddressesForm() {
       region: "",
       zipcode: "",
       remarks: "",
-      isDefault: false,
     });
   };
 
@@ -159,7 +153,10 @@ export function AddressesForm() {
       });
 
       if (!response.ok) {
-        throw new Error("Failed to save address");
+        const errorData = await response.json().catch(() => ({}));
+        const errorMessage = errorData.error || "Failed to save address";
+        console.error("API Error:", errorData);
+        throw new Error(errorMessage);
       }
 
       toast.success(editingAddress ? "Address updated" : "Address added");
@@ -167,7 +164,8 @@ export function AddressesForm() {
       fetchAddresses();
     } catch (error) {
       console.error("Error saving address:", error);
-      toast.error("Failed to save address");
+      const errorMessage = error instanceof Error ? error.message : "Failed to save address";
+      toast.error(errorMessage);
     }
   };
 
@@ -192,28 +190,6 @@ export function AddressesForm() {
     }
   };
 
-  const handleSetDefault = async (addressId: string) => {
-    try {
-      const address = addresses.find((a) => a.id === addressId);
-      if (!address) return;
-
-      const response = await fetch(`/api/addresses?id=${addressId}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...address, isDefault: true }),
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to set default address");
-      }
-
-      toast.success("Default address updated");
-      fetchAddresses();
-    } catch (error) {
-      console.error("Error setting default address:", error);
-      toast.error("Failed to set default address");
-    }
-  };
 
   if (loading) {
     return (
@@ -374,21 +350,6 @@ export function AddressesForm() {
                   />
                 </div>
 
-                <div className="flex items-center space-x-2">
-                  <input
-                    type="checkbox"
-                    id="isDefault"
-                    checked={formData.isDefault}
-                    onChange={(e) =>
-                      setFormData({ ...formData, isDefault: e.target.checked })
-                    }
-                    className="h-4 w-4 rounded border-gray-300"
-                  />
-                  <Label htmlFor="isDefault" className="cursor-pointer">
-                    Set as default address
-                  </Label>
-                </div>
-
                 <div className="flex justify-end gap-2 pt-4">
                   <Button
                     type="button"
@@ -423,17 +384,9 @@ export function AddressesForm() {
             {addresses.map((address) => (
               <div
                 key={address.id}
-                className="border rounded-lg p-4 space-y-2 relative"
+                className="border rounded-lg p-4 space-y-2"
               >
-                {address.isDefault && (
-                  <div className="absolute top-4 right-4">
-                    <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800">
-                      <Check className="h-3 w-3 mr-1" />
-                      Default
-                    </span>
-                  </div>
-                )}
-                <div className="pr-20">
+                <div>
                   <h3 className="font-semibold">{address.receipientName}</h3>
                   <p className="text-sm text-muted-foreground">
                     {address.street}
@@ -450,15 +403,6 @@ export function AddressesForm() {
                   )}
                 </div>
                 <div className="flex gap-2 pt-2">
-                  {!address.isDefault && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleSetDefault(address.id)}
-                    >
-                      Set as Default
-                    </Button>
-                  )}
                   <Button
                     variant="outline"
                     size="sm"

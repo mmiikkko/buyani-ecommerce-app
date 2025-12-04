@@ -18,11 +18,9 @@ export async function GET() {
       .from(addresses)
       .where(eq(addresses.userId, session.user.id));
     
-    // Sort: default addresses first, then by added date
-    userAddresses.sort((a, b) => {
-      if (a.isDefault && !b.isDefault) return -1;
-      if (!a.isDefault && b.isDefault) return 1;
-      return new Date(a.addedAt || 0).getTime() - new Date(b.addedAt || 0).getTime();
+    // Sort by added date (newest first)
+    userAddresses.sort((a: any, b: any) => {
+      return new Date(b.addedAt || 0).getTime() - new Date(a.addedAt || 0).getTime();
     });
 
     return NextResponse.json(userAddresses);
@@ -53,7 +51,6 @@ export async function POST(req: NextRequest) {
       region,
       zipcode,
       remarks,
-      isDefault,
     } = body;
 
     // Validate required fields
@@ -62,14 +59,6 @@ export async function POST(req: NextRequest) {
         { error: "Missing required fields" },
         { status: 400 }
       );
-    }
-
-    // If this is set as default, unset other defaults
-    if (isDefault) {
-      await db
-        .update(addresses)
-        .set({ isDefault: false })
-        .where(eq(addresses.userId, session.user.id));
     }
 
     const newAddress = {
@@ -83,16 +72,16 @@ export async function POST(req: NextRequest) {
       region: region || null,
       zipcode,
       remarks: remarks || null,
-      isDefault: isDefault || false,
     };
 
     await db.insert(addresses).values(newAddress);
 
     return NextResponse.json({ success: true, address: newAddress });
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error creating address:", error);
+    const errorMessage = error?.message || "Failed to create address";
     return NextResponse.json(
-      { error: "Failed to create address" },
+      { error: errorMessage, details: error?.code || "UNKNOWN_ERROR" },
       { status: 500 }
     );
   }
@@ -122,7 +111,6 @@ export async function PUT(req: NextRequest) {
       region,
       zipcode,
       remarks,
-      isDefault,
     } = body;
 
     // Verify address belongs to user
@@ -136,14 +124,6 @@ export async function PUT(req: NextRequest) {
       return NextResponse.json({ error: "Address not found" }, { status: 404 });
     }
 
-    // If this is set as default, unset other defaults
-    if (isDefault) {
-      await db
-        .update(addresses)
-        .set({ isDefault: false })
-        .where(and(eq(addresses.userId, session.user.id), ne(addresses.id, addressId)));
-    }
-
     const updates: any = {};
     if (receipientName !== undefined) updates.receipientName = receipientName;
     if (street !== undefined) updates.street = street;
@@ -153,7 +133,6 @@ export async function PUT(req: NextRequest) {
     if (region !== undefined) updates.region = region;
     if (zipcode !== undefined) updates.zipcode = zipcode;
     if (remarks !== undefined) updates.remarks = remarks;
-    if (isDefault !== undefined) updates.isDefault = isDefault;
 
     await db
       .update(addresses)
@@ -161,10 +140,11 @@ export async function PUT(req: NextRequest) {
       .where(eq(addresses.id, addressId));
 
     return NextResponse.json({ success: true });
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error updating address:", error);
+    const errorMessage = error?.message || "Failed to update address";
     return NextResponse.json(
-      { error: "Failed to update address" },
+      { error: errorMessage, details: error?.code || "UNKNOWN_ERROR" },
       { status: 500 }
     );
   }
