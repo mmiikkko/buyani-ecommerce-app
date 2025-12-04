@@ -10,7 +10,44 @@ interface ProductCardProps {
 }
 
 export function ProductCard({ product }: ProductCardProps) {
-  const primaryImage = product.images?.[0]?.image_url?.[0] ?? "";
+  // Safely extract image URL with multiple fallbacks
+  const getPrimaryImage = (): string | null => {
+    try {
+      const images = product.images;
+      if (!images || images.length === 0) return null;
+      
+      const firstImage = images[0];
+      if (!firstImage || !firstImage.image_url) return null;
+      
+      const imageUrlArray = firstImage.image_url;
+      if (!Array.isArray(imageUrlArray) || imageUrlArray.length === 0) return null;
+      
+      const url = imageUrlArray[0];
+      if (!url || typeof url !== "string") return null;
+      
+      const trimmed = url.trim();
+      if (trimmed === "" || trimmed === "null" || trimmed === "undefined") return null;
+      
+      // Try to validate URL format - Next.js Image is strict about this
+      // Allow: http://, https://, / (relative), data: (data URI)
+      if (
+        trimmed.startsWith("http://") ||
+        trimmed.startsWith("https://") ||
+        trimmed.startsWith("/") ||
+        trimmed.startsWith("data:")
+      ) {
+        return trimmed;
+      }
+      
+      // If it doesn't match known patterns, it might be invalid
+      return null;
+    } catch (error) {
+      console.error("Error extracting image URL:", error);
+      return null;
+    }
+  };
+  
+  const primaryImage = getPrimaryImage();
   const rating = product.rating ? parseFloat(product.rating) : 0;
   const price = product.price ?? 0;
 
@@ -27,6 +64,11 @@ export function ProductCard({ product }: ProductCardProps) {
             alt={product.productName}
             fill
             className="object-cover group-hover:scale-105 transition-transform duration-200"
+            onError={(e) => {
+              // Fallback if image fails to load
+              const target = e.target as HTMLImageElement;
+              target.style.display = "none";
+            }}
           />
         ) : (
           <div className="flex h-full w-full items-center justify-center text-sm text-slate-400">
