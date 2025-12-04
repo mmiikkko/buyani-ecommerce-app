@@ -87,6 +87,7 @@ export const addresses = mysqlTable("addresses", {
    .notNull()
    .references(() => user.id, { onDelete: "cascade" }),
 
+  receipientName: varchar("receipient_name", { length: 255 }).notNull(),
   street: varchar("street", { length: 255 }),
   baranggay: varchar("baranggay", { length: 255 }),
   city: varchar("city", { length: 255 }),
@@ -289,14 +290,12 @@ export const carts = mysqlTable("carts", {
   createdAt: timestamp("created_at", { fsp: 3 }).defaultNow(),
   modifiedAt: timestamp("modified_at", { fsp: 3 })
     .$onUpdate(() => new Date()),
-  
-    
 },
   (table) => ({
     buyerUnique: unique("buyer_unique").on(table.buyerId),
   }));
   
-  
+
   export const cartItems = mysqlTable(
     "cart_items",
     {
@@ -325,8 +324,6 @@ export const carts = mysqlTable("carts", {
     })
   );
   
-  
-
 export const reviews = mysqlTable("reviews", {
   id: varchar("id", { length: 36 }).primaryKey(),
 
