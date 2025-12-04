@@ -37,35 +37,37 @@ export async function GET() {
 
     // LAST 30 DAYS SALES (GROUP BY DATE)
     const last30Days = await db.execute(sql`
-      SELECT 
-        DATE(o.created_at) AS day,
-        SUM(oi.quantity) AS total
-      FROM orders o
-      JOIN order_items oi ON o.id = oi.order_id
-      WHERE o.shop_id = ${shopId}
-        AND o.created_at >= NOW() - INTERVAL 30 DAY
-      GROUP BY day
-      ORDER BY day ASC
-    `);
+        SELECT
+          DATE(o.created_at) AS day,
+          SUM(oi.quantity) AS total
+        FROM orders o
+        JOIN order_items oi ON o.id = oi.order_id
+        WHERE o.shop_id = ${shopId}
+          AND o.created_at >= CURDATE() - INTERVAL 30 DAY
+        GROUP BY DATE(o.created_at)
+        ORDER BY day ASC
+      `);
+      
 
     // MOST BOUGHT ITEM (LAST 30 DAYS)
     const topItem = await db.execute(sql`
-      SELECT 
-        p.productName,
-        SUM(oi.quantity) AS totalSold
-      FROM order_items oi
-      JOIN orders o ON oi.order_id = o.id
-      JOIN products p ON oi.product_id = p.id
-      WHERE o.shop_id = ${shopId}
-        AND o.created_at >= NOW() - INTERVAL 30 DAY
-      GROUP BY p.id
-      ORDER BY totalSold DESC
-      LIMIT 1
-    `);
+        SELECT
+          p.productName,
+          SUM(oi.quantity) AS totalSold
+        FROM order_items oi
+        JOIN orders o ON oi.order_id = o.id
+        JOIN products p ON oi.product_id = p.id
+        WHERE o.shop_id = ${shopId}
+          AND o.created_at >= CURDATE() - INTERVAL 30 DAY
+        GROUP BY p.id, p.productName
+        ORDER BY totalSold DESC
+        LIMIT 1
+      `);
+      
 
     return NextResponse.json({
-      chart: last30Days.rows,
-      topItem: topItem.rows?.[0] ?? null,
+      //chart: last30Days.rows,
+      //topItem: topItem.rows?.[0] ?? null,
     });
 
   } catch (error) {
