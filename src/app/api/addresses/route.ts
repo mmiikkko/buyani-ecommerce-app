@@ -1,30 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/server/drizzle";
 import { addresses } from "@/server/schema/auth-schema";
-import { eq } from "drizzle-orm";
+import { eq, and, ne, sql } from "drizzle-orm";
 import { getServerSession } from "@/server/session";
 import { v4 as uuidv4 } from "uuid";
-import { sql } from "drizzle-orm";
-
-// Helper function to get or create customer_profile
-async function getOrCreateCustomerProfile(userId: string): Promise<string> {
-  // First, try to get existing customer_profile
-  const existingProfile = await db.execute(
-    sql`SELECT id FROM customer_profile WHERE user_id = ${userId} LIMIT 1`
-  );
-
-  if (existingProfile && Array.isArray(existingProfile) && existingProfile.length > 0) {
-    return (existingProfile[0] as any).id;
-  }
-
-  // Create new customer_profile if it doesn't exist
-  const profileId = uuidv4();
-  await db.execute(
-    sql`INSERT INTO customer_profile (id, user_id, added_at) VALUES (${profileId}, ${userId}, NOW())`
-  );
-
-  return profileId;
-}
 
 // GET /api/addresses - Get addresses for the current user
 export async function GET() {
@@ -34,12 +13,17 @@ export async function GET() {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const customerProfileId = await getOrCreateCustomerProfile(session.user.id);
-
     const userAddresses = await db
       .select()
       .from(addresses)
-      .where(eq(addresses.customerProfileId, customerProfileId));
+      .where(eq(addresses.userId, session.user.id));
+    
+    // Sort: default addresses first, then by added date
+    userAddresses.sort((a, b) => {
+      if (a.isDefault && !b.isDefault) return -1;
+      if (!a.isDefault && b.isDefault) return 1;
+      return new Date(a.addedAt || 0).getTime() - new Date(b.addedAt || 0).getTime();
+    });
 
     return NextResponse.json(userAddresses);
   } catch (error) {
@@ -61,41 +45,45 @@ export async function POST(req: NextRequest) {
 
     const body = await req.json();
     const {
-      fullName,
+      receipientName,
       street,
-      apartment,
+      baranggay,
       city,
       province,
+      region,
       zipcode,
-      country,
-      contactNumber,
-      deliveryNotes,
+      remarks,
+      isDefault,
     } = body;
 
     // Validate required fields
-    if (!fullName || !street || !city || !province || !zipcode || !country || !contactNumber) {
+    if (!receipientName || !street || !city || !province || !zipcode) {
       return NextResponse.json(
         { error: "Missing required fields" },
         { status: 400 }
       );
     }
 
-    // Get or create customer_profile
-    const customerProfileId = await getOrCreateCustomerProfile(session.user.id);
-
-    // Combine street and apartment if apartment exists
-    const fullStreet = apartment ? `${street}, ${apartment}` : street;
+    // If this is set as default, unset other defaults
+    if (isDefault) {
+      await db
+        .update(addresses)
+        .set({ isDefault: false })
+        .where(eq(addresses.userId, session.user.id));
+    }
 
     const newAddress = {
       id: uuidv4(),
-      customerProfileId: customerProfileId,
-      street: fullStreet,
+      userId: session.user.id,
+      receipientName,
+      street,
+      baranggay: baranggay || null,
       city,
       province,
+      region: region || null,
       zipcode,
-      region: country, // Using region field for country
-      remarks: deliveryNotes || null,
-      baranggay: null, // Can be added later if needed
+      remarks: remarks || null,
+      isDefault: isDefault || false,
     };
 
     await db.insert(addresses).values(newAddress);
@@ -126,42 +114,46 @@ export async function PUT(req: NextRequest) {
 
     const body = await req.json();
     const {
-      fullName,
+      receipientName,
       street,
-      apartment,
+      baranggay,
       city,
       province,
+      region,
       zipcode,
-      country,
-      contactNumber,
-      deliveryNotes,
+      remarks,
+      isDefault,
     } = body;
-
-    // Get customer_profile for user
-    const customerProfileId = await getOrCreateCustomerProfile(session.user.id);
 
     // Verify address belongs to user
     const existingAddress = await db
       .select()
       .from(addresses)
-      .where(eq(addresses.id, addressId))
+      .where(and(eq(addresses.id, addressId), eq(addresses.userId, session.user.id)))
       .limit(1);
 
-    if (!existingAddress.length || existingAddress[0].customerProfileId !== customerProfileId) {
+    if (!existingAddress.length) {
       return NextResponse.json({ error: "Address not found" }, { status: 404 });
     }
 
-    // Combine street and apartment if apartment exists
-    const fullStreet = apartment ? `${street}, ${apartment}` : street;
+    // If this is set as default, unset other defaults
+    if (isDefault) {
+      await db
+        .update(addresses)
+        .set({ isDefault: false })
+        .where(and(eq(addresses.userId, session.user.id), ne(addresses.id, addressId)));
+    }
 
-    const updates = {
-      street: fullStreet,
-      city,
-      province,
-      zipcode,
-      region: country,
-      remarks: deliveryNotes || null,
-    };
+    const updates: any = {};
+    if (receipientName !== undefined) updates.receipientName = receipientName;
+    if (street !== undefined) updates.street = street;
+    if (baranggay !== undefined) updates.baranggay = baranggay;
+    if (city !== undefined) updates.city = city;
+    if (province !== undefined) updates.province = province;
+    if (region !== undefined) updates.region = region;
+    if (zipcode !== undefined) updates.zipcode = zipcode;
+    if (remarks !== undefined) updates.remarks = remarks;
+    if (isDefault !== undefined) updates.isDefault = isDefault;
 
     await db
       .update(addresses)
@@ -173,6 +165,45 @@ export async function PUT(req: NextRequest) {
     console.error("Error updating address:", error);
     return NextResponse.json(
       { error: "Failed to update address" },
+      { status: 500 }
+    );
+  }
+}
+
+// DELETE /api/addresses?id=xxx - Delete an address
+export async function DELETE(req: NextRequest) {
+  try {
+    const session = await getServerSession();
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const { searchParams } = new URL(req.url);
+    const addressId = searchParams.get("id");
+    if (!addressId) {
+      return NextResponse.json({ error: "Missing address ID" }, { status: 400 });
+    }
+
+    // Verify address belongs to user
+    const existingAddress = await db
+      .select()
+      .from(addresses)
+      .where(and(eq(addresses.id, addressId), eq(addresses.userId, session.user.id)))
+      .limit(1);
+
+    if (!existingAddress.length) {
+      return NextResponse.json({ error: "Address not found" }, { status: 404 });
+    }
+
+    await db
+      .delete(addresses)
+      .where(eq(addresses.id, addressId));
+
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error("Error deleting address:", error);
+    return NextResponse.json(
+      { error: "Failed to delete address" },
       { status: 500 }
     );
   }

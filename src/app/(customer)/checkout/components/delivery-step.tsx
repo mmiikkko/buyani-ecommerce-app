@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Shield, ArrowRight } from "lucide-react";
+import { Shield, ArrowRight, MapPin, Check, Plus } from "lucide-react";
 
 type AddressData = {
   fullName: string;
@@ -18,6 +18,19 @@ type AddressData = {
   country: string;
   contactNumber: string;
   deliveryNotes: string;
+};
+
+type SavedAddress = {
+  id: string;
+  receipientName: string;
+  street: string | null;
+  baranggay: string | null;
+  city: string | null;
+  province: string | null;
+  region: string | null;
+  zipcode: string | null;
+  remarks: string | null;
+  isDefault: boolean;
 };
 
 type User = {
@@ -36,6 +49,8 @@ interface DeliveryStepProps {
 }
 
 export function DeliveryStep({ initialData, user, onSubmit, loading }: DeliveryStepProps) {
+  const [savedAddresses, setSavedAddresses] = useState<SavedAddress[]>([]);
+  const [selectedAddressId, setSelectedAddressId] = useState<string | "new">("new");
   const [formData, setFormData] = useState<AddressData>({
     fullName: initialData?.fullName || `${user.first_name || ""} ${user.last_name || ""}`.trim() || user.name || "",
     street: initialData?.street || "",
@@ -48,8 +63,95 @@ export function DeliveryStep({ initialData, user, onSubmit, loading }: DeliveryS
     deliveryNotes: initialData?.deliveryNotes || "",
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  useEffect(() => {
+    // Fetch saved addresses
+    fetch("/api/addresses")
+      .then((res) => res.json())
+      .then((data) => {
+        if (Array.isArray(data)) {
+          setSavedAddresses(data);
+          // If there's a default address, select it
+          const defaultAddress = data.find((addr: SavedAddress) => addr.isDefault);
+          if (defaultAddress) {
+            handleSelectAddress(defaultAddress.id);
+          } else if (data.length > 0) {
+            // If no default but addresses exist, select first one
+            handleSelectAddress(data[0].id);
+          }
+        }
+      })
+      .catch((err) => console.error("Error fetching addresses:", err));
+  }, []);
+
+  const handleSelectAddress = (addressId: string) => {
+    if (addressId === "new") {
+      setSelectedAddressId("new");
+      setFormData({
+        fullName: `${user.first_name || ""} ${user.last_name || ""}`.trim() || user.name || "",
+        street: "",
+        apartment: "",
+        city: "",
+        province: "",
+        zipcode: "",
+        country: "Philippines",
+        contactNumber: "",
+        deliveryNotes: "",
+      });
+      return;
+    }
+
+    const address = savedAddresses.find((a) => a.id === addressId);
+    if (!address) return;
+
+    setSelectedAddressId(addressId);
+    // Parse street to separate street and apartment if needed
+    const streetParts = address.street?.split(", ") || [];
+    setFormData({
+      fullName: address.receipientName || "",
+      street: streetParts[0] || "",
+      apartment: streetParts.slice(1).join(", ") || "",
+      city: address.city || "",
+      province: address.province || "",
+      zipcode: address.zipcode || "",
+      country: address.region || "Philippines",
+      contactNumber: "",
+      deliveryNotes: address.remarks || "",
+    });
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // If a new address is being entered, save it to the database
+    if (selectedAddressId === "new") {
+      try {
+        const addressPayload = {
+          receipientName: formData.fullName,
+          street: formData.apartment ? `${formData.street}, ${formData.apartment}` : formData.street,
+          baranggay: null,
+          city: formData.city,
+          province: formData.province,
+          region: formData.country,
+          zipcode: formData.zipcode,
+          remarks: formData.deliveryNotes || null,
+          isDefault: savedAddresses.length === 0, // First address is default
+        };
+
+        const response = await fetch("/api/addresses", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(addressPayload),
+        });
+
+        if (!response.ok) {
+          throw new Error("Failed to save address");
+        }
+      } catch (error) {
+        console.error("Error saving address:", error);
+        // Continue anyway - the address data is still valid for checkout
+      }
+    }
+    
     onSubmit(formData);
   };
 
@@ -65,10 +167,83 @@ export function DeliveryStep({ initialData, user, onSubmit, loading }: DeliveryS
         </p>
       </CardHeader>
       <CardContent>
+        {savedAddresses.length > 0 && (
+          <div className="mb-6">
+            <Label className="text-base font-semibold mb-3 block">
+              Select or Add Address
+            </Label>
+            <div className="space-y-3">
+              {savedAddresses.map((address) => (
+                <div
+                  key={address.id}
+                  className={`flex items-start space-x-3 border rounded-lg p-4 cursor-pointer transition-colors ${
+                    selectedAddressId === address.id
+                      ? "border-emerald-600 bg-emerald-50"
+                      : "hover:bg-slate-50"
+                  }`}
+                  onClick={() => handleSelectAddress(address.id)}
+                >
+                  <div className={`mt-1 h-4 w-4 rounded-full border-2 flex items-center justify-center ${
+                    selectedAddressId === address.id
+                      ? "border-emerald-600 bg-emerald-600"
+                      : "border-gray-300"
+                  }`}>
+                    {selectedAddressId === address.id && (
+                      <div className="h-2 w-2 rounded-full bg-white" />
+                    )}
+                  </div>
+                  <div className="flex-1 space-y-1">
+                    <div className="flex items-center gap-2">
+                      <MapPin className="h-4 w-4 text-emerald-600" />
+                      <span className="font-semibold">{address.receipientName}</span>
+                      {address.isDefault && (
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800">
+                          <Check className="h-3 w-3 mr-1" />
+                          Default
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-sm text-muted-foreground">
+                      {address.street}
+                      {address.baranggay && `, ${address.baranggay}`}
+                      {address.city && `, ${address.city}`}
+                      {address.province && `, ${address.province}`}
+                      {address.region && `, ${address.region}`}
+                      {address.zipcode && ` ${address.zipcode}`}
+                    </p>
+                  </div>
+                </div>
+              ))}
+              <div
+                className={`flex items-start space-x-3 border rounded-lg p-4 cursor-pointer transition-colors border-dashed ${
+                  selectedAddressId === "new"
+                    ? "border-emerald-600 bg-emerald-50"
+                    : "hover:bg-slate-50"
+                }`}
+                onClick={() => handleSelectAddress("new")}
+              >
+                <div className={`mt-1 h-4 w-4 rounded-full border-2 flex items-center justify-center ${
+                  selectedAddressId === "new"
+                    ? "border-emerald-600 bg-emerald-600"
+                    : "border-gray-300"
+                }`}>
+                  {selectedAddressId === "new" && (
+                    <div className="h-2 w-2 rounded-full bg-white" />
+                  )}
+                </div>
+                <div className="flex-1 flex items-center gap-2">
+                  <Plus className="h-4 w-4 text-emerald-600" />
+                  <span className="font-semibold">Add New Address</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <Label htmlFor="fullName">
-              Full Name <span className="text-red-500">*</span>
+              Recipient Name <span className="text-red-500">*</span>
             </Label>
             <Input
               id="fullName"

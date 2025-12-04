@@ -95,6 +95,7 @@ export const addresses = mysqlTable("addresses", {
   region: varchar("region", { length: 255 }),
   zipcode: varchar("zipcode", { length: 20 }),
   remarks: text("remarks"),
+  isDefault: boolean("is_default").default(false).notNull(),
 
   addedAt: timestamp("added_at", { fsp: 3 }).defaultNow(),
   modifiedAt: timestamp("modified_at", { fsp: 3 })
