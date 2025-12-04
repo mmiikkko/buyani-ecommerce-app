@@ -82,9 +82,9 @@ export function AddProducts({ onAdd }: AddProductsProps) {
       id: uuidv4(),
       product_id: productId,
       image_url:
-        img && (img.startsWith("http") || img.startsWith("/"))
+        typeof img === "string" && img.startsWith("data:image/")
           ? img
-          : "", // blob: previews won't be persisted — replace with empty string
+          : "",
       is_primary: idx === 0,
     }));
 
@@ -164,11 +164,30 @@ export function AddProducts({ onAdd }: AddProductsProps) {
           {/* IMAGES */}
           <TabsContent value="images" className="mt-4">
             <div className="border p-4 rounded-md space-y-3">
-              <input type="file" accept="image/*" multiple onChange={(e) => {
-                const files = e.target.files;
-                if (!files) return;
-                setImagePreviews(prev => [...prev, ...Array.from(files).map(f => URL.createObjectURL(f))]);
-              }} />
+            <input
+                type="file"
+                accept="image/*"
+                multiple
+                onChange={(e) => {
+                  const files = e.target.files;
+                  if (!files) return;
+
+                  Array.from(files).forEach((file) => {
+                    // Optional size limit (recommended)
+                    if (file.size > 2 * 1024 * 1024) {
+                      setError("Each image must be under 2MB");
+                      return;
+                    }
+
+                    const reader = new FileReader();
+                    reader.onloadend = () => {
+                      const base64 = reader.result as string;
+                      setImagePreviews((prev) => [...prev, base64]);
+                    };
+                    reader.readAsDataURL(file);
+                  });
+                }}
+              />
               <div className="mt-3 grid grid-cols-4 gap-3">
                 {imagePreviews.map((src, idx) => (
                   <div key={idx} className="relative border rounded-md overflow-hidden">

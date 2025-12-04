@@ -3,5 +3,5 @@ export default function SettingsLayout({
 }: {
   children: React.ReactNode;
 }) {
-  return <div className="container h-fit m-auto p-30 ">{children}</div>;
+  return <div className="container h-fit m-auto p-8 ">{children}</div>;
 }

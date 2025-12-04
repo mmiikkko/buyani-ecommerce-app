@@ -1,29 +1,48 @@
-"use-client"
+"use client";
 
+import { useEffect, useState } from "react";
 import {
-    Card,
-    CardContent,
-    CardHeader,
-    CardDescription
+  Card,
+  CardHeader,
+  CardContent,
+  CardDescription,
 } from "@/components/ui/card";
 
-export function FrequentBought(){
-    return(
-        <div className="min-w-[45%] max-w-[200%] min-h-[100%] flex flex-wrap gap-4 items-center justify-center mr-5 ">
-            <Card className="min-w-[100%] max-w-[250%] min-h-[100%] flex flex-col justify-start pt-5 pb-5">
-                <CardHeader>
-                    <h1 className="font-bold">Frequent Bought Item</h1>
-                    <CardDescription>
-                        Showing frequent bought items in your store.
-                    </CardDescription>
-                </CardHeader>
-                <CardContent className="flex flex-col">
-                    <h5>Content</h5>
-                    <h5>Content</h5>
-                </CardContent>
-            </Card>
-            
-        </div>
-        
-    )
+export function FrequentBought() {
+  const [item, setItem] = useState<{
+    productName: string;
+    totalSold: number;
+  } | null>(null);
+
+  useEffect(() => {
+    fetch("/api/sellers/analytics")
+      .then(res => res.json())
+      .then(res => setItem(res.topItem));
+  }, []);
+
+  return (
+    <div className="min-w-[45%] mr-5">
+      <Card>
+        <CardHeader>
+          <h1 className="font-bold">Most Bought Item</h1>
+          <CardDescription>Last 30 days</CardDescription>
+        </CardHeader>
+
+        <CardContent>
+          {item ? (
+            <>
+              <p className="text-lg font-semibold">{item.productName}</p>
+              <p className="text-sm text-muted-foreground">
+                Sold: <span className="font-bold">{item.totalSold}</span>
+              </p>
+            </>
+          ) : (
+            <p className="text-sm text-muted-foreground">
+              No sales data available
+            </p>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
 }

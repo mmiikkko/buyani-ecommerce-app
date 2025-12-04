@@ -178,9 +178,14 @@ export async function POST(req: NextRequest) {
         // Ensure we only insert safe image strings (absolute http|https or relative starting with '/')
         const candidate = typeof img.image_url === "string" ? img.image_url : "";
         const safeUrl =
-          candidate && (candidate.startsWith("http") || candidate.startsWith("/"))
-            ? candidate
-            : ""; // don't insert blob: or first char
+        candidate &&
+        (
+          candidate.startsWith("http") ||
+          candidate.startsWith("/") ||
+          candidate.startsWith("data:image/")
+        )
+          ? candidate
+          : ""; // don't insert blob: or first char
 
         return {
           id: uuidv4(),

@@ -15,10 +15,15 @@ export function ProductCard({
 
   // Use only valid absolute URLs or public relative paths; otherwise use placeholder
   const safeSrc =
-    firstImage &&
-    (firstImage.startsWith("http") || firstImage.startsWith("/"))
-      ? firstImage
-      : "/placeholder.png";
+  firstImage &&
+  (
+    firstImage.startsWith("http") ||
+    firstImage.startsWith("/") ||
+    firstImage.startsWith("data:image/")
+  )
+    ? firstImage
+    : "/placeholder.png";
+
 
   return (
     <div className="w-full max-w-sm shadow-md rounded-lg space-y-4 overflow-hidden bg-white">
