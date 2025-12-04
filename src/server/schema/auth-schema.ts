@@ -10,6 +10,7 @@ import {
   unique,
 } from "drizzle-orm/mysql-core";
 
+
 export const USER_ROLES = {
   ADMIN: "admin",
   SELLER: "seller",
@@ -82,7 +83,7 @@ export const verification = mysqlTable("verification", {
 export const addresses = mysqlTable("addresses", {
   id: varchar("id", { length: 36 }).primaryKey(),
 
-  customerProfileId: varchar("customer_profile_id", { length: 36 })
+  userId: varchar("user_id", { length: 36 })
    .notNull()
    .references(() => user.id, { onDelete: "cascade" }),
 
@@ -140,11 +141,10 @@ export const products = mysqlTable("products", {
   description: text("description"),
 
   price: decimal("price", { precision: 10, scale: 2 }).notNull(),
-  rating: varchar("rating", { length: 10 }),
+  rating: int("rating"),
 
   isAvailable: boolean("is_available").default(true),
   status: varchar("status", { length: 50 }).default("Available"),
-  isFeatured: boolean("is_featured").default(false),
 
   createdAt: timestamp("created_at", { fsp: 3 }).defaultNow().notNull(),
   updatedAt: timestamp("updated_at", { fsp: 3 })
@@ -177,6 +177,25 @@ export const productImages = mysqlTable("product_images", {
   url: text("url"),
 });
 
+export const shippingInfo = mysqlTable("shipping_info", {
+  id: varchar("id", { length: 36 }).primaryKey(),
+
+  orderId: varchar("order_id", { length: 36 })
+    .notNull()
+    .references(() => orders.id, { onDelete: "cascade" }),
+  status: varchar("status", { length: 50 }),
+  trackingInfo: varchar("tracking_info", { length: 255 }).notNull(),
+  shippingFee: decimal("shipping_fee", { precision: 10, scale: 2 }),
+  weight : decimal("weight_l", { precision: 10, scale: 2 }),
+  height: decimal("height", { precision: 10, scale: 2 }),
+  width: decimal("width", { precision: 10, scale: 2 }),
+  length: decimal("length", { precision: 10, scale: 2 }),
+  createdAt: timestamp("created_at", { fsp: 3 }).defaultNow(),
+  updatedAt: timestamp("updated_at", { fsp: 3 })
+    .$onUpdate(() => new Date())
+    .notNull(),
+}
+)
 
 export const orders = mysqlTable("orders", {
   id: varchar("id", { length: 36 }).primaryKey(),
@@ -207,7 +226,7 @@ export const orderItems = mysqlTable(
 
     productId: varchar("product_id", { length: 36 })
       .notNull()
-      .references(() => products.id, { onDelete: "restrict" }),
+      .references(() => products.id, { onDelete: "cascade" }),
 
     quantity: int("quantity").notNull(),
     subtotal: decimal("subtotal", { precision: 10, scale: 2 }).notNull(),
@@ -230,7 +249,7 @@ export const payments = mysqlTable("payments", {
     .notNull()
     .references(() => orders.id, { onDelete: "cascade" }),
 
-  paymentMethod: decimal("paymentMethod", { precision: 10, scale: 2 }),
+  paymentMethod: varchar("paymentMethod", { length: 36 }),
   paymentReceived: decimal("paymentReceived", { precision: 10, scale: 2 }),
   change: decimal("change", { precision: 10, scale: 2 }),
   status: varchar("status", { length: 50 }),
@@ -320,7 +339,7 @@ export const reviews = mysqlTable("reviews", {
     .references(() => user.id, { onDelete: "cascade" }),
 
   comment: varchar("comment", { length: 355 }),
-  rating: int("rating").notNull(),
+  rating: int("rating"),
   createdAt: timestamp("created_at", { fsp: 3 }).defaultNow(),
   updatedAt: timestamp("updated_at", { fsp: 3 })
     .$onUpdate(() => new Date()),
