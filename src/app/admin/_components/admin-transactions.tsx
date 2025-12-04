@@ -19,27 +19,18 @@ export function AdminTransactions() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [search, setSearch] = useState("");
 
-  // TEMP: Replace with real fetch
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setTransactions([
-      {
-        id: "T-001",
-        userId: "U-123",
-        orderId: "ORD-9901",
-        transactionType: "Refund",
-        remarks: "Customer requested refund",
-        createdAt: "2025-02-12",
-      },
-      {
-        id: "T-002",
-        userId: "U-456",
-        orderId: "ORD-9902",
-        transactionType: "Purchase",
-        remarks: "...",
-        createdAt: "2025-02-14",
-      },
-    ]);
+    const fetchTransactions = async () => {
+      try {
+        const res = await fetch("/api/transactions");
+        const data = await res.json();
+        setTransactions(data || []);
+      } catch (error) {
+        console.error("Error fetching transactions:", error);
+      }
+    };
+
+    fetchTransactions();
   }, []);
 
   const filtered = transactions.filter(
@@ -78,14 +69,20 @@ export function AdminTransactions() {
           <TableBody>
             {filtered.map((t) => (
               <TableRow key={t.id}>
-                <TableCell>{t.id}</TableCell>
+                <TableCell className="font-medium">{t.id}</TableCell>
                 <TableCell>{t.userId}</TableCell>
                 <TableCell>{t.orderId}</TableCell>
                 <TableCell>
-                  <Badge>{t.transactionType}</Badge>
+                  <Badge>{t.transactionType || "N/A"}</Badge>
                 </TableCell>
-                <TableCell className="max-w-[250px] truncate">{t.remarks}</TableCell>
-                <TableCell>{t.createdAt}</TableCell>
+                <TableCell className="max-w-[250px] truncate">{t.remarks || "No remarks"}</TableCell>
+                <TableCell>
+                  {new Date(t.createdAt).toLocaleDateString("en-US", {
+                    year: "numeric",
+                    month: "short",
+                    day: "numeric",
+                  })}
+                </TableCell>
               </TableRow>
             ))}
           </TableBody>

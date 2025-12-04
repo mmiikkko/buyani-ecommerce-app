@@ -65,7 +65,7 @@ export function Footer() {
               </li>
               <li>
                 <Link
-                  href="/seller-center"
+                  href="/become-seller"
                   className="hover:text-white hover:underline hover:underline-offset-4"
                 >
                   Become a seller

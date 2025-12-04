@@ -53,8 +53,9 @@ export function SellerRegisterForm() {
 
     try {
       // Send API request to create seller shop
-      const res = await fetch("/api/seller/register", {
+      const res = await fetch("/api/sellers/apply", {
         method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(values),
       });
 
@@ -63,8 +64,9 @@ export function SellerRegisterForm() {
         throw new Error(d.error || "Something went wrong");
       }
 
-      toast.success("Seller profile created!");
-      router.push("/seller/dashboard");
+      const data = await res.json();
+      toast.success(data.message || "Shop application submitted successfully!");
+      router.push("/");
     } catch (e) {
         const err = e as Error;
         console.log(err.message);
