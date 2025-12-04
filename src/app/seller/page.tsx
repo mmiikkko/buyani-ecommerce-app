@@ -1,9 +1,12 @@
+// app/seller/page.tsx
 "use client";
+
 import { useEffect, useState } from "react";
 import { CardActivity } from "./_components/cards-activity";
 import { RecentOrders } from "./_components/cards-recentorders";
 import { ChartAreaIcons } from "./_components/cards-chart";
 import { FrequentBought } from "./_components/cards-frequentbought";
+import { Order } from "@/types/orders";
 
 export default function SellerDashboard() {
   const [stats, setStats] = useState({
@@ -12,7 +15,8 @@ export default function SellerDashboard() {
     pendingOrders: 0,
     totalProducts: 0,
   });
-  const [recentOrders, setRecentOrders] = useState<any[]>([]);
+
+  const [recentOrders, setRecentOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -28,7 +32,7 @@ export default function SellerDashboard() {
         // Fetch recent orders
         const ordersRes = await fetch("/api/sellers/recent-orders");
         if (ordersRes.ok) {
-          const ordersData = await ordersRes.json();
+          const ordersData: Order[] = await ordersRes.json();
           setRecentOrders(ordersData);
         }
       } catch (error) {
@@ -48,7 +52,7 @@ export default function SellerDashboard() {
       </h1>
       <p> Here&apos;s what&apos;s happening with your store today. </p>
 
-      {/* Activity*/}
+      {/* Activity */}
       <section className="flex flex-wrap min-h-[50%] min-w-[90%] max-w-[100%] justify-center">
         {loading ? (
           <p>Loading stats...</p>
@@ -65,15 +69,15 @@ export default function SellerDashboard() {
         )}
       </section>
 
-      {/* Recent Orders*/}
+      {/* Recent Orders */}
       <section className="flex flex-wrap min-h-[50%] min-w-[90%] max-w-[100%] justify-center">
         <RecentOrders orders={recentOrders} />
       </section>
 
-      {/* Charts and Stats*/}
+      {/* Charts and Stats */}
       <section className="flex min-h-[50%] min-w-[90%] max-w-[100%] justify-center gap-5">
-          <ChartAreaIcons />
-          <FrequentBought />
+        <ChartAreaIcons />
+        <FrequentBought />
       </section>
     </section>
   );
