@@ -1,10 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/server/drizzle';
 import { orders, orderItems, addresses, cartItems, carts, payments } from '@/server/schema/auth-schema';
-import { eq, and } from 'drizzle-orm';
+import { eq } from 'drizzle-orm';
 import { getServerSession } from '@/server/session';
 import { v4 as uuidv4 } from 'uuid';
-import { sql } from 'drizzle-orm';
 
 // GET /api/orders - Get orders for the current user
 export async function GET(req: NextRequest) {
@@ -55,31 +54,14 @@ export async function POST(req: NextRequest) {
     const shippingFee = subtotal >= 500 ? 0 : 50;
     const total = subtotal + shippingFee;
 
-    // Helper to get or create customer_profile
-    const getOrCreateCustomerProfile = async (userId: string): Promise<string> => {
-      const existingProfile = await db.execute(
-        sql`SELECT id FROM customer_profile WHERE user_id = ${userId} LIMIT 1`
-      );
-      if (existingProfile && Array.isArray(existingProfile) && existingProfile.length > 0) {
-        return (existingProfile[0] as any).id;
-      }
-      const profileId = uuidv4();
-      await db.execute(
-        sql`INSERT INTO customer_profile (id, user_id, added_at) VALUES (${profileId}, ${userId}, NOW())`
-      );
-      return profileId;
-    };
-
     // Create or get address
     let addressId: string | null = null;
     if (address) {
-      const customerProfileId = await getOrCreateCustomerProfile(session.user.id);
-      
-      // Check if address already exists
+      // Check if address already exists for this user
       const existingAddresses = await db
         .select()
         .from(addresses)
-        .where(eq(addresses.customerProfileId, customerProfileId))
+        .where(eq(addresses.userId, session.user.id))
         .limit(1);
 
       if (existingAddresses.length > 0) {
@@ -91,6 +73,7 @@ export async function POST(req: NextRequest) {
         await db
           .update(addresses)
           .set({
+            receipientName: address.fullName,
             street: fullStreet,
             city: address.city,
             province: address.province,
@@ -107,7 +90,8 @@ export async function POST(req: NextRequest) {
           : address.street;
         await db.insert(addresses).values({
           id: addressId,
-          customerProfileId: customerProfileId,
+          userId: session.user.id,
+          receipientName: address.fullName,
           street: fullStreet,
           city: address.city,
           province: address.province,
@@ -139,14 +123,16 @@ export async function POST(req: NextRequest) {
     }
 
     // Create payment record
-    // Note: paymentMethod in schema is decimal, but we'll store as string in a different way
-    // For now, we'll use status field to store payment method type
+    const paymentId = uuidv4();
+    const isCOD = paymentMethod === "cod";
+    
     await db.insert(payments).values({
-      id: uuidv4(),
+      id: paymentId,
       orderId,
-      paymentMethod: null, // Schema expects decimal, but we'll use status for method type
-      paymentReceived: String(total),
-      status: paymentMethod, // Store payment method in status field
+      paymentMethod: paymentMethod, // Store payment method type
+      paymentReceived: isCOD ? null : String(total), // For COD, payment received is null until delivery
+      change: null, // Will be calculated when payment is received
+      status: isCOD ? "pending" : "completed", // COD is pending, others are completed
     });
 
     // Clear cart
