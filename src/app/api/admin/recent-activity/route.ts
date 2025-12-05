@@ -4,9 +4,9 @@ import { orders, user, transactions } from "@/server/schema/auth-schema";
 import { sql, eq } from "drizzle-orm";
 
 // GET /api/admin/recent-activity - Get recent activities (orders and transactions)
-export async function GET(req: NextRequest) {
+export async function GET(_req: NextRequest) {
   try {
-    // Get recent orders (last 10)
+    // Get recent orders (last 5)
     const recentOrders = await db
       .select({
         id: orders.id,
@@ -21,7 +21,7 @@ export async function GET(req: NextRequest) {
       .orderBy(sql`${orders.createdAt} DESC`)
       .limit(5);
 
-    // Get recent transactions (last 10)
+    // Get recent transactions (last 5)
     const recentTransactions = await db
       .select({
         id: transactions.id,
@@ -37,21 +37,21 @@ export async function GET(req: NextRequest) {
       .orderBy(sql`${transactions.createdAt} DESC`)
       .limit(5);
 
-    // Combine and sort by date
+    // Combine and sort by date, ensuring createdAt is never null
     const activities = [
       ...recentOrders.map((o) => ({
         id: o.id,
-        type: "order",
+        type: "order" as const,
         user: o.buyerName || "Unknown",
         description: `New order placed - ₱${Number(o.total || 0).toFixed(2)}`,
-        date: o.createdAt,
+        date: o.createdAt ?? new Date(), // fallback if null
       })),
       ...recentTransactions.map((t) => ({
         id: t.id,
-        type: "transaction",
+        type: "transaction" as const,
         user: t.userName || "Unknown",
         description: `${t.transactionType || "Transaction"}: ${t.remarks || "No remarks"}`,
-        date: t.createdAt,
+        date: t.createdAt ?? new Date(), // fallback if null
       })),
     ]
       .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
@@ -66,4 +66,3 @@ export async function GET(req: NextRequest) {
     );
   }
 }
-
