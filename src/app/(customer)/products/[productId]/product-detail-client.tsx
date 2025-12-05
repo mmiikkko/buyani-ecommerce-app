@@ -42,7 +42,7 @@ export function ProductDetailClient({ product, userId }: ProductDetailClientProp
   const isOutOfStock = !product.isAvailable || productStock <= 0;
   
   // Parse rating (assuming format like "4.8" or "4.8/5")
-  const rating = product.rating ? parseFloat(product.rating) : 0;
+  const rating = product.rating ? Number(product.rating) : 0;
   const reviewCount = product.reviewCount ?? 0;
 
   const ensureAuthenticated = (redirectTo: string) => {
