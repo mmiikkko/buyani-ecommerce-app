@@ -37,7 +37,11 @@ export function ProductDetailClient({ product, userId }: ProductDetailClientProp
 
   const productPrice = Number(product.price ?? 0);
   const productStock = product.stock ?? 0;
-  const productImages = product.images?.flatMap(img => img.image_url) ?? [];
+  const productImages = [...product.images]
+  .sort((a, b) => Number(b.is_primary) - Number(a.is_primary))
+  .map(img => img.image_url);
+
+
   const primaryImage = productImages[selectedImageIndex] ?? "";
   const isOutOfStock = !product.isAvailable || productStock <= 0;
   
@@ -53,7 +57,7 @@ export function ProductDetailClient({ product, userId }: ProductDetailClientProp
     return true;
   };
 
-  const handleAddToCart = () => {
+  const handleAddToCart = () => { 
     if (!ensureAuthenticated(`/products/${product.id}`)) {
       return;
     }

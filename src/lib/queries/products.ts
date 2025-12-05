@@ -147,9 +147,9 @@ export async function getProductById(productId: string) {
     images: imageRows.map((image) => ({
       id: image.id,
       product_id: image.productId,
-      image_url: image.url ? [image.url] : [],
+      image_url: image.url ?? "", // ✅ string
       is_primary: false,
-    })),
+    })),    
     createdAt: productRow.createdAt,
     updatedAt: productRow.updatedAt,
     shopName: productRow.shopName ?? null,
