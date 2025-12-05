@@ -1,14 +1,17 @@
-// types/orders.ts
 export type OrderItem = {
+  productId: string;
   productName: string;
   quantity: number;
   subtotal: number;
 };
 
 export type Order = {
-  orderId: string;
-  createdAt: string; // ISO string date
+  orderId: string;          // orders.id
+  buyerId: string;
+  addressId?: string | null;
   total: number;
-  shopName: string;
+  createdAt: string;
+
+  shopName: string;         // comes from JOIN shop.shopName
   items: OrderItem[];
 };
