@@ -358,9 +358,10 @@ export function AddressesForm() {
                   >
                     Cancel
                   </Button>
-                  <LoadingButton type="submit">
-                    {editingAddress ? "Update" : "Add"} Address
+                  <LoadingButton type="submit" loading={false}>
+                      {editingAddress ? "Update" : "Add"} Address
                   </LoadingButton>
+
                 </div>
               </form>
             </DialogContent>
