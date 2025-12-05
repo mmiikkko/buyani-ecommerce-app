@@ -48,7 +48,7 @@ export function ProductCard({ product }: ProductCardProps) {
   };
   
   const primaryImage = getPrimaryImage();
-  const rating = product.rating ? parseFloat(product.rating) : 0;
+  const rating = product.rating ? Number(product.rating) : 0;
   const price = product.price ?? 0;
 
   return (
