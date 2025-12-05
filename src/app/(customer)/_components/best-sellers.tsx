@@ -20,8 +20,8 @@ export function BestSellersSection() {
             const aSold = a.itemsSold ?? 0;
             const bSold = b.itemsSold ?? 0;
             if (bSold !== aSold) return bSold - aSold;
-            const aRating = a.rating ? parseFloat(a.rating) : 0;
-            const bRating = b.rating ? parseFloat(b.rating) : 0;
+            const aRating = Number(a.rating ?? 0);
+            const bRating = Number(b.rating ?? 0);
             return bRating - aRating;
           })
           .slice(0, 10);
