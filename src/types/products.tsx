@@ -8,7 +8,7 @@ export type Product = {
     description?: string | null;
   
     price?: number;
-    rating?: string | null;
+    rating?: number | null;
     isAvailable: boolean;
     status: string;
   
