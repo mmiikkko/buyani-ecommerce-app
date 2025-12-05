@@ -4,6 +4,17 @@ import { useState, useEffect } from "react";
 import { AdminSearchbar } from "../_components/admin-users-searchbar";
 import { AdminUsersTable, AdminUser } from "../_components/admin-users-table";
 
+// Define the APIUser interface to type the fetched data
+interface APIUser {
+  id: string;
+  first_name?: string;
+  last_name?: string;
+  name?: string;
+  role: "admin" | "seller" | "customer";
+  emailVerified: boolean;
+  createdAt: string;
+}
+
 export default function AdminUsersPage() {
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [loading, setLoading] = useState(true);
@@ -14,19 +25,19 @@ export default function AdminUsersPage() {
     const fetchUsers = async () => {
       try {
         const res = await fetch("/api/users");
-        const data = await res.json();
-        
+        const data: APIUser[] = await res.json(); // now fully typed
+
         // Transform API data to AdminUser format
-        const transformedUsers: AdminUser[] = data.map((user: any) => ({
+        const transformedUsers: AdminUser[] = data.map((user) => ({
           id: user.id,
           fullName: user.name || `${user.first_name || ""} ${user.last_name || ""}`.trim() || "Unknown",
           role: user.role === "admin" ? "Admin" : user.role === "seller" ? "Seller" : "Customer",
-          amount: 0, // TODO: Calculate from orders/transactions
-          online: false, // TODO: Check active sessions
-          status: user.emailVerified ? "active" : "pending" as "active" | "pending" | "suspended",
+          amount: 0,
+          online: false,
+          status: user.emailVerified ? "active" : "pending",
           dateAdded: user.createdAt || new Date().toISOString(),
         }));
-        
+
         setUsers(transformedUsers);
       } catch (error) {
         console.error("Error fetching users:", error);
@@ -38,12 +49,10 @@ export default function AdminUsersPage() {
     fetchUsers();
   }, []);
 
-  // Filter users based on status filter
   const filteredUsers = users.filter((user) => {
     if (filter === "all") return true;
     if (filter === "active") return user.status === "active";
     if (filter === "pending") return user.status === "pending";
-    if (filter === "inactive") return user.status === "inactive";
     if (filter === "suspended") return user.status === "suspended";
     return true;
   });
@@ -77,7 +86,6 @@ export default function AdminUsersPage() {
           filter={filter}
         />
       )}
-
     </section>
   );
 }
