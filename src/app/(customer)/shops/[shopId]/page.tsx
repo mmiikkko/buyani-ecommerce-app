@@ -3,14 +3,13 @@ import { ShopDetailClient } from "./shop-detail-client";
 import { db } from "@/server/drizzle";
 import { shop, user, products } from "@/server/schema/auth-schema";
 import { eq, and, sql } from "drizzle-orm";
+import type { Shop } from "@/types/shops";
 
 type ShopPageProps = {
-  params: Promise<{
-    shopId: string;
-  }>;
+  params: Promise<{ shopId: string }>;
 };
 
-async function getShopById(shopId: string) {
+async function getShopById(shopId: string): Promise<Shop | null> {
   try {
     const shopItem = await db
       .select({
@@ -32,20 +31,15 @@ async function getShopById(shopId: string) {
       .where(eq(shop.id, shopId))
       .limit(1);
 
-    if (!shopItem.length) {
-      return null;
-    }
+    if (!shopItem.length) return null;
 
     const shopData = shopItem[0];
-    
-    // Get product count
+
+    // Product count
     const productCount = await db
       .select({ count: sql<number>`count(*)` })
       .from(products)
-      .where(and(
-        eq(products.shopId, shopData.id),
-        eq(products.isAvailable, true)
-      ));
+      .where(and(eq(products.shopId, shopData.id), eq(products.isAvailable, true)));
 
     return {
       id: shopData.id,
@@ -57,7 +51,8 @@ async function getShopById(shopId: string) {
       status: shopData.status,
       created_at: shopData.createdAt,
       updated_at: shopData.updatedAt,
-      owner_name: shopData.ownerName || 
+      owner_name:
+        shopData.ownerName ||
         `${shopData.ownerFirstName || ""} ${shopData.ownerLastName || ""}`.trim() ||
         "Unknown",
       products: Number(productCount[0]?.count || 0),
@@ -72,9 +67,7 @@ export default async function ShopPage({ params }: ShopPageProps) {
   const { shopId } = await params;
   const shop = await getShopById(shopId);
 
-  if (!shop) {
-    notFound();
-  }
+  if (!shop) notFound();
 
   return (
     <main className="relative min-h-screen bg-slate-50">
@@ -82,4 +75,3 @@ export default async function ShopPage({ params }: ShopPageProps) {
     </main>
   );
 }
-

@@ -3,7 +3,15 @@
 import { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { Star, Store, MessageCircle, Shield, CheckCircle2, Package, ArrowLeft } from "lucide-react";
+import {
+  Star,
+  Store,
+  MessageCircle,
+  Shield,
+  CheckCircle2,
+  Package,
+  ArrowLeft,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ProductCard } from "../../_components/product-card";
 import type { Shop } from "@/types/shops";
@@ -22,13 +30,9 @@ export function ShopDetailClient({ shop, shopId }: ShopDetailClientProps) {
     fetch(`/api/shops/${shopId}/products`)
       .then((res) => res.json())
       .then((data) => {
-        if (Array.isArray(data)) {
-          setProducts(data);
-        }
+        if (Array.isArray(data)) setProducts(data);
       })
-      .catch((err) => {
-        console.error("Error fetching products:", err);
-      })
+      .catch((err) => console.error("Error fetching products:", err))
       .finally(() => setLoading(false));
   }, [shopId]);
 
@@ -50,12 +54,7 @@ export function ShopDetailClient({ shop, shopId }: ShopDetailClientProps) {
           {/* Shop Image */}
           <div className="relative h-64 w-full md:w-80 md:h-80 bg-slate-100">
             {shop.image ? (
-              <Image
-                src={shop.image}
-                alt={shop.shop_name}
-                fill
-                className="object-cover"
-              />
+              <Image src={shop.image} alt={shop.shop_name} fill className="object-cover" />
             ) : (
               <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-emerald-50 to-amber-50">
                 <Store className="h-24 w-24 text-slate-400" />
@@ -67,24 +66,18 @@ export function ShopDetailClient({ shop, shopId }: ShopDetailClientProps) {
           <div className="flex-1 p-6 md:p-8">
             <div className="space-y-4">
               <div>
-                <h1 className="text-3xl font-bold text-slate-900 mb-2">
-                  {shop.shop_name}
-                </h1>
-                
-                {/* Rating */}
+                <h1 className="text-3xl font-bold text-slate-900 mb-2">{shop.shop_name}</h1>
+
                 {rating > 0 && (
                   <div className="flex items-center gap-2 mb-2">
                     <Star className="h-5 w-5 fill-amber-400 text-amber-400" />
-                    <span className="text-lg font-semibold text-slate-700">
-                      {rating.toFixed(1)}
-                    </span>
+                    <span className="text-lg font-semibold text-slate-700">{rating.toFixed(1)}</span>
                     <span className="text-sm text-slate-500">
                       ({shop.products || 0} {shop.products === 1 ? "product" : "products"})
                     </span>
                   </div>
                 )}
 
-                {/* Owner */}
                 {shop.owner_name && (
                   <p className="text-sm text-slate-600">
                     by <span className="font-medium">{shop.owner_name}</span>
@@ -92,26 +85,17 @@ export function ShopDetailClient({ shop, shopId }: ShopDetailClientProps) {
                 )}
               </div>
 
-              {/* Description */}
-              {shop.description && (
-                <p className="text-slate-700 leading-relaxed">
-                  {shop.description}
-                </p>
-              )}
+              {shop.description && <p className="text-slate-700 leading-relaxed">{shop.description}</p>}
 
-              {/* Action Buttons */}
               <div className="flex flex-wrap gap-3 pt-2">
                 <Button variant="outline" className="border-slate-300 hover:bg-white">
-                  <MessageCircle className="mr-2 h-4 w-4" />
-                  Contact Seller
+                  <MessageCircle className="mr-2 h-4 w-4" /> Contact Seller
                 </Button>
                 <Button variant="outline" className="border-slate-300 hover:bg-white">
-                  <Package className="mr-2 h-4 w-4" />
-                  Follow Shop
+                  <Package className="mr-2 h-4 w-4" /> Follow Shop
                 </Button>
               </div>
 
-              {/* Badges */}
               <div className="flex flex-wrap gap-3 pt-2">
                 {shop.status === "approved" && (
                   <div className="flex items-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-2">
@@ -133,9 +117,7 @@ export function ShopDetailClient({ shop, shopId }: ShopDetailClientProps) {
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-2xl font-semibold text-slate-900">
-              Products
-            </h2>
+            <h2 className="text-2xl font-semibold text-slate-900">Products</h2>
             <p className="text-sm text-slate-600 mt-1">
               {products.length} {products.length === 1 ? "product" : "products"} available
             </p>
@@ -162,4 +144,3 @@ export function ShopDetailClient({ shop, shopId }: ShopDetailClientProps) {
     </div>
   );
 }
-
