@@ -71,8 +71,35 @@ export function ReviewStep({
       }
 
       const result = await response.json();
+
+      // Handle GCash payment - redirect to PayMongo
+      if (paymentMethod === "gcash") {
+        toast.info("Redirecting to GCash payment...");
+        
+        const gcashResponse = await fetch("/api/payments/gcash", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            orderId: result.orderId,
+            amount: result.total,
+            description: `Buyani Order #${result.orderId}`,
+          }),
+        });
+
+        if (!gcashResponse.ok) {
+          const errorData = await gcashResponse.json();
+          throw new Error(errorData.error || "Failed to create payment session");
+        }
+
+        const gcashResult = await gcashResponse.json();
+        
+        // Redirect to PayMongo checkout
+        window.location.href = gcashResult.checkoutUrl;
+        return;
+      }
+
+      // For COD and other payment methods
       toast.success("Order placed successfully!");
-      // Redirect to orders page or home
       router.push("/settings/orders");
     } catch (error) {
       console.error("Error placing order:", error);

@@ -125,14 +125,15 @@ export async function POST(req: NextRequest) {
     // Create payment record
     const paymentId = uuidv4();
     const isCOD = paymentMethod === "cod";
+    const isGCash = paymentMethod === "gcash";
     
     await db.insert(payments).values({
       id: paymentId,
       orderId,
       paymentMethod: paymentMethod, // Store payment method type
-      paymentReceived: isCOD ? null : String(total), // For COD, payment received is null until delivery
+      paymentReceived: isCOD || isGCash ? null : String(total), // For COD/GCash, payment received is null until confirmed
       change: null, // Will be calculated when payment is received
-      status: isCOD ? "pending" : "completed", // COD is pending, others are completed
+      status: isCOD || isGCash ? "pending" : "completed", // COD and GCash are pending until confirmed
     });
 
     // Clear cart
@@ -151,6 +152,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({
       success: true,
       orderId,
+      total,
+      paymentMethod,
       message: "Order placed successfully",
     });
   } catch (error) {
