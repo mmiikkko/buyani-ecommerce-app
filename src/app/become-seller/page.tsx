@@ -165,7 +165,7 @@ export default function BecomeSellerPage() {
             )}
             {shopStatus === "pending" && (
               <p className="text-sm text-gray-600">
-                Your shop application is being reviewed. You will be notified once it's approved.
+                Your shop application is being reviewed. You will be notified once your request is approved.
               </p>
             )}
             <div className="text-center text-sm text-gray-500 pt-4 border-t">
