@@ -1,4 +1,4 @@
-"use client";
+"use-client";
 
 import { AdminCategories } from "../_components/admin-categories";
 import { LandingCustom } from "../_components/landing-custom";

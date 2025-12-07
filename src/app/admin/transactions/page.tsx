@@ -1,4 +1,4 @@
-"use client";
+"use-client";
 import { AdminTransactions } from "../_components/admin-transactions";
 
 export default function Transactions() {

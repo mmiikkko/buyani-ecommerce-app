@@ -10,30 +10,26 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { Eye, UserX, UserCheck, Trash2 } from "lucide-react";
-import { toast } from "sonner";
+import { Eye } from "lucide-react";
 
 export interface AdminUser {
   id: string;
   fullName: string;
-  role: "Customer" | "Seller" | "Admin" | "Suspended";
+  role: "Customer" | "Seller" | "Admin";
   amount: number;
   online: boolean;
   status: "active" | "pending" | "suspended";
   dateAdded: string;
-  originalRole?: string; // Store original role before suspension
 }
 
 export function AdminUsersTable({
   users,
   search,
   filter,
-  onRefresh,
 }: {
   users: AdminUser[];
   search: string;
   filter: string; // "all", "active", "pending", "inactive", "suspended"
-  onRefresh?: () => void;
 }) {
   const filtered = (users ?? []).filter((u) => {
     // Filter by status (already filtered in parent, but keeping for consistency)
@@ -66,84 +62,6 @@ export function AdminUsersTable({
     const start = (currentPage - 1) * rowsPerPage;
     return filtered.slice(start, start + rowsPerPage);
   }, [currentPage, filtered]);
-
-  const [actionLoading, setActionLoading] = useState<string | null>(null);
-
-  // Suspend user by changing their role to "suspended"
-  const handleSuspend = async (userId: string, userName: string) => {
-    if (!confirm(`Are you sure you want to suspend ${userName}?`)) return;
-    
-    setActionLoading(userId);
-    try {
-      const res = await fetch(`/api/users?id=${userId}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ role: "suspended" }),
-      });
-      
-      if (res.ok) {
-        toast.success(`${userName} has been suspended`);
-        onRefresh?.();
-      } else {
-        toast.error("Failed to suspend user");
-      }
-    } catch (error) {
-      console.error("Error suspending user:", error);
-      toast.error("Failed to suspend user");
-    } finally {
-      setActionLoading(null);
-    }
-  };
-
-  // Restore user by changing their role back to "customer"
-  const handleRestore = async (userId: string, userName: string) => {
-    if (!confirm(`Restore ${userName} as a customer?`)) return;
-    
-    setActionLoading(userId);
-    try {
-      const res = await fetch(`/api/users?id=${userId}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ role: "customer" }),
-      });
-      
-      if (res.ok) {
-        toast.success(`${userName} has been restored`);
-        onRefresh?.();
-      } else {
-        toast.error("Failed to restore user");
-      }
-    } catch (error) {
-      console.error("Error restoring user:", error);
-      toast.error("Failed to restore user");
-    } finally {
-      setActionLoading(null);
-    }
-  };
-
-  // Delete user permanently
-  const handleDelete = async (userId: string, userName: string) => {
-    if (!confirm(`Are you sure you want to permanently delete ${userName}? This action cannot be undone.`)) return;
-    
-    setActionLoading(userId);
-    try {
-      const res = await fetch(`/api/users?id=${userId}`, {
-        method: "DELETE",
-      });
-      
-      if (res.ok) {
-        toast.success(`${userName} has been deleted`);
-        onRefresh?.();
-      } else {
-        toast.error("Failed to delete user");
-      }
-    } catch (error) {
-      console.error("Error deleting user:", error);
-      toast.error("Failed to delete user");
-    } finally {
-      setActionLoading(null);
-    }
-  };
 
   return (
     <div className="w-full p-6 bg-green-50 min-h-screen">
@@ -205,46 +123,12 @@ export function AdminUsersTable({
                   </TableCell>
 
                   <TableCell className="flex items-center gap-2">
-                    <Button variant="ghost" size="icon" title="View Details">
+                    <Button variant="ghost" size="icon">
                       <Eye className="h-4 w-4" />
                     </Button>
-                    
-                    {/* Show Suspend or Restore button based on status */}
-                    {user.role === "Suspended" || user.status === "suspended" ? (
-                      <Button 
-                        className="bg-green-600 hover:bg-green-700 text-white text-xs px-3 py-1 cursor-pointer"
-                        onClick={() => handleRestore(user.id, user.fullName)}
-                        disabled={actionLoading === user.id}
-                        title="Restore User"
-                      >
-                        <UserCheck className="h-3 w-3 mr-1" />
-                        {actionLoading === user.id ? "..." : "Restore"}
-                      </Button>
-                    ) : user.role !== "Admin" ? (
-                      <Button 
-                        className="bg-orange-600 hover:bg-orange-700 text-white text-xs px-3 py-1 cursor-pointer"
-                        onClick={() => handleSuspend(user.id, user.fullName)}
-                        disabled={actionLoading === user.id}
-                        title="Suspend User"
-                      >
-                        <UserX className="h-3 w-3 mr-1" />
-                        {actionLoading === user.id ? "..." : "Suspend"}
-                      </Button>
-                    ) : null}
-
-                    {/* Delete button - don't show for admin users */}
-                    {user.role !== "Admin" && (
-                      <Button 
-                        variant="destructive"
-                        size="sm"
-                        className="text-xs px-2 py-1 cursor-pointer"
-                        onClick={() => handleDelete(user.id, user.fullName)}
-                        disabled={actionLoading === user.id}
-                        title="Delete User"
-                      >
-                        <Trash2 className="h-3 w-3" />
-                      </Button>
-                    )}
+                    <Button className="bg-red-600 hover:bg-red-700 text-white text-xs px-3 py-1">
+                      Suspend
+                    </Button>
                   </TableCell>
                 </TableRow>
               ))}

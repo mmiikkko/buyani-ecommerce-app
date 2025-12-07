@@ -1,7 +1,5 @@
 "use client";
 import Link from "next/link";
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
 import {
   Sidebar,
   SidebarContent,
@@ -31,8 +29,6 @@ import {
   ChevronUp,
   User2,
 } from "lucide-react";
-import { authClient } from "@/server/auth-client";
-import { toast } from "sonner";
 
 // Menu items.
 const items = [
@@ -69,41 +65,6 @@ const items = [
 ];
 
 export function AppSidebar() {
-  const router = useRouter();
-  const [adminName, setAdminName] = useState<string>("Admin");
-
-  useEffect(() => {
-    // Fetch admin user info
-    const fetchAdminInfo = async () => {
-      try {
-        const res = await fetch("/api/auth/me");
-        if (res.ok) {
-          const data = await res.json();
-          setAdminName(data.name || data.firstName || "Admin");
-        }
-      } catch (error) {
-        console.error("Error fetching admin info:", error);
-      }
-    };
-
-    fetchAdminInfo();
-  }, []);
-
-  const handleSignOut = async () => {
-    toast.loading("Signing out...");
-
-    const { error } = await authClient.signOut();
-
-    toast.dismiss();
-
-    if (error) {
-      toast.error(error.message || "Something went wrong");
-    } else {
-      toast.success("Signed out successfully");
-      router.push("/sign-in");
-    }
-  };
-
   return (
     <Sidebar variant="floating" className="fixed top-0 left-0 h-screen flex flex-col justify-between">
       <SidebarContent className="flex-1 overflow-y-auto mt-18">
@@ -135,7 +96,7 @@ export function AppSidebar() {
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <SidebarMenuButton>
-                  <User2 /> {adminName}
+                  <User2 /> Username
                   <ChevronUp className="ml-auto" />
                 </SidebarMenuButton>
               </DropdownMenuTrigger>
@@ -152,10 +113,7 @@ export function AppSidebar() {
                         Account
                   </Link>
                 </DropdownMenuItem>
-                <DropdownMenuItem 
-                  className="cursor-pointer"
-                  onClick={handleSignOut}
-                >
+                <DropdownMenuItem>
                   <span>Sign out</span>
                 </DropdownMenuItem>
               </DropdownMenuContent>

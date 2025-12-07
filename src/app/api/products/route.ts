@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/server/drizzle';
-import { products, productImages, productInventory, shop, cartItems } from '@/server/schema/auth-schema';
+import { products, productImages, productInventory, shop } from '@/server/schema/auth-schema';
 import { eq, and, inArray } from 'drizzle-orm';
 import { v4 as uuidv4 } from 'uuid';
 import { corsResponse, corsOptions } from '@/lib/api-utils';
@@ -134,32 +134,9 @@ export async function PUT(req: NextRequest) {
 
 // DELETE /api/products?id=xxx
 export async function DELETE(req: NextRequest) {
-  try {
-    const { searchParams } = new URL(req.url);
-    const productId = searchParams.get("id");
-    if (!productId) {
-      return NextResponse.json({ error: "Missing id" }, { status: 400 });
-    }
-
-    // First, delete all cart_items that reference this product
-    // This is necessary because cart_items has ON DELETE RESTRICT constraint
-    await db.delete(cartItems).where(eq(cartItems.productId, productId));
-
-    // Delete product images (has ON DELETE CASCADE, but being explicit)
-    await db.delete(productImages).where(eq(productImages.productId, productId));
-
-    // Delete product inventory (if it exists)
-    await db.delete(productInventory).where(eq(productInventory.productId, productId));
-
-    // Finally, delete the product itself
-    await db.delete(products).where(eq(products.id, productId));
-
-    return NextResponse.json({ success: true });
-  } catch (error) {
-    console.error("Error deleting product:", error);
-    return NextResponse.json(
-      { error: "Failed to delete product. It may be referenced in orders or other records." },
-      { status: 500 }
-    );
-  }
+  const { searchParams } = new URL(req.url);
+  const productId = searchParams.get("id");
+  if (!productId) return NextResponse.json({ error: "Missing id" }, { status: 400 });
+  await db.delete(products).where(eq(products.id, productId));
+  return NextResponse.json({ success: true });
 }
