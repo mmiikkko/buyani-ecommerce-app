@@ -4,12 +4,6 @@ import { shop, user, products } from '@/server/schema/auth-schema';
 import { eq, and, sql } from 'drizzle-orm';
 import { getServerSession } from '@/server/session';
 import { v4 as uuidv4 } from 'uuid'; // For unique IDs
-import { corsResponse, corsOptions } from '@/lib/api-utils';
-
-// OPTIONS /api/shops - Handle CORS preflight
-export async function OPTIONS() {
-  return corsOptions();
-}
 
 // GET /api/shops - get all shops (with optional status filter) or single shop by id
 export async function GET(req: NextRequest) {
@@ -41,9 +35,9 @@ export async function GET(req: NextRequest) {
         .limit(1);
 
       if (!shopItem.length) {
-        return corsResponse(
+        return NextResponse.json(
           { error: "Shop not found" },
-          404
+          { status: 404 }
         );
       }
 
@@ -58,7 +52,7 @@ export async function GET(req: NextRequest) {
           eq(products.isAvailable, true)
         ));
 
-      return corsResponse({
+      return NextResponse.json({
         id: shopData.id,
         seller_id: shopData.sellerId,
         shop_name: shopData.shopName,
@@ -168,12 +162,12 @@ export async function GET(req: NextRequest) {
       })
     );
 
-    return corsResponse(shopsWithCounts);
+    return NextResponse.json(shopsWithCounts);
   } catch (error) {
     console.error("Error fetching shops:", error);
-    return corsResponse(
+    return NextResponse.json(
       { error: "Failed to fetch shops" },
-      500
+      { status: 500 }
     );
   }
 }

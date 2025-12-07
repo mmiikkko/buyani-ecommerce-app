@@ -14,12 +14,6 @@ export function BestSellersSection() {
     fetch("/api/products")
       .then((res) => res.json())
       .then((data) => {
-        // Ensure data is an array before sorting
-        if (!Array.isArray(data)) {
-          console.error("Expected array but got:", data);
-          setProducts([]);
-          return;
-        }
         // Sort by itemsSold or rating, take top 10
         const sorted = data
           .sort((a: Product, b: Product) => {
@@ -35,7 +29,6 @@ export function BestSellersSection() {
       })
       .catch((err) => {
         console.error("Error fetching products:", err);
-        setProducts([]);
       })
       .finally(() => setLoading(false));
   }, []);

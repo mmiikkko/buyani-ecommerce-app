@@ -8,9 +8,9 @@ import { Button } from "../../../../components/ui/button";
 import { ReactNode } from "react";
 export default function ASNavbar( { children }: { children?: ReactNode } ) {
   return (
-    <nav className="flex justify-between items-center fixed top-0 left-0 right-0 z-50 shadow-md h-16 bg-gradient-to-br from-emerald-50/90 via-slate-50/90 to-amber-50/90 backdrop-blur-xl pl-3 pr-5">
+    <nav className="flex justify-between items-center fixed top-0 left-0 right-0 z-50 shadow-md h-16 bg-white pl-3 pr-5">
       {/* Left side */}
-      <div className="flex items-center px-4 py-2 bg-transparent">
+      <div className="flex items-center px-4 py-2 bg-white">
           {children}
         <Image
           src={Logo}
@@ -29,7 +29,7 @@ export default function ASNavbar( { children }: { children?: ReactNode } ) {
       </div>
 
       {/* Right side*/}
-      <div className="flex items-center px-4 py-2 bg-transparent">
+      <div className="flex items-center px-4 py-2 bg-white">
         <ul>
           <li>
             <Button

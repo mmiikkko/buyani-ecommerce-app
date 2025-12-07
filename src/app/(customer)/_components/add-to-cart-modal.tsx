@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Plus, Minus, ShoppingCart } from "lucide-react";
 import Image from "next/image";
 import { addToCart } from "@/lib/queries/cart";
-import { toast } from "sonner";
+import { useRouter } from "next/navigation";
 
 interface AddToCartModalProps {
   open: boolean;
@@ -38,6 +38,7 @@ export function AddToCartModal({
   const [quantity, setQuantity] = useState(1);
   const [isAdding, setIsAdding] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const router = useRouter();
 
   // Check if product ID is a placeholder
   const isPlaceholder = product.id.startsWith("PlaceHolder") || product.id.includes("PlaceHolder");
@@ -63,30 +64,18 @@ export function AddToCartModal({
     try {
       const result = await addToCart(userId, product.id, quantity);
       if (result.success) {
-        // Show success message
-        toast.success(
-          `${quantity} ${quantity === 1 ? "item" : "items"} added to cart!`,
-          {
-            description: `${product.name} has been added to your cart.`,
-          }
-        );
-        // Close modal
+        // Close modal first
         onOpenChange(false);
         // Reset quantity after adding
         setQuantity(1);
+        // Navigate to cart page
+        router.push("/cart");
       } else {
         setError(result.error || "Failed to add item to cart. Please try again.");
-        toast.error("Failed to add item to cart", {
-          description: result.error || "Please try again.",
-        });
       }
     } catch (error) {
       console.error("Error adding to cart:", error);
-      const errorMessage = "Failed to add item to cart. The product may not exist in the database.";
-      setError(errorMessage);
-      toast.error("Failed to add item to cart", {
-        description: "The product may not exist in the database.",
-      });
+      setError("Failed to add item to cart. The product may not exist in the database.");
     } finally {
       setIsAdding(false);
     }

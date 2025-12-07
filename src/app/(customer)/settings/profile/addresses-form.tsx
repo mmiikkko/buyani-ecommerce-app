@@ -2,12 +2,12 @@
 
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { LoadingButton } from "@/components/loading-button";
-import { MapPin, Plus, Edit, Trash2, Check, X, Package } from "lucide-react";
+import { MapPin, Plus, Edit, Trash2, Check, X } from "lucide-react";
 import { toast } from "sonner";
 import {
   Dialog,
@@ -193,19 +193,9 @@ export function AddressesForm() {
 
   if (loading) {
     return (
-      <Card className="transition-all duration-300">
-        <CardHeader className="pb-4">
-          <div className="flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-orange-500/10">
-              <MapPin className="h-5 w-5 text-orange-600" />
-            </div>
-            <div>
-              <CardTitle className="text-xl">Addresses</CardTitle>
-              <CardDescription className="mt-1">
-                Manage your delivery addresses
-              </CardDescription>
-            </div>
-          </div>
+      <Card>
+        <CardHeader>
+          <CardTitle>Addresses</CardTitle>
         </CardHeader>
         <CardContent>
           <p className="text-muted-foreground">Loading addresses...</p>
@@ -215,26 +205,18 @@ export function AddressesForm() {
   }
 
   return (
-    <Card className="transition-all duration-300 hover:shadow-lg">
-      <CardHeader className="pb-4">
-        <div className="flex items-center justify-between flex-wrap gap-4">
-          <div className="flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-orange-500/10">
-              <MapPin className="h-5 w-5 text-orange-600" />
-            </div>
-            <div>
-              <CardTitle className="text-xl">Delivery Addresses</CardTitle>
-              <CardDescription className="mt-1">
-                Manage your delivery addresses for faster checkout
-              </CardDescription>
-            </div>
+    <Card>
+      <CardHeader>
+        <div className="flex items-center justify-between">
+          <div>
+            <CardTitle>Addresses</CardTitle>
+            <p className="text-sm text-muted-foreground mt-1">
+              Manage your delivery addresses
+            </p>
           </div>
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
             <DialogTrigger asChild>
-              <Button 
-                onClick={() => handleOpenDialog()} 
-                className="bg-[#2E7D32] hover:bg-[#2E7D32]/90 text-white"
-              >
+              <Button onClick={() => handleOpenDialog()} variant="outline">
                 <Plus className="h-4 w-4 mr-2" />
                 Add Address
               </Button>
@@ -376,11 +358,7 @@ export function AddressesForm() {
                   >
                     Cancel
                   </Button>
-                  <LoadingButton 
-                    type="submit" 
-                    loading={false}
-                    className="bg-[#2E7D32] hover:bg-[#2E7D32]/90 text-white"
-                  >
+                  <LoadingButton type="submit" loading={false}>
                       {editingAddress ? "Update" : "Add"} Address
                   </LoadingButton>
 
@@ -392,58 +370,44 @@ export function AddressesForm() {
       </CardHeader>
       <CardContent>
         {addresses.length === 0 ? (
-          <div className="text-center py-12 px-4">
-            <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-muted/50 mb-4">
-              <MapPin className="h-10 w-10 text-muted-foreground/50" />
-            </div>
-            <h3 className="text-lg font-semibold mb-2">No addresses saved yet</h3>
-            <p className="text-muted-foreground mb-6 max-w-sm mx-auto">
-              Add your first delivery address to make checkout faster and easier
+          <div className="text-center py-8">
+            <MapPin className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+            <p className="text-muted-foreground mb-4">
+              No addresses saved yet
             </p>
-            <Button 
-              onClick={() => handleOpenDialog()} 
-              className="bg-[#2E7D32] hover:bg-[#2E7D32]/90 text-white"
-            >
+            <Button onClick={() => handleOpenDialog()} variant="outline">
               <Plus className="h-4 w-4 mr-2" />
               Add Your First Address
             </Button>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="space-y-4">
             {addresses.map((address) => (
               <div
                 key={address.id}
-                className="border-2 rounded-xl p-5 space-y-3 hover:border-[#2E7D32]/50 transition-all duration-200 bg-card"
+                className="border rounded-lg p-4 space-y-2"
               >
-                <div className="flex items-start justify-between gap-3">
-                  <div className="flex-1 space-y-2">
-                    <div className="flex items-center gap-2">
-                      <Package className="h-4 w-4 text-[#2E7D32]" />
-                      <h3 className="font-semibold text-base">{address.receipientName}</h3>
-                    </div>
-                    <p className="text-sm text-muted-foreground leading-relaxed">
-                      {address.street}
-                      {address.baranggay && `, ${address.baranggay}`}
-                      {address.city && `, ${address.city}`}
-                      {address.province && `, ${address.province}`}
-                      {address.region && `, ${address.region}`}
-                      {address.zipcode && ` ${address.zipcode}`}
+                <div>
+                  <h3 className="font-semibold">{address.receipientName}</h3>
+                  <p className="text-sm text-muted-foreground">
+                    {address.street}
+                    {address.baranggay && `, ${address.baranggay}`}
+                    {address.city && `, ${address.city}`}
+                    {address.province && `, ${address.province}`}
+                    {address.region && `, ${address.region}`}
+                    {address.zipcode && ` ${address.zipcode}`}
+                  </p>
+                  {address.remarks && (
+                    <p className="text-sm text-muted-foreground mt-1">
+                      <span className="font-medium">Notes:</span> {address.remarks}
                     </p>
-                    {address.remarks && (
-                      <div className="pt-2 border-t">
-                        <p className="text-xs text-muted-foreground">
-                          <span className="font-medium">Delivery Notes:</span> {address.remarks}
-                        </p>
-                      </div>
-                    )}
-                  </div>
+                  )}
                 </div>
                 <div className="flex gap-2 pt-2">
                   <Button
                     variant="outline"
                     size="sm"
                     onClick={() => handleOpenDialog(address)}
-                    className="flex-1"
                   >
                     <Edit className="h-4 w-4 mr-1" />
                     Edit
@@ -452,7 +416,6 @@ export function AddressesForm() {
                     variant="outline"
                     size="sm"
                     onClick={() => setDeleteAddressId(address.id)}
-                    className="text-red-600 hover:text-red-700 hover:bg-red-50"
                   >
                     <Trash2 className="h-4 w-4 mr-1" />
                     Delete
