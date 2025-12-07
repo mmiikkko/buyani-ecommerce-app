@@ -12,8 +12,24 @@ export function FeaturedVendorsSection() {
 
   useEffect(() => {
     fetch("/api/shops")
-      .then((res) => res.json())
+      .then((res) => {
+        if (!res.ok) {
+          // Handle error gracefully without throwing
+          console.warn(`Failed to fetch shops: HTTP ${res.status}`);
+          return res.json().catch(() => ({})); // Try to parse error response, fallback to empty object
+        }
+        return res.json();
+      })
       .then((data) => {
+        // Ensure data is an array before sorting
+        if (!Array.isArray(data)) {
+          // If it's an error object, log it silently
+          if (data && typeof data === 'object' && 'error' in data) {
+            console.warn("API error:", data.error);
+          }
+          setShops([]);
+          return;
+        }
         // Sort by rating or product count, take top 6
         const sorted = data
           .sort((a: Shop, b: Shop) => {
@@ -26,7 +42,8 @@ export function FeaturedVendorsSection() {
         setShops(sorted);
       })
       .catch((err) => {
-        console.error("Error fetching shops:", err);
+        // Silently handle errors - don't log to console to avoid cluttering
+        setShops([]);
       })
       .finally(() => setLoading(false));
   }, []);

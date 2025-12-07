@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Trash2, Plus, Minus, ShoppingCart } from "lucide-react";
 import Image from "next/image";
 import { removeFromCart, updateCartItemQuantity } from "@/lib/queries/cart";
@@ -25,6 +26,9 @@ interface CartClientProps {
 export function CartClient({ initialItems, userId }: CartClientProps) {
   const [items, setItems] = useState(initialItems);
   const [loading, setLoading] = useState<Record<string, boolean>>({});
+  const [selectedItems, setSelectedItems] = useState<Set<string>>(
+    new Set(initialItems.map(item => item.id))
+  );
   const router = useRouter();
 
   const handleRemove = async (itemId: string) => {
@@ -49,10 +53,32 @@ export function CartClient({ initialItems, userId }: CartClientProps) {
     setLoading((prev) => ({ ...prev, [itemId]: false }));
   };
 
-  const subtotal = items.reduce(
-    (sum, item) => sum + (item.price || 0) * item.quantity,
-    0
-  );
+  const handleToggleSelect = (itemId: string) => {
+    setSelectedItems((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(itemId)) {
+        newSet.delete(itemId);
+      } else {
+        newSet.add(itemId);
+      }
+      return newSet;
+    });
+  };
+
+  const handleSelectAll = () => {
+    if (selectedItems.size === items.length) {
+      setSelectedItems(new Set());
+    } else {
+      setSelectedItems(new Set(items.map(item => item.id)));
+    }
+  };
+
+  const subtotal = items
+    .filter((item) => selectedItems.has(item.id))
+    .reduce(
+      (sum, item) => sum + (item.price || 0) * item.quantity,
+      0
+    );
 
   if (items.length === 0) {
     return (
@@ -80,10 +106,34 @@ export function CartClient({ initialItems, userId }: CartClientProps) {
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
         {/* Cart Items */}
         <div className="lg:col-span-2 space-y-4">
+          {/* Select All Checkbox */}
+          <div className="flex items-center gap-2 pb-2 border-b">
+            <Checkbox
+              id="select-all"
+              checked={selectedItems.size === items.length && items.length > 0}
+              onCheckedChange={handleSelectAll}
+            />
+            <label
+              htmlFor="select-all"
+              className="text-sm font-medium text-slate-700 cursor-pointer"
+            >
+              Select All ({selectedItems.size} of {items.length})
+            </label>
+          </div>
+
           {items.map((item) => (
             <Card key={item.id}>
               <CardContent className="p-4">
                 <div className="flex gap-4">
+                  {/* Checkbox */}
+                  <div className="flex items-start pt-1">
+                    <Checkbox
+                      id={`item-${item.id}`}
+                      checked={selectedItems.has(item.id)}
+                      onCheckedChange={() => handleToggleSelect(item.id)}
+                    />
+                  </div>
+
                   {/* Product Image */}
                   <div className="relative h-24 w-24 flex-shrink-0 rounded-lg overflow-hidden bg-slate-100">
                     {item.image ? (
@@ -177,9 +227,15 @@ export function CartClient({ initialItems, userId }: CartClientProps) {
                 className="w-full bg-emerald-600 hover:bg-emerald-700"
                 size="lg"
                 onClick={() => router.push("/checkout")}
+                disabled={selectedItems.size === 0}
               >
-                Proceed to Checkout
+                Proceed to Checkout ({selectedItems.size} {selectedItems.size === 1 ? "item" : "items"})
               </Button>
+              {selectedItems.size === 0 && (
+                <p className="text-xs text-center text-muted-foreground mt-2">
+                  Please select at least one item to checkout
+                </p>
+              )}
             </CardContent>
           </Card>
         </div>
