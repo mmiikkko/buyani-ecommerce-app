@@ -62,8 +62,7 @@ export function CheckoutClient({ cartItems, userId, user }: CheckoutClientProps)
     (sum, item) => sum + (item.price || 0) * item.quantity,
     0
   );
-  const shippingFee = subtotal >= 500 ? 0 : 50; // Free shipping over 500
-  const total = subtotal + shippingFee;
+  const total = subtotal;
 
   const handleAddressSubmit = async (addressData: CheckoutData["address"]) => {
     if (!addressData) return;
@@ -132,7 +131,6 @@ export function CheckoutClient({ cartItems, userId, user }: CheckoutClientProps)
           <OrderSummary
             cartItems={cartItems}
             subtotal={subtotal}
-            shippingFee={shippingFee}
             total={total}
           />
         </div>
