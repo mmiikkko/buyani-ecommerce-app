@@ -40,6 +40,10 @@ export async function GET(req: NextRequest) {
   }
 }
 
+type CartItem = {
+  price?: number; // Optional, as indicated by `item.price || 0`
+  quantity: number;
+};
 
 // POST /api/orders - Create a new order from cart
 export async function POST(req: NextRequest) {
@@ -61,7 +65,7 @@ export async function POST(req: NextRequest) {
 
     // Calculate total
     const total = items.reduce(
-      (sum: number, item: any) => sum + (item.price || 0) * item.quantity,
+      (sum: number, item: CartItem) => sum + (item.price || 0) * item.quantity,
       0
     );
 

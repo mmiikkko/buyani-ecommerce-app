@@ -33,6 +33,19 @@ export const user = mysqlTable("user", {
     .notNull(),
 });
 
+export const user_status = mysqlTable("user_status", {
+  id: varchar("id", { length: 36 }).primaryKey(),
+  userId: varchar("user_id", { length: 36 })
+  .notNull()
+  .references(() => user.id, { onDelete: "cascade" }), 
+  status: varchar("status", { length: 255 }).default("active").notNull(),
+  remarks: varchar("remarks", { length: 500 }),
+  createdAt: timestamp("created_at", { fsp: 3 }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { fsp: 3 })
+    .$onUpdate(() => new Date())
+    .notNull(),
+});
+
 export const session = mysqlTable("session", {
   id: varchar("id", { length: 36 }).primaryKey(),
   expiresAt: timestamp("expires_at", { fsp: 3 }).notNull(),
