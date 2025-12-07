@@ -47,12 +47,10 @@ export async function POST(req: NextRequest) {
     }
 
     // Calculate total
-    const subtotal = items.reduce(
+    const total = items.reduce(
       (sum: number, item: any) => sum + (item.price || 0) * item.quantity,
       0
     );
-    const shippingFee = subtotal >= 500 ? 0 : 50;
-    const total = subtotal + shippingFee;
 
     // Create or get address
     let addressId: string | null = null;

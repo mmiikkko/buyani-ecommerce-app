@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { AdminSearchbar } from "../_components/admin-users-searchbar";
 import { AdminUsersTable, AdminUser } from "../_components/admin-users-table";
 
@@ -10,7 +10,7 @@ interface APIUser {
   first_name?: string;
   last_name?: string;
   name?: string;
-  role: "admin" | "seller" | "customer";
+  role: "admin" | "seller" | "customer" | "suspended";
   emailVerified: boolean;
   createdAt: string;
 }
@@ -21,33 +21,53 @@ export default function AdminUsersPage() {
   const [filter, setFilter] = useState<string>("all");
   const [search, setSearch] = useState<string>("");
 
-  useEffect(() => {
-    const fetchUsers = async () => {
-      try {
-        const res = await fetch("/api/users");
-        const data: APIUser[] = await res.json(); // now fully typed
+  const fetchUsers = useCallback(async () => {
+    try {
+      setLoading(true);
+      const res = await fetch("/api/users");
+      const data: APIUser[] = await res.json();
 
-        // Transform API data to AdminUser format
-        const transformedUsers: AdminUser[] = data.map((user) => ({
+      // Transform API data to AdminUser format
+      const transformedUsers: AdminUser[] = data.map((user) => {
+        // Determine display role
+        let displayRole: "Customer" | "Seller" | "Admin" | "Suspended";
+        if (user.role === "admin") displayRole = "Admin";
+        else if (user.role === "seller") displayRole = "Seller";
+        else if (user.role === "suspended") displayRole = "Suspended";
+        else displayRole = "Customer";
+
+        // Determine status - suspended users get suspended status
+        let status: "active" | "pending" | "suspended";
+        if (user.role === "suspended") {
+          status = "suspended";
+        } else if (user.emailVerified) {
+          status = "active";
+        } else {
+          status = "pending";
+        }
+
+        return {
           id: user.id,
           fullName: user.name || `${user.first_name || ""} ${user.last_name || ""}`.trim() || "Unknown",
-          role: user.role === "admin" ? "Admin" : user.role === "seller" ? "Seller" : "Customer",
+          role: displayRole,
           amount: 0,
           online: false,
-          status: user.emailVerified ? "active" : "pending",
+          status,
           dateAdded: user.createdAt || new Date().toISOString(),
-        }));
+        };
+      });
 
-        setUsers(transformedUsers);
-      } catch (error) {
-        console.error("Error fetching users:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchUsers();
+      setUsers(transformedUsers);
+    } catch (error) {
+      console.error("Error fetching users:", error);
+    } finally {
+      setLoading(false);
+    }
   }, []);
+
+  useEffect(() => {
+    fetchUsers();
+  }, [fetchUsers]);
 
   const filteredUsers = users.filter((user) => {
     if (filter === "all") return true;
@@ -84,6 +104,7 @@ export default function AdminUsersPage() {
           users={filteredUsers}
           search={search}
           filter={filter}
+          onRefresh={fetchUsers}
         />
       )}
     </section>

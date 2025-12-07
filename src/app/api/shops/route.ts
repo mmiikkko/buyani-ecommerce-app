@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/server/drizzle';
-import { shop, user, products } from '@/server/schema/auth-schema';
+import { shop, user, products, USER_ROLES } from '@/server/schema/auth-schema';
 import { eq, and, sql } from 'drizzle-orm';
 import { getServerSession } from '@/server/session';
 import { v4 as uuidv4 } from 'uuid'; // For unique IDs
@@ -205,19 +205,35 @@ export async function PUT(req: NextRequest) {
       return NextResponse.json({ error: 'Missing id' }, { status: 400 });
     }
 
-    // Verify shop belongs to the seller
-    const shopData = await db
-      .select()
-      .from(shop)
-      .where(and(eq(shop.id, shopId), eq(shop.sellerId, session.user.id)))
-      .limit(1);
+    // Check if user is admin (can modify any shop) or shop owner
+    const isAdmin = session.user.role?.includes(USER_ROLES.ADMIN) ?? false;
+    
+    if (!isAdmin) {
+      // Verify shop belongs to the seller (non-admins only)
+      const shopData = await db
+        .select()
+        .from(shop)
+        .where(and(eq(shop.id, shopId), eq(shop.sellerId, session.user.id)))
+        .limit(1);
 
-    if (shopData.length === 0) {
-      return NextResponse.json({ error: "Shop not found or unauthorized" }, { status: 404 });
+      if (shopData.length === 0) {
+        return NextResponse.json({ error: "Shop not found or unauthorized" }, { status: 404 });
+      }
+    } else {
+      // Admin: just verify shop exists
+      const shopExists = await db
+        .select({ id: shop.id })
+        .from(shop)
+        .where(eq(shop.id, shopId))
+        .limit(1);
+
+      if (shopExists.length === 0) {
+        return NextResponse.json({ error: "Shop not found" }, { status: 404 });
+      }
     }
 
     const updates = await req.json();
-    await db.update(shop).set(updates).where(eq(shop.id, shopId));
+    await db.update(shop).set({ ...updates, updatedAt: new Date() }).where(eq(shop.id, shopId));
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error("Error updating shop:", error);
@@ -242,15 +258,31 @@ export async function DELETE(req: NextRequest) {
       return NextResponse.json({ error: 'Missing id' }, { status: 400 });
     }
 
-    // Verify shop belongs to the seller
-    const shopData = await db
-      .select()
-      .from(shop)
-      .where(and(eq(shop.id, shopId), eq(shop.sellerId, session.user.id)))
-      .limit(1);
+    // Check if user is admin (can delete any shop) or shop owner
+    const isAdmin = session.user.role?.includes(USER_ROLES.ADMIN) ?? false;
 
-    if (shopData.length === 0) {
-      return NextResponse.json({ error: "Shop not found or unauthorized" }, { status: 404 });
+    if (!isAdmin) {
+      // Verify shop belongs to the seller (non-admins only)
+      const shopData = await db
+        .select()
+        .from(shop)
+        .where(and(eq(shop.id, shopId), eq(shop.sellerId, session.user.id)))
+        .limit(1);
+
+      if (shopData.length === 0) {
+        return NextResponse.json({ error: "Shop not found or unauthorized" }, { status: 404 });
+      }
+    } else {
+      // Admin: just verify shop exists
+      const shopExists = await db
+        .select({ id: shop.id })
+        .from(shop)
+        .where(eq(shop.id, shopId))
+        .limit(1);
+
+      if (shopExists.length === 0) {
+        return NextResponse.json({ error: "Shop not found" }, { status: 404 });
+      }
     }
 
     await db.delete(shop).where(eq(shop.id, shopId));
