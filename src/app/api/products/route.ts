@@ -3,6 +3,12 @@ import { db } from '@/server/drizzle';
 import { products, productImages, productInventory, shop } from '@/server/schema/auth-schema';
 import { eq, and, inArray } from 'drizzle-orm';
 import { v4 as uuidv4 } from 'uuid';
+import { corsResponse, corsOptions } from '@/lib/api-utils';
+
+// OPTIONS /api/products - Handle CORS preflight
+export async function OPTIONS() {
+  return corsOptions();
+}
 
 // GET /api/products
 // Optional query param: ?categoryId=xxx to filter by category
@@ -84,12 +90,12 @@ export async function GET(req: NextRequest) {
       };
     });
 
-    return NextResponse.json(productsWithImages);
+    return corsResponse(productsWithImages);
   } catch (error) {
     console.error("Error fetching products:", error);
-    return NextResponse.json(
+    return corsResponse(
       { error: "Failed to fetch products" },
-      { status: 500 }
+      500
     );
   }
 }

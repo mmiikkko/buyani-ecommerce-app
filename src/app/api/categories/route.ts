@@ -3,6 +3,12 @@ import { db } from "@/server/drizzle";
 import { categories, products, shop } from "@/server/schema/auth-schema";
 import { eq, and, sql } from "drizzle-orm";
 import { v4 as uuidv4 } from "uuid";
+import { corsResponse, corsOptions } from '@/lib/api-utils';
+
+// OPTIONS /api/categories - Handle CORS preflight
+export async function OPTIONS() {
+  return corsOptions();
+}
 
 // GET /api/categories
 // Optional query param: ?withCounts=true to include product counts
@@ -34,15 +40,15 @@ export async function GET(req: NextRequest) {
         })
       );
 
-      return NextResponse.json(categoriesWithCounts);
+      return corsResponse(categoriesWithCounts);
     }
 
-    return NextResponse.json(allCategories);
+    return corsResponse(allCategories);
   } catch (error) {
     console.error("Error fetching categories:", error);
-    return NextResponse.json(
+    return corsResponse(
       { error: "Failed to fetch categories" },
-      { status: 500 }
+      500
     );
   }
 }

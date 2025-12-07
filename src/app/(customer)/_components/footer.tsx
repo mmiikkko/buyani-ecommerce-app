@@ -1,9 +1,17 @@
+"use client";
+
 import Logo from "@/assets/logo/Logo.png";
 import { Facebook, MapPin, Phone, ShieldCheck } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
+import { authClient } from "@/server/auth-client";
+import { USER_ROLES } from "@/server/schema/auth-schema";
 
 export function Footer() {
+  const session = authClient.useSession();
+  const user = session.data?.user;
+  const isSeller = user?.role?.includes(USER_ROLES.SELLER) ?? false;
+
   return (
     <footer className="border-t border-emerald-900/40 bg-gradient-to-b from-slate-950 via-slate-950 to-emerald-950 text-slate-50">
       <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
@@ -49,8 +57,10 @@ export function Footer() {
             <ul className="space-y-1.5 text-xs text-slate-300">
               <li>
                 <Link
-                  href="/about"
-                  className="hover:text-white hover:underline hover:underline-offset-4"
+                  href="https://cnsc.edu.ph/UCN/cnsc-esd-launches-techno-demo-facility-university-market-hub-and-coffee-table-book/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="hover:text-emerald-300 hover:underline hover:underline-offset-4 transition-colors"
                 >
                   About Buyani
                 </Link>
@@ -58,27 +68,21 @@ export function Footer() {
               <li>
                 <Link
                   href="/how-it-works"
-                  className="hover:text-white hover:underline hover:underline-offset-4"
+                  className="hover:text-emerald-300 hover:underline hover:underline-offset-4 transition-colors"
                 >
                   How it works
                 </Link>
               </li>
-              <li>
-                <Link
-                  href="/become-seller"
-                  className="hover:text-white hover:underline hover:underline-offset-4"
-                >
-                  Become a seller
-                </Link>
-              </li>
-              <li>
-                <Link
-                  href="/help"
-                  className="hover:text-white hover:underline hover:underline-offset-4"
-                >
-                  Help center
-                </Link>
-              </li>
+              {!isSeller && (
+                <li>
+                  <Link
+                    href="/become-seller"
+                    className="hover:text-emerald-300 hover:underline hover:underline-offset-4 transition-colors"
+                  >
+                    Become a seller
+                  </Link>
+                </li>
+              )}
             </ul>
           </div>
 
