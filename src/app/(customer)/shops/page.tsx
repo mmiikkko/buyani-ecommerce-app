@@ -10,12 +10,28 @@ export default function ShopsPage() {
 
   useEffect(() => {
     fetch("/api/shops")
-      .then((res) => res.json())
+      .then((res) => {
+        if (!res.ok) {
+          throw new Error(`HTTP error! status: ${res.status}`);
+        }
+        return res.json();
+      })
       .then((data) => {
+        // Ensure data is an array
+        if (!Array.isArray(data)) {
+          console.error("Expected array but got:", data);
+          // If it's an error object, log it
+          if (data && typeof data === 'object' && 'error' in data) {
+            console.error("API error:", data.error);
+          }
+          setShops([]);
+          return;
+        }
         setShops(data);
       })
       .catch((err) => {
         console.error("Error fetching shops:", err);
+        setShops([]);
       })
       .finally(() => setLoading(false));
   }, []);
