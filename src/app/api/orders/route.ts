@@ -1,10 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/server/drizzle';
-import { orders, orderItems, addresses, cartItems, carts, payments } from '@/server/schema/auth-schema';
+import { orders, orderItems, addresses, cartItems, carts, payments, user } from '@/server/schema/auth-schema';
 import { eq } from 'drizzle-orm';
 import { getServerSession } from '@/server/session';
 import { v4 as uuidv4 } from 'uuid';
 
+
+// GET /api/orders - Get orders for the current user
 // GET /api/orders - Get orders for the current user
 export async function GET(req: NextRequest) {
   try {
@@ -13,9 +15,19 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    // Join orders with user table to get the buyer's name
     const userOrders = await db
-      .select()
+      .select({
+        id: orders.id,
+        buyerId: orders.buyerId,
+        buyerName: user.name,       // <--- added
+        addressId: orders.addressId,
+        total: orders.total,
+        createdAt: orders.createdAt,
+        updatedAt: orders.updatedAt,
+      })
       .from(orders)
+      .leftJoin(user, eq(orders.buyerId, user.id)) // join on buyerId
       .where(eq(orders.buyerId, session.user.id));
 
     return NextResponse.json(userOrders);
@@ -27,6 +39,7 @@ export async function GET(req: NextRequest) {
     );
   }
 }
+
 
 // POST /api/orders - Create a new order from cart
 export async function POST(req: NextRequest) {
