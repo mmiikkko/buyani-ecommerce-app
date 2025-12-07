@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/server/drizzle';
 import { user } from '@/server/schema/auth-schema';
 import { eq } from 'drizzle-orm';
-import { v4 as uuidv4 } from 'uuid';
+
 
 // GET /api/users
 export async function GET(req: NextRequest) {
