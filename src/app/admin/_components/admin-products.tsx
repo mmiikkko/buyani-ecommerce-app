@@ -8,7 +8,35 @@ import { AdminSearchbar } from "./admin-users-searchbar";
 import { BadgeAlert, Undo2, Trash2, Check } from "lucide-react";
 
 // ------------------------------------------------------------
-// PRODUCT TYPE
+// API PRODUCT TYPE (from /api/products)
+// ------------------------------------------------------------
+type APIProduct = {
+  id: string;
+  shopId: string;
+  categoryId: string;
+  productName: string;
+  SKU: string | null;
+  description: string | null;
+  price: number;
+  rating: number | null;
+  isAvailable: boolean;
+  status: string | null;
+  createdAt: string;
+  updatedAt: string;
+  stock: number;
+  itemsSold: number | null;
+  shopName: string | null;
+  shopStatus: string | null;
+  images: Array<{
+    id: string;
+    product_id: string;
+    image_url: string[];
+    is_primary: boolean;
+  }>;
+};
+
+// ------------------------------------------------------------
+// DISPLAY PRODUCT TYPE (transformed for UI)
 // ------------------------------------------------------------
 type Product = {
   id: string;
@@ -40,13 +68,39 @@ export function AdminProducts() {
   const fetchProducts = async () => {
     try {
       const res = await fetch("/api/products");
-      const data = await res.json();
-      setProducts(data);
+      const data: APIProduct[] = await res.json();
+      
+      // Transform API response to display format
+      const transformedProducts: Product[] = data.map((p) => ({
+        id: p.id,
+        name: p.productName,
+        shopOwner: p.shopName || "Unknown Shop",
+        description: p.description || "",
+        category: p.categoryId || "Uncategorized",
+        price: Number(p.price) || 0,
+        stock: p.stock || 0,
+        dateAdded: p.createdAt,
+        status: mapProductStatus(p.status),
+        flags: 0,
+        reason: undefined,
+        image: p.images?.[0]?.image_url?.[0] || "/assets/placeholder.png",
+      }));
+      
+      setProducts(transformedProducts);
     } catch (err) {
       console.error("Fetch products error:", err);
     } finally {
       setLoading(false);
     }
+  };
+  
+  // Map API status to display status
+  const mapProductStatus = (status: string | null): "normal" | "flagged" | "removed" => {
+    if (!status) return "normal";
+    const s = status.toLowerCase();
+    if (s === "flagged") return "flagged";
+    if (s === "removed" || s === "unavailable") return "removed";
+    return "normal";
   };
 
   useEffect(() => {
@@ -66,11 +120,25 @@ export function AdminProducts() {
     fetchProducts();
   };
 
-  const updateProduct = async (id: string, updates: unknown) => {
+  const updateProduct = async (id: string, updates: { status?: string; flags?: number }) => {
+    // Map display status to API status
+    const apiUpdates: Record<string, unknown> = {};
+    if (updates.status) {
+      if (updates.status === "normal") {
+        apiUpdates.status = "Available";
+        apiUpdates.isAvailable = true;
+      } else if (updates.status === "flagged") {
+        apiUpdates.status = "flagged";
+      } else if (updates.status === "removed") {
+        apiUpdates.status = "removed";
+        apiUpdates.isAvailable = false;
+      }
+    }
+    
     await fetch(`/api/products?id=${id}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(updates),
+      body: JSON.stringify(apiUpdates),
     });
     fetchProducts();
   };

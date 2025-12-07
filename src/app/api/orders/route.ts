@@ -68,8 +68,6 @@ export async function POST(req: NextRequest) {
       (sum: number, item: CartItem) => sum + (item.price || 0) * item.quantity,
       0
     );
-    const shippingFee = subtotal >= 500 ? 0 : 50;
-    const total = subtotal + shippingFee;
 
     // Create or get address
     let addressId: string | null = null;
@@ -125,7 +123,7 @@ export async function POST(req: NextRequest) {
       id: orderId,
       buyerId: session.user.id,
       addressId,
-      total: String(total),
+      total: String(subtotal),
     });
 
     // Create order items
@@ -148,7 +146,7 @@ export async function POST(req: NextRequest) {
       id: paymentId,
       orderId,
       paymentMethod: paymentMethod, // Store payment method type
-      paymentReceived: isCOD || isGCash ? null : String(total), // For COD/GCash, payment received is null until confirmed
+      paymentReceived: isCOD || isGCash ? null : String(subtotal), // For COD/GCash, payment received is null until confirmed
       change: null, // Will be calculated when payment is received
       status: isCOD || isGCash ? "pending" : "completed", // COD and GCash are pending until confirmed
     });
@@ -169,7 +167,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({
       success: true,
       orderId,
-      total,
+      subtotal,
       paymentMethod,
       message: "Order placed successfully",
     });

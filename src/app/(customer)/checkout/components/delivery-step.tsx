@@ -227,65 +227,37 @@ export function DeliveryStep({ initialData, user, onSubmit, loading }: DeliveryS
                 </div>
               </div>
             </div>
+
+            {/* Continue button for saved address */}
+            {selectedAddressId !== "new" && (
+              <Button
+                onClick={handleSubmit}
+                className="w-full bg-emerald-600 hover:bg-emerald-700 h-12 text-base font-semibold mt-4"
+                disabled={loading}
+              >
+                {loading ? "Saving..." : (
+                  <>
+                    Continue to Payment
+                    <ArrowRight className="ml-2 h-5 w-5" />
+                  </>
+                )}
+              </Button>
+            )}
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <Label htmlFor="fullName">
-              Recipient Name <span className="text-red-500">*</span>
-            </Label>
-            <Input
-              id="fullName"
-              value={formData.fullName}
-              onChange={(e) =>
-                setFormData((prev) => ({ ...prev, fullName: e.target.value }))
-              }
-              required
-              className="mt-1"
-            />
-          </div>
-
-          <div>
-            <Label htmlFor="street">
-              Street Address <span className="text-red-500">*</span>
-            </Label>
-            <Input
-              id="street"
-              value={formData.street}
-              onChange={(e) =>
-                setFormData((prev) => ({ ...prev, street: e.target.value }))
-              }
-              required
-              className="mt-1"
-            />
-          </div>
-
-          <div>
-            <Label htmlFor="apartment">
-              Apartment, Suite, Unit, etc. (Optional)
-            </Label>
-            <Input
-              id="apartment"
-              value={formData.apartment}
-              onChange={(e) =>
-                setFormData((prev) => ({ ...prev, apartment: e.target.value }))
-              }
-              placeholder="Apartment, suite, unit, building, floor, etc."
-              className="mt-1"
-            />
-          </div>
-
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        {/* Show form only when adding new address or no saved addresses exist */}
+        {(savedAddresses.length === 0 || selectedAddressId === "new") && (
+          <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <Label htmlFor="city">
-                City <span className="text-red-500">*</span>
+              <Label htmlFor="fullName">
+                Recipient Name <span className="text-red-500">*</span>
               </Label>
               <Input
-                id="city"
-                value={formData.city}
+                id="fullName"
+                value={formData.fullName}
                 onChange={(e) =>
-                  setFormData((prev) => ({ ...prev, city: e.target.value }))
+                  setFormData((prev) => ({ ...prev, fullName: e.target.value }))
                 }
                 required
                 className="mt-1"
@@ -293,31 +265,14 @@ export function DeliveryStep({ initialData, user, onSubmit, loading }: DeliveryS
             </div>
 
             <div>
-              <Label htmlFor="province">
-                State / Province <span className="text-red-500">*</span>
+              <Label htmlFor="street">
+                Street Address <span className="text-red-500">*</span>
               </Label>
               <Input
-                id="province"
-                value={formData.province}
+                id="street"
+                value={formData.street}
                 onChange={(e) =>
-                  setFormData((prev) => ({ ...prev, province: e.target.value }))
-                }
-                required
-                className="mt-1"
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <div>
-              <Label htmlFor="zipcode">
-                Postal / ZIP Code <span className="text-red-500">*</span>
-              </Label>
-              <Input
-                id="zipcode"
-                value={formData.zipcode}
-                onChange={(e) =>
-                  setFormData((prev) => ({ ...prev, zipcode: e.target.value }))
+                  setFormData((prev) => ({ ...prev, street: e.target.value }))
                 }
                 required
                 className="mt-1"
@@ -325,64 +280,128 @@ export function DeliveryStep({ initialData, user, onSubmit, loading }: DeliveryS
             </div>
 
             <div>
-              <Label htmlFor="country">
-                Country <span className="text-red-500">*</span>
+              <Label htmlFor="apartment">
+                Apartment, Suite, Unit, etc. (Optional)
               </Label>
               <Input
-                id="country"
-                value={formData.country}
+                id="apartment"
+                value={formData.apartment}
                 onChange={(e) =>
-                  setFormData((prev) => ({ ...prev, country: e.target.value }))
+                  setFormData((prev) => ({ ...prev, apartment: e.target.value }))
+                }
+                placeholder="Apartment, suite, unit, building, floor, etc."
+                className="mt-1"
+              />
+            </div>
+
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <div>
+                <Label htmlFor="city">
+                  City <span className="text-red-500">*</span>
+                </Label>
+                <Input
+                  id="city"
+                  value={formData.city}
+                  onChange={(e) =>
+                    setFormData((prev) => ({ ...prev, city: e.target.value }))
+                  }
+                  required
+                  className="mt-1"
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="province">
+                  State / Province <span className="text-red-500">*</span>
+                </Label>
+                <Input
+                  id="province"
+                  value={formData.province}
+                  onChange={(e) =>
+                    setFormData((prev) => ({ ...prev, province: e.target.value }))
+                  }
+                  required
+                  className="mt-1"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <div>
+                <Label htmlFor="zipcode">
+                  Postal / ZIP Code <span className="text-red-500">*</span>
+                </Label>
+                <Input
+                  id="zipcode"
+                  value={formData.zipcode}
+                  onChange={(e) =>
+                    setFormData((prev) => ({ ...prev, zipcode: e.target.value }))
+                  }
+                  required
+                  className="mt-1"
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="country">
+                  Country <span className="text-red-500">*</span>
+                </Label>
+                <Input
+                  id="country"
+                  value={formData.country}
+                  onChange={(e) =>
+                    setFormData((prev) => ({ ...prev, country: e.target.value }))
+                  }
+                  required
+                  className="mt-1"
+                />
+              </div>
+            </div>
+
+            <div>
+              <Label htmlFor="contactNumber">
+                Contact Number <span className="text-red-500">*</span>
+              </Label>
+              <Input
+                id="contactNumber"
+                type="tel"
+                value={formData.contactNumber}
+                onChange={(e) =>
+                  setFormData((prev) => ({ ...prev, contactNumber: e.target.value }))
                 }
                 required
                 className="mt-1"
               />
             </div>
-          </div>
 
-          <div>
-            <Label htmlFor="contactNumber">
-              Contact Number <span className="text-red-500">*</span>
-            </Label>
-            <Input
-              id="contactNumber"
-              type="tel"
-              value={formData.contactNumber}
-              onChange={(e) =>
-                setFormData((prev) => ({ ...prev, contactNumber: e.target.value }))
-              }
-              required
-              className="mt-1"
-            />
-          </div>
+            <div>
+              <Label htmlFor="deliveryNotes">Delivery Notes (Optional)</Label>
+              <Textarea
+                id="deliveryNotes"
+                value={formData.deliveryNotes}
+                onChange={(e) =>
+                  setFormData((prev) => ({ ...prev, deliveryNotes: e.target.value }))
+                }
+                placeholder="e.g. Leave at the front desk, Call upon arrival"
+                className="mt-1"
+                rows={3}
+              />
+            </div>
 
-          <div>
-            <Label htmlFor="deliveryNotes">Delivery Notes (Optional)</Label>
-            <Textarea
-              id="deliveryNotes"
-              value={formData.deliveryNotes}
-              onChange={(e) =>
-                setFormData((prev) => ({ ...prev, deliveryNotes: e.target.value }))
-              }
-              placeholder="e.g. Leave at the front desk, Call upon arrival"
-              className="mt-1"
-              rows={3}
-            />
-          </div>
-
-          <Button
-            type="submit"
-            className="w-full bg-emerald-600 hover:bg-emerald-700 h-12 text-base font-semibold"
-            disabled={loading}
-          >
-            {loading ? "Saving..." : (
-              <>
-                Continue to Payment
-                <ArrowRight className="ml-2 h-5 w-5" />
-              </>
-            )}
-          </Button>
-        </form>
+            <Button
+              type="submit"
+              className="w-full bg-emerald-600 hover:bg-emerald-700 h-12 text-base font-semibold"
+              disabled={loading}
+            >
+              {loading ? "Saving..." : (
+                <>
+                  Continue to Payment
+                  <ArrowRight className="ml-2 h-5 w-5" />
+                </>
+              )}
+            </Button>
+          </form>
+        )}
       </CardContent>
     </Card>
   );
