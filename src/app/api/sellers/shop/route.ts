@@ -59,12 +59,6 @@ export async function GET() {
   }
 }
 
-type ShopUpdates = {
-  shopName?: string;
-  description?: string;
-  imageURL?: string;
-};
-
 // PUT /api/sellers/shop - Update shop information
 export async function PUT(req: NextRequest) {
   try {
@@ -87,7 +81,7 @@ export async function PUT(req: NextRequest) {
       return NextResponse.json({ error: "Shop not found" }, { status: 404 });
     }
 
-    const updates: ShopUpdates = {};
+    const updates: any = {};
     if (body.shopName !== undefined) {
       // Check if shop name is already taken by another shop
       const existingShop = await db
