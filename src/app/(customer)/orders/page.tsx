@@ -71,8 +71,12 @@ export default function CustomerOrdersPage() {
       }
       const data = await res.json();
       setOrders(data);
-    } catch (error: any) {
-      toast.error(error?.message || "Unable to load orders");
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        toast.error(error.message || "Unable to load orders");
+      } else {
+        toast.error("Unable to load orders");
+      }
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -129,8 +133,12 @@ export default function CustomerOrdersPage() {
         )
       );
       toast.success("Thanks for confirming! Order marked as received.");
-    } catch (error: any) {
-      toast.error(error?.message || "Could not update order");
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        toast.error(error.message || "Unable to load orders");
+      } else {
+        toast.error("Unable to load orders");
+      }
     } finally {
       setActionId(null);
     }
@@ -235,7 +243,6 @@ export default function CustomerOrdersPage() {
                         Placed on {new Date(order.createdAt).toLocaleString()}
                       </p>
                     </div>
-                    <StatusBadge status={order.status || order.payment?.status} />
                   </CardHeader>
                   <CardContent className="space-y-3">
                     {order.items?.length ? (

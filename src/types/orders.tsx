@@ -1,3 +1,5 @@
+import type { Payment } from "./payments";
+
 export type OrderItem = {
   productId: string;
   productName: string;
@@ -18,6 +20,7 @@ export type Order = {
   shopName?: string;         // comes from JOIN shop.shopName
   items: OrderItem[];
   status?: string;          // order status
-  payment?: string;            // payment information
+  payment?: Payment | null;           // payment information
+  paymentMethod?: string;  // payment method
   transactions?: string;     // transaction information
 };
