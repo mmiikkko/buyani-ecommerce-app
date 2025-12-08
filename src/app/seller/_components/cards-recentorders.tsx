@@ -207,7 +207,7 @@ export function RecentOrders({ orders }: RecentOrdersProps)  {
               <span className={`font-bold text-lg ${
                 isRejected ? "text-red-600" : isAccepted ? "text-[#2E7D32]" : "text-amber-600"
               }`}>
-                ₱{order.total.toLocaleString("en-US", {
+                ₱{(order.total ?? 0).toLocaleString("en-US", {
                   minimumFractionDigits: 2,
                   maximumFractionDigits: 2,
                 })}

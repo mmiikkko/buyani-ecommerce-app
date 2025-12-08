@@ -87,9 +87,9 @@ export function AddProducts({ onAdd, onUpdate, productToEdit, onEditComplete }: 
             if (typeof img.image_url === "string") {
               return img.image_url;
             }
-            if (Array.isArray(img.image_url) && img.image_url.length > 0) {
-              return img.image_url[0];
-            }
+            //if (Array.isArray(img.image_url) && img.image_url.length > 0) {
+              //return img.image_url[0];
+            //}
             return null;
           })
           .filter((url): url is string => url !== null && url !== "" && url.startsWith("data:image/"));

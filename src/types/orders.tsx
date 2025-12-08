@@ -18,6 +18,6 @@ export type Order = {
   shopName?: string;         // comes from JOIN shop.shopName
   items: OrderItem[];
   status?: string;          // order status
-  payment?: any;            // payment information
-  transactions?: any[];     // transaction information
+  payment?: string;            // payment information
+  transactions?: string;     // transaction information
 };
