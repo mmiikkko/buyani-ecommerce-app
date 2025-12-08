@@ -307,7 +307,7 @@ export const carts = mysqlTable("carts", {
   
       productId: varchar("product_id", { length: 36 })
         .notNull()
-        .references(() => products.id, { onDelete: "restrict" }),
+        .references(() => products.id, { onDelete: "cascade" }),
   
       quantity: int("quantity").notNull().default(1),
   

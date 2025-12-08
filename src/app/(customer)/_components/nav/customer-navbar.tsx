@@ -50,6 +50,7 @@ export default function Navbar({ className }: NavbarProps) {
   useEffect(() => {
     if (pathname === "/products") {
       const urlQuery = searchParams.get("search") || "";
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setSearchQuery(urlQuery);
     }
   }, [pathname, searchParams]);
@@ -109,6 +110,7 @@ export default function Navbar({ className }: NavbarProps) {
   // Fetch cart count when user is authenticated
   useEffect(() => {
     if (!isAuthenticated || !user?.id) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setCartCount(0);
       return;
     }
