@@ -133,7 +133,15 @@ export function ProductDetailClient({ product, userId }: ProductDetailClientProp
 
       if (convRes.ok) {
         const conversation = await convRes.json();
-        router.push(`/chat?conversationId=${conversation.id}`);
+        // Open chat FAB widget with this conversation
+        if (typeof window !== "undefined") {
+          window.dispatchEvent(
+            new CustomEvent("chatfab:open", {
+              detail: { conversationId: conversation.id },
+            })
+          );
+        }
+        toast.success("Chat opened");
       } else {
         const error = await convRes.json();
         toast.error(error.error || "Failed to start conversation");

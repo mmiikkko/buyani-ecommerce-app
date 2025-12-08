@@ -42,11 +42,17 @@ export default function SellerInbox() {
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [unreadCounts, setUnreadCounts] = useState<Record<string, number>>({});
 
   useEffect(() => {
-    fetchCurrentUser();
-    fetchConversations();
+  fetchCurrentUser();
   }, []);
+
+useEffect(() => {
+  if (currentUserId) {
+    fetchConversations();
+  }
+}, [currentUserId]);
 
   useEffect(() => {
     if (selectedConversation && currentUserId) {
@@ -79,6 +85,8 @@ export default function SellerInbox() {
   };
 
   const fetchConversations = async () => {
+    if (!currentUserId) return;
+    
     try {
       setLoading(true);
       const res = await fetch("/api/conversations");

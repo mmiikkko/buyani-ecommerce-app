@@ -1,5 +1,6 @@
 "use client";
 import Link from "next/link";
+import { useEffect, useState } from "react";
 import {
   Sidebar,
   SidebarContent,
@@ -59,6 +60,15 @@ const items = [
 ];
 
 export function AppSidebar() {
+  const [mounted, setMounted] = useState(false);
+
+  // Avoid SSR/client mismatch from Radix auto-generated IDs by rendering after mount
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!mounted) return null;
+
   return (
     <Sidebar variant="floating" className="fixed top-0 left-0 h-screen flex flex-col justify-between">
       <SidebarContent className="flex-1 overflow-y-auto mt-18">

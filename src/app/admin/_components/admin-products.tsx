@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import Image from "next/image";
 import { AdminSearchbar } from "./admin-users-searchbar";
 import { BadgeAlert, Undo2, Trash2, Check } from "lucide-react";
+import { AdminProductModal } from "./admin-product-modal";
 
 // ------------------------------------------------------------
 // API PRODUCT TYPE (from /api/products)
@@ -62,6 +63,20 @@ export function AdminProducts() {
   const [filter, setFilter] = useState("all");
   const [search, setSearch] = useState("");
 
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [isModalOpen, setModalOpen] = useState(false);
+
+  const openModal = (product: Product) => {
+    setSelectedProduct(product);
+    setModalOpen(true);
+  };
+
+  const closeModal = () => {
+    setModalOpen(false);
+    setSelectedProduct(null);
+  };
+
+
   // ------------------------------------------------------------
   // FETCH PRODUCTS (Dynamic)
   // ------------------------------------------------------------
@@ -111,14 +126,6 @@ export function AdminProducts() {
   // CRUD ACTIONS
   // ------------------------------------------------------------
 
-  const createProduct = async (data: unknown) => {
-    await fetch("/api/products", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(data),
-    });
-    fetchProducts();
-  };
 
   const updateProduct = async (id: string, updates: { status?: string; flags?: number }) => {
     // Map display status to API status
@@ -178,7 +185,7 @@ export function AdminProducts() {
 
       return matchesSearch && matchesFilter;
     });
-  }, [filter, search, products]);
+  }, [products, search, filter, isNewProduct]);
 
   // ------------------------------------------------------------
   // RENDER
@@ -300,6 +307,7 @@ export function AdminProducts() {
               <Button
                 variant="link"
                 className="mt-2 w-full text-gray-600 cursor-pointer"
+                onClick={() => openModal(product)}
               >
                 View Full Details
               </Button>
@@ -315,6 +323,13 @@ export function AdminProducts() {
           </Card>
         ))}
       </div>
+
+      <AdminProductModal 
+        open={isModalOpen} 
+        onClose={closeModal} 
+        product={selectedProduct}
+      />
+
     </div>
   );
 }

@@ -1,7 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/server/drizzle';
-import { orders, orderItems, addresses, cartItems, carts, payments, user } from '@/server/schema/auth-schema';
-import { eq } from 'drizzle-orm';
+import {
+  orders,
+  orderItems,
+  addresses,
+  cartItems,
+  carts,
+  payments,
+  user,
+  products,
+} from '@/server/schema/auth-schema';
+import { eq, inArray } from 'drizzle-orm';
 import { getServerSession } from '@/server/session';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -20,17 +29,52 @@ export async function GET(req: NextRequest) {
       .select({
         id: orders.id,
         buyerId: orders.buyerId,
-        buyerName: user.name,       // <--- added
+        buyerName: user.name,
         addressId: orders.addressId,
         total: orders.total,
         createdAt: orders.createdAt,
         updatedAt: orders.updatedAt,
       })
       .from(orders)
-      .leftJoin(user, eq(orders.buyerId, user.id)) // join on buyerId
+      .leftJoin(user, eq(orders.buyerId, user.id))
       .where(eq(orders.buyerId, session.user.id));
 
-    return NextResponse.json(userOrders);
+    // fetch items for each order
+    const orderIds = userOrders.map((o) => o.id);
+    const items = orderIds.length
+      ? await db
+          .select({
+            orderId: orderItems.orderId,
+            productId: orderItems.productId,
+            productName: products.productName,
+            quantity: orderItems.quantity,
+            subtotal: orderItems.subtotal,
+          })
+          .from(orderItems)
+          .leftJoin(products, eq(orderItems.productId, products.id))
+          .where(inArray(orderItems.orderId, orderIds))
+      : [];
+
+    const paymentsData = orderIds.length
+      ? await db
+          .select({
+            orderId: payments.orderId,
+            status: payments.status,
+            paymentMethod: payments.paymentMethod,
+            paymentReceived: payments.paymentReceived,
+            change: payments.change,
+          })
+          .from(payments)
+          .where(inArray(payments.orderId, orderIds))
+      : [];
+
+    const withItems = userOrders.map((o) => ({
+      ...o,
+      items: items.filter((i) => i.orderId === o.id),
+      payment: paymentsData.find((p) => p.orderId === o.id),
+    }));
+
+    return NextResponse.json(withItems);
   } catch (error) {
     console.error("Error fetching orders:", error);
     return NextResponse.json(

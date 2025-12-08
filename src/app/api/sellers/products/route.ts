@@ -348,12 +348,21 @@ export async function POST(req: NextRequest) {
           });
           console.log("Images saved successfully");
           
-          // Verify images were saved
-          const savedImages = await db
-            .select()
-            .from(productImages)
-            .where(eq(productImages.productId, productId));
-          console.log(`Verified: ${savedImages.length} images saved for product ${productId}`);
+          // Verify images were saved. This is best-effort only; if the verification
+          // query fails (e.g., transient connection issue), we still consider the
+          // product creation successful to avoid showing a false error toast
+          // to the seller after the product was already inserted.
+          try {
+            const savedImages = await executeQuery(async () => {
+              return await db
+                .select()
+                .from(productImages)
+                .where(eq(productImages.productId, productId));
+            });
+            console.log(`Verified: ${savedImages.length} images saved for product ${productId}`);
+          } catch (verifyError) {
+            console.warn("Skipped image verification due to transient error:", verifyError);
+          }
         } catch (imgError: any) {
           console.error("Error saving images:", imgError);
           // Check for data truncation errors

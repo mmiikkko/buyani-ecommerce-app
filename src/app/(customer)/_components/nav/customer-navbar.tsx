@@ -271,6 +271,16 @@ export default function Navbar({ className }: NavbarProps) {
 
             ) : isAuthenticated ? (
               <div className="flex items-center gap-2">
+                <Link href="/orders">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-8 rounded-full border-slate-200 hover:bg-slate-50 px-3 text-xs font-medium"
+                  >
+                    Orders
+                  </Button>
+                </Link>
+
                 <Link href="/cart" className="relative">
                   <Button
                     variant="outline"
