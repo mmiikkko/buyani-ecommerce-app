@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   Star,
   Store,
@@ -16,6 +17,8 @@ import { Button } from "@/components/ui/button";
 import { ProductCard } from "../../_components/product-card";
 import type { Shop } from "@/types/shops";
 import type { Product } from "@/types/products";
+import { toast } from "sonner";
+import { authClient } from "@/server/auth-client";
 
 interface ShopDetailClientProps {
   shop: Shop;
@@ -25,6 +28,11 @@ interface ShopDetailClientProps {
 export function ShopDetailClient({ shop, shopId }: ShopDetailClientProps) {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
+  const [chatting, setChatting] = useState(false);
+  const session = authClient.useSession();
+  const user = session.data?.user;
+  const isAuthenticated = !!user;
+  const router = useRouter();
 
   useEffect(() => {
     fetch(`/api/shops/${shopId}/products`)
@@ -37,6 +45,49 @@ export function ShopDetailClient({ shop, shopId }: ShopDetailClientProps) {
   }, [shopId]);
 
   const rating = shop.shop_rating ? parseFloat(shop.shop_rating) : 0;
+
+  const ensureAuthenticated = useCallback(() => {
+    if (!isAuthenticated) {
+      toast.error("Please sign in to chat");
+      router.push(`/sign-in?redirect=${encodeURIComponent(`/shops/${shopId}`)}`);
+      return false;
+    }
+    return true;
+  }, [isAuthenticated, router, shopId]);
+
+  const handleContactSeller = useCallback(async () => {
+    if (!ensureAuthenticated()) return;
+    try {
+      setChatting(true);
+      const res = await fetch("/api/conversations", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          sellerId: shop.seller_id,
+          productId: null,
+        }),
+      });
+
+      if (!res.ok) {
+        const error = await res.json().catch(() => ({}));
+        throw new Error(error.error || "Failed to start conversation");
+      }
+
+      const conversation = await res.json();
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(
+          new CustomEvent("chatfab:open", {
+            detail: { conversationId: conversation.id },
+          })
+        );
+      }
+      toast.success("Chat opened");
+    } catch (error: any) {
+      toast.error(error?.message || "Failed to contact seller");
+    } finally {
+      setChatting(false);
+    }
+  }, [ensureAuthenticated, shop.seller_id]);
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
@@ -88,11 +139,13 @@ export function ShopDetailClient({ shop, shopId }: ShopDetailClientProps) {
               {shop.description && <p className="text-slate-700 leading-relaxed">{shop.description}</p>}
 
               <div className="flex flex-wrap gap-3 pt-2">
-                <Button variant="outline" className="border-slate-300 hover:bg-white">
+                <Button
+                  variant="outline"
+                  className="border-slate-300 hover:bg-white"
+                  onClick={handleContactSeller}
+                  disabled={chatting}
+                >
                   <MessageCircle className="mr-2 h-4 w-4" /> Contact Seller
-                </Button>
-                <Button variant="outline" className="border-slate-300 hover:bg-white">
-                  <Package className="mr-2 h-4 w-4" /> Follow Shop
                 </Button>
               </div>
 

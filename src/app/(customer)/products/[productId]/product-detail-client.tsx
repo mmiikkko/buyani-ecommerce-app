@@ -10,16 +10,15 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { addToCart } from "@/lib/queries/cart";
 import { AddToCartModal } from "../../_components/add-to-cart-modal";
-import { 
-  ShoppingCart, 
-  Heart, 
-  Star, 
-  Minus, 
-  Plus, 
-  Home, 
+import {
+  ShoppingCart,
+  Star,
+  Minus,
+  Plus,
+  Home,
   MessageCircle,
   Shield,
-  CheckCircle2
+  CheckCircle2,
 } from "lucide-react";
 
 type ProductDetailClientProps = {
@@ -33,7 +32,6 @@ export function ProductDetailClient({ product, userId }: ProductDetailClientProp
   const [isBuying, setIsBuying] = useState(false);
   const [quantity, setQuantity] = useState(1);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
-  const [isWishlisted, setIsWishlisted] = useState(false);
 
   const productPrice = Number(product.price ?? 0);
   const productStock = product.stock ?? 0;
@@ -90,14 +88,6 @@ export function ProductDetailClient({ product, userId }: ProductDetailClientProp
       const newQuantity = Math.max(1, Math.min(prev + delta, productStock));
       return newQuantity;
     });
-  };
-
-  const handleWishlist = () => {
-    if (!ensureAuthenticated(`/products/${product.id}`)) {
-      return;
-    }
-    setIsWishlisted(!isWishlisted);
-    toast.success(isWishlisted ? "Removed from wishlist" : "Added to wishlist");
   };
 
   const handleChatSeller = async () => {
@@ -303,16 +293,6 @@ export function ProductDetailClient({ product, userId }: ProductDetailClientProp
               disabled={isBuying || isOutOfStock}
             >
               {isBuying ? "Processing..." : "Buy Now"}
-            </Button>
-            <Button
-              variant="outline"
-              size="icon"
-              className="h-12 w-12 border-slate-300 hover:bg-slate-50"
-              onClick={handleWishlist}
-            >
-              <Heart 
-                className={`h-5 w-5 ${isWishlisted ? "fill-red-500 text-red-500" : "text-slate-600"}`} 
-              />
             </Button>
           </div>
 

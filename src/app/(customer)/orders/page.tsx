@@ -44,17 +44,16 @@ export default function CustomerOrdersPage() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [actionId, setActionId] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState("all");
 
   const STATUS_TABS = [
     { value: "all", label: "All" },
     { value: "pending", label: "Pending" },
     { value: "accepted", label: "Accepted" },
-    { value: "confirmed", label: "Confirmed" },
     { value: "shipped", label: "Shipped" },
     { value: "delivered", label: "Delivered" },
     { value: "rejected", label: "Rejected" },
-    { value: "completed", label: "Completed" },
   ];
 
   const fetchOrders = async (showLoading = true) => {
@@ -104,8 +103,38 @@ export default function CustomerOrdersPage() {
 
   const filtered = useMemo(() => {
     if (statusFilter === "all") return grouped;
-    return grouped.filter((o) => (o.status || "pending") === statusFilter);
+    return grouped.filter((o) => {
+      const status = o.status || "pending";
+      if (statusFilter === "accepted") {
+        return status === "accepted" || status === "confirmed";
+      }
+      return status === statusFilter;
+    });
   }, [grouped, statusFilter]);
+
+  const markAsReceived = async (orderId: string) => {
+    try {
+      setActionId(orderId);
+      const res = await fetch(`/api/orders?id=${orderId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: "delivered" }),
+      });
+      if (!res.ok) {
+        throw new Error("Failed to update order");
+      }
+      setOrders((prev) =>
+        prev.map((o) =>
+          o.id === orderId || o.orderId === orderId ? { ...o, status: "delivered" } : o
+        )
+      );
+      toast.success("Thanks for confirming! Order marked as received.");
+    } catch (error: any) {
+      toast.error(error?.message || "Could not update order");
+    } finally {
+      setActionId(null);
+    }
+  };
 
   if (loading) {
     return (
@@ -237,6 +266,18 @@ export default function CustomerOrdersPage() {
                         <span className="font-medium text-slate-900">{order.payment.paymentMethod}</span>
                       </p>
                     )}
+                {["accepted", "confirmed", "shipped"].includes(order.status || "") && (
+                  <div className="flex justify-end">
+                    <Button
+                      size="sm"
+                      className="bg-emerald-600 hover:bg-emerald-700"
+                      onClick={() => markAsReceived(order.id || order.orderId)}
+                      disabled={actionId === (order.id || order.orderId)}
+                    >
+                      {actionId === (order.id || order.orderId) ? "Saving..." : "Mark as received"}
+                    </Button>
+                  </div>
+                )}
                   </CardContent>
                 </Card>
               ))}
