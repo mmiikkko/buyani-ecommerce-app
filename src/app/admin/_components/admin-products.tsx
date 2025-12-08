@@ -185,7 +185,7 @@ export function AdminProducts() {
 
       return matchesSearch && matchesFilter;
     });
-  }, [filter, search, products]);
+  }, [products, search, filter, isNewProduct]);
 
   // ------------------------------------------------------------
   // RENDER
