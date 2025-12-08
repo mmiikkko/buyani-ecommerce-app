@@ -93,7 +93,7 @@ function OrdersTable({
   const filteredOrders = useMemo(() => {
     return (orders ?? []).filter((order) => {
       const firstItem = order.items?.[0];
-      const productName = firstItem?.product?.productName ?? firstItem?.productName ?? "Unknown";
+      const productName = firstItem?.productId ?? firstItem?.productName ?? "Unknown";
       const customer = order.buyerName ?? order.buyerId ?? "Unknown";
 
       // no real status in type, skipping filter unless you manage a temp status in frontend
@@ -152,7 +152,7 @@ function OrdersTable({
           <TableBody>
             {currentRows.map((order, idx) => {
               const firstItem = order.items?.[0];
-              const productName = firstItem?.product?.productName ?? firstItem?.productName ?? "Unknown";
+              const productName = firstItem?.productId ?? firstItem?.productName ?? "Unknown";
               const buyerName = order.buyerName ?? order.buyerId ?? "Unknown Customer";
               const orderId = order.orderId || order.id || `order-${idx}`;
 
