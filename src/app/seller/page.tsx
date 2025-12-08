@@ -7,6 +7,7 @@ import { RecentOrders } from "./_components/cards-recentorders";
 import { ChartAreaIcons } from "./_components/cards-chart";
 import { FrequentBought } from "./_components/cards-frequentbought";
 import { Order } from "@/types/orders";
+import { Store, Loader2 } from "lucide-react";
 
 export default function SellerDashboard() {
   const [stats, setStats] = useState({
@@ -46,16 +47,33 @@ export default function SellerDashboard() {
   }, []);
 
   return (
-    <section className="relative min-h-screen min-w-full overflow-hidden space-y-5 mt-18 mx-3">
-      <h1 className="text-xl font-bold mb-1 text-[#2E7D32]">
-        Welcome back
-      </h1>
-      <p> Here&apos;s what&apos;s happening with your store today. </p>
+    <div className="relative min-h-screen min-w-full overflow-hidden space-y-6 pt-17 px-6">
+      {/* Enhanced Header */}
+      <div className="space-y-2 mb-6">
+        <div className="flex items-center gap-3">
+          <div className="p-3 rounded-xl bg-[#2E7D32]/10">
+            <Store className="h-6 w-6 text-[#2E7D32]" />
+          </div>
+          <div>
+            <h1 className="text-3xl font-bold text-[#2E7D32]">
+              Welcome back
+            </h1>
+            <p className="text-muted-foreground mt-1">
+              Here&apos;s what&apos;s happening with your store today
+            </p>
+          </div>
+        </div>
+      </div>
 
-      {/* Activity */}
-      <section className="flex flex-wrap min-h-[50%] min-w-[90%] max-w-[100%] justify-center">
+      {/* Stats Cards */}
+      <section className="w-full">
         {loading ? (
-          <p>Loading stats...</p>
+          <div className="flex items-center justify-center py-12">
+            <div className="inline-flex items-center gap-2 text-muted-foreground">
+              <Loader2 className="h-5 w-5 animate-spin" />
+              <p>Loading dashboard stats...</p>
+            </div>
+          </div>
         ) : (
           <CardActivity
             totalSales={`₱${Number(stats.totalSales).toLocaleString("en-US", {
@@ -70,15 +88,15 @@ export default function SellerDashboard() {
       </section>
 
       {/* Recent Orders */}
-      <section className="flex flex-wrap min-h-[50%] min-w-[90%] max-w-[100%] justify-center">
+      <section className="w-full">
         <RecentOrders orders={recentOrders} />
       </section>
 
       {/* Charts and Stats */}
-      <section className="flex min-h-[50%] min-w-[90%] max-w-[100%] justify-center gap-5">
+      <section className="grid grid-cols-1 lg:grid-cols-2 gap-6 w-full">
         <ChartAreaIcons />
         <FrequentBought />
       </section>
-    </section>
+    </div>
   );
 }

@@ -24,7 +24,9 @@ export default function Products() {
       }
       setError(null);
       
-      const res = await fetch("/api/sellers/products");
+      const res = await fetch("/api/sellers/products", {
+        credentials: "include",
+      });
       
       if (!res.ok) {
         if (res.status === 401) {
@@ -51,24 +53,56 @@ export default function Products() {
     fetchProducts(true);
   }, [fetchProducts]);
 
-  const handleAddProduct = async (newProduct: Product) => {
-    try {
-      const res = await fetch("/api/sellers/products", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(newProduct),
-      });
+  const handleAddProduct = async (newProduct: Product): Promise<void> => {
+    const maxRetries = 3;
+    let lastError: Error | null = null;
 
-      if (!res.ok) {
-        throw new Error("Failed to create product");
+    for (let attempt = 0; attempt < maxRetries; attempt++) {
+      try {
+        const res = await fetch("/api/sellers/products", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify(newProduct),
+        });
+
+        if (!res.ok) {
+          // Try to get error message from response
+          let errorMessage = "Failed to create product";
+          try {
+            const errorData = await res.json();
+            errorMessage = errorData.error || errorMessage;
+          } catch {
+            // If response is not JSON, use status text
+            errorMessage = res.statusText || errorMessage;
+          }
+
+          // If it's a connection error (503), retry
+          if (res.status === 503 && attempt < maxRetries - 1) {
+            const delay = Math.min(200 * Math.pow(2, attempt), 2000);
+            await new Promise(resolve => setTimeout(resolve, delay));
+            continue;
+          }
+
+          // For other errors or final attempt, throw
+          throw new Error(errorMessage);
+        }
+
+        // Success - refresh products list
+        await fetchProducts(false);
+        return; // Success, exit retry loop
+      } catch (err) {
+        lastError = err instanceof Error ? err : new Error("Failed to create product");
+        
+        // If it's not a connection error or we've exhausted retries, throw
+        if (attempt === maxRetries - 1 || !lastError.message.includes("connection")) {
+          throw lastError;
+        }
       }
-
-      toast.success("Product created successfully");
-      await fetchProducts(false);
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : "Failed to create product";
-      toast.error(errorMessage);
     }
+
+    // Should never reach here, but just in case
+    throw lastError || new Error("Failed to create product after retries");
   };
 
   const handleDeleteProduct = async (productId: string) => {
@@ -91,6 +125,62 @@ export default function Products() {
       const errorMessage = err instanceof Error ? err.message : "Failed to delete product";
       toast.error(errorMessage);
     }
+  };
+
+  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+
+  const handleEditProduct = (product: Product) => {
+    setEditingProduct(product);
+  };
+
+  const handleUpdateProduct = async (updatedProduct: Product): Promise<void> => {
+    const maxRetries = 3;
+    let lastError: Error | null = null;
+
+    for (let attempt = 0; attempt < maxRetries; attempt++) {
+      try {
+        const res = await fetch(`/api/sellers/products?id=${updatedProduct.id}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify(updatedProduct),
+        });
+
+        if (!res.ok) {
+          let errorMessage = "Failed to update product";
+          try {
+            const errorData = await res.json();
+            errorMessage = errorData.error || errorMessage;
+          } catch {
+            errorMessage = res.statusText || errorMessage;
+          }
+
+          if (res.status === 503 && attempt < maxRetries - 1) {
+            const delay = Math.min(200 * Math.pow(2, attempt), 2000);
+            await new Promise(resolve => setTimeout(resolve, delay));
+            continue;
+          }
+
+          throw new Error(errorMessage);
+        }
+
+        await fetchProducts(false);
+        setEditingProduct(null);
+        return;
+      } catch (err) {
+        lastError = err instanceof Error ? err : new Error("Failed to update product");
+        
+        if (attempt === maxRetries - 1 || !lastError.message.includes("connection")) {
+          throw lastError;
+        }
+      }
+    }
+
+    throw lastError || new Error("Failed to update product after retries");
+  };
+
+  const handleEditComplete = () => {
+    setEditingProduct(null);
   };
 
   if (loading) {
@@ -157,7 +247,12 @@ export default function Products() {
             <RefreshCw className={`h-4 w-4 ${refreshing ? "animate-spin" : ""}`} />
             Refresh
           </Button>
-          <AddProducts onAdd={handleAddProduct} />
+          <AddProducts 
+            onAdd={handleAddProduct}
+            onUpdate={handleUpdateProduct}
+            productToEdit={editingProduct}
+            onEditComplete={handleEditComplete}
+          />
         </div>
       </div>
 
@@ -165,7 +260,12 @@ export default function Products() {
         <div className="flex justify-center items-center h-64 w-full">
           <div className="text-center">
             <p className="text-lg text-gray-500 mb-4">You have no listed products yet</p>
-            <AddProducts onAdd={handleAddProduct} />
+            <AddProducts 
+              onAdd={handleAddProduct}
+              onUpdate={handleUpdateProduct}
+              productToEdit={editingProduct}
+              onEditComplete={handleEditComplete}
+            />
           </div>
         </div>
       )}
@@ -177,6 +277,7 @@ export default function Products() {
               key={item.id} 
               product={item} 
               onDelete={handleDeleteProduct}
+              onEdit={handleEditProduct}
             />
           ))}
         </div>

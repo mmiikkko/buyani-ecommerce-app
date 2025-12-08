@@ -1,24 +1,8 @@
-// app/api/sellers/recent-orders/route.ts
 import { NextResponse } from "next/server";
 import { db } from "@/server/drizzle";
 import { getServerSession } from "@/server/session";
-import { eq } from "drizzle-orm";
-import { orders, orderItems, products, shop } from "@/server/schema/auth-schema";
-
-// TypeScript type for your recent order
-export type RecentOrderItem = {
-  productName: string;
-  quantity: number;
-  subtotal: number;
-};
-
-export type RecentOrder = {
-  orderId: string;
-  createdAt: string; // ISO string
-  total: number;
-  items: RecentOrderItem[];
-  shopName: string;
-};
+import { eq, inArray, sql, and, gte } from "drizzle-orm";
+import { orders, orderItems, products, shop, payments } from "@/server/schema/auth-schema";
 
 export async function GET() {
   try {
@@ -29,59 +13,127 @@ export async function GET() {
 
     const sellerId = session.user.id;
 
-    // Fetch recent orders for this seller
-    const rawOrders = await db
+    // Get seller's shops
+    const sellerShops = await db
+      .select({ id: shop.id })
+      .from(shop)
+      .where(eq(shop.sellerId, sellerId));
+
+    if (sellerShops.length === 0) {
+      return NextResponse.json({
+        chart: [],
+        topItem: null,
+      });
+    }
+
+    const shopIds = sellerShops.map((s) => s.id);
+
+    // Get seller's products
+    const sellerProducts = await db
+      .select({ id: products.id })
+      .from(products)
+      .where(inArray(products.shopId, shopIds));
+
+    const productIds = sellerProducts.map((p) => p.id);
+
+    if (productIds.length === 0) {
+      return NextResponse.json({
+        chart: [],
+        topItem: null,
+      });
+    }
+
+    // Get orders from the last 30 days
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+    // Get order items for seller's products from last 30 days
+    const orderItemsList = await db
       .select({
-        orderId: orders.id,
-        createdAt: orders.createdAt,
-        total: orders.total,
+        orderId: orderItems.orderId,
         productId: orderItems.productId,
         quantity: orderItems.quantity,
-        subtotal: orderItems.subtotal,
+        createdAt: orders.createdAt,
         productName: products.productName,
-        shopName: shop.shopName,
+        paymentStatus: payments.status,
       })
-      .from(orders)
-      .innerJoin(orderItems, eq(orderItems.orderId, orders.id))
-      .innerJoin(products, eq(products.id, orderItems.productId))
-      .innerJoin(shop, eq(shop.id, products.shopId))
-      .where(eq(shop.sellerId, sellerId))
-      .orderBy(orders.createdAt)
-      .limit(10);
+      .from(orderItems)
+      .innerJoin(orders, eq(orderItems.orderId, orders.id))
+      .innerJoin(products, eq(orderItems.productId, products.id))
+      .leftJoin(payments, eq(payments.orderId, orders.id))
+      .where(
+        and(
+          inArray(orderItems.productId, productIds),
+          gte(orders.createdAt, thirtyDaysAgo)
+        )
+      );
 
-    // Group order items under each order
-    const groupedOrders: RecentOrder[] = [];
-    const map = new Map<string, RecentOrder>();
+    // Filter out rejected orders
+    const validOrderItems = orderItemsList.filter(
+      (item) => !item.paymentStatus || item.paymentStatus.toLowerCase() !== "rejected"
+    );
 
-    rawOrders.forEach((row) => {
-      const orderId = row.orderId;
-      const existing = map.get(orderId);
-      const item: RecentOrderItem = {
-        productName: row.productName,
-        quantity: row.quantity,
-        subtotal: Number(row.subtotal),
-      };
+    // Generate chart data - group by day for last 30 days
+    const chartDataMap = new Map<string, number>();
+    
+    // Initialize all 30 days with 0
+    for (let i = 0; i < 30; i++) {
+      const date = new Date();
+      date.setDate(date.getDate() - i);
+      const dateKey = date.toISOString().split('T')[0];
+      chartDataMap.set(dateKey, 0);
+    }
 
-      if (existing) {
-        existing.items.push(item);
-      } else {
-        const newOrder: RecentOrder = {
-          orderId,
-          createdAt: row.createdAt.toISOString(),
-          total: Number(row.total),
-          shopName: row.shopName,
-          items: [item],
-        };
-        map.set(orderId, newOrder);
-        groupedOrders.push(newOrder);
+    // Aggregate quantities by day
+    validOrderItems.forEach((item) => {
+      if (item.createdAt) {
+        const dateKey = new Date(item.createdAt).toISOString().split('T')[0];
+        const currentTotal = chartDataMap.get(dateKey) || 0;
+        chartDataMap.set(dateKey, currentTotal + Number(item.quantity || 0));
       }
     });
 
-    return NextResponse.json(groupedOrders);
+    // Convert to array format for chart (most recent first)
+    const chart = Array.from(chartDataMap.entries())
+      .map(([day, total]) => ({ day, total }))
+      .sort((a, b) => new Date(a.day).getTime() - new Date(b.day).getTime());
+
+    // Find top selling product
+    const productSalesMap = new Map<string, { productName: string; totalSold: number }>();
+    
+    validOrderItems.forEach((item) => {
+      if (item.productName && item.productId) {
+        const existing = productSalesMap.get(item.productId);
+        if (existing) {
+          existing.totalSold += Number(item.quantity || 0);
+        } else {
+          productSalesMap.set(item.productId, {
+            productName: item.productName,
+            totalSold: Number(item.quantity || 0),
+          });
+        }
+      }
+    });
+
+    // Find the top item
+    let topItem: { productName: string; totalSold: number } | null = null;
+    let maxSold = 0;
+
+    productSalesMap.forEach((product) => {
+      if (product.totalSold > maxSold) {
+        maxSold = product.totalSold;
+        topItem = product;
+      }
+    });
+
+    return NextResponse.json({
+      chart,
+      topItem,
+    });
   } catch (error) {
-    console.error(error);
+    console.error("Error fetching analytics:", error);
     return NextResponse.json(
-      { error: "Failed to fetch recent orders" },
+      { error: "Failed to fetch analytics" },
       { status: 500 }
     );
   }

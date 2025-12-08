@@ -6,43 +6,83 @@ import {
   CardHeader,
   CardContent,
   CardDescription,
+  CardTitle,
 } from "@/components/ui/card";
+import { Star, TrendingUp } from "lucide-react";
 
 export function FrequentBought() {
   const [item, setItem] = useState<{
     productName: string;
     totalSold: number;
   } | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch("/api/sellers/analytics")
-      .then(res => res.json())
-      .then(res => setItem(res.topItem));
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        const res = await fetch("/api/sellers/analytics");
+        if (res.ok) {
+          const result = await res.json();
+          setItem(result.topItem ?? null);
+        } else {
+          setItem(null);
+        }
+      } catch (error) {
+        console.error("Error fetching top item:", error);
+        setItem(null);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
   }, []);
 
   return (
-    <div className="min-w-[45%] mr-5">
-      <Card>
-        <CardHeader>
-          <h1 className="font-bold">Most Bought Item</h1>
-          <CardDescription>Last 30 days</CardDescription>
-        </CardHeader>
+    <Card className="w-full transition-all duration-300 hover:shadow-lg">
+      <CardHeader className="pb-4">
+        <div className="flex items-center gap-3">
+          <div className="p-2 rounded-lg bg-amber-500/10">
+            <Star className="h-5 w-5 text-amber-600" />
+          </div>
+          <div>
+            <CardTitle className="text-xl">Most Bought Item</CardTitle>
+            <CardDescription className="mt-1">
+              Top selling product in the last 30 days
+            </CardDescription>
+          </div>
+        </div>
+      </CardHeader>
 
-        <CardContent>
-          {item ? (
-            <>
-              <p className="text-lg font-semibold">{item.productName}</p>
-              <p className="text-sm text-muted-foreground">
-                Sold: <span className="font-bold">{item.totalSold}</span>
-              </p>
-            </>
-          ) : (
+      <CardContent>
+        {loading ? (
+          <div className="flex items-center justify-center py-12">
+            <p className="text-sm text-muted-foreground">Loading data...</p>
+          </div>
+        ) : item ? (
+          <div className="space-y-4">
+            <div className="p-4 rounded-xl bg-gradient-to-br from-amber-50 to-emerald-50 border border-amber-100">
+              <div className="flex items-center gap-2 mb-2">
+                <TrendingUp className="h-4 w-4 text-amber-600" />
+                <p className="text-lg font-bold text-slate-900">{item.productName}</p>
+              </div>
+              <div className="flex items-baseline gap-2">
+                <span className="text-sm text-muted-foreground">Total Sold:</span>
+                <span className="text-2xl font-bold text-[#2E7D32]">{item.totalSold}</span>
+                <span className="text-sm text-muted-foreground">units</span>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div className="flex flex-col items-center justify-center py-12 text-center">
+            <Star className="h-12 w-12 text-muted-foreground/30 mb-3" />
             <p className="text-sm text-muted-foreground">
               No sales data available
             </p>
-          )}
-        </CardContent>
-      </Card>
-    </div>
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
 }

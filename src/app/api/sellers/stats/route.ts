@@ -59,10 +59,11 @@ export async function GET(req: NextRequest) {
         // Total Orders
         totalOrders = orderIds.length;
 
-        // Get orders with payments
+        // Get orders with payments and order totals
         const ordersWithPayments = await db
           .select({
             orderId: orders.id,
+            orderTotal: orders.total,
             paymentReceived: payments.paymentReceived,
             status: payments.status,
           })
@@ -71,8 +72,19 @@ export async function GET(req: NextRequest) {
           .where(inArray(orders.id, orderIds));
 
         // Calculate total sales
+        // For seller stats, we use order total (which represents the seller's revenue from that order)
+        // This matches how recent-orders displays amounts
+        // Exclude rejected orders from total sales
         totalSales = ordersWithPayments.reduce((sum, order) => {
-          const amount = order.paymentReceived ? Number(order.paymentReceived) : 0;
+          // Skip rejected orders - they shouldn't count towards sales
+          const orderStatus = order.status?.toLowerCase();
+          if (orderStatus === "rejected") {
+            return sum;
+          }
+          
+          // Use order total as the primary source (seller's revenue from the order)
+          // paymentReceived might be different (e.g., includes change for cash payments)
+          const amount = order.orderTotal ? Number(order.orderTotal) : 0;
           return sum + amount;
         }, 0);
 
@@ -81,6 +93,9 @@ export async function GET(req: NextRequest) {
           (order) => !order.status || order.status.toLowerCase() === "pending"
         ).length;
       }
+    } else {
+      // If no products, still return zeros but log for debugging
+      console.log(`[Stats] Seller ${sellerId} has no products. Shop IDs: ${shopIds.join(", ")}`);
     }
 
     return NextResponse.json({

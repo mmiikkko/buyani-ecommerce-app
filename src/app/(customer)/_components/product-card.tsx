@@ -64,6 +64,7 @@ export function ProductCard({ product }: ProductCardProps) {
             alt={product.productName}
             fill
             className="object-cover group-hover:scale-105 transition-transform duration-200"
+            unoptimized={primaryImage.startsWith("data:")}
             onError={(e) => {
               // Fallback if image fails to load
               const target = e.target as HTMLImageElement;

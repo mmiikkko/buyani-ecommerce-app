@@ -100,6 +100,50 @@ export function ProductDetailClient({ product, userId }: ProductDetailClientProp
     toast.success(isWishlisted ? "Removed from wishlist" : "Added to wishlist");
   };
 
+  const handleChatSeller = async () => {
+    if (!ensureAuthenticated(`/products/${product.id}`)) {
+      return;
+    }
+
+    try {
+      // Get seller ID from shop
+      const shopRes = await fetch(`/api/shops/${product.shopId}`);
+      if (!shopRes.ok) {
+        toast.error("Failed to get seller information");
+        return;
+      }
+
+      const shopData = await shopRes.json();
+      const sellerId = shopData.seller_id;
+
+      if (!sellerId) {
+        toast.error("Seller information not found");
+        return;
+      }
+
+      // Create or get existing conversation
+      const convRes = await fetch("/api/conversations", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          sellerId,
+          productId: product.id,
+        }),
+      });
+
+      if (convRes.ok) {
+        const conversation = await convRes.json();
+        router.push(`/chat?conversationId=${conversation.id}`);
+      } else {
+        const error = await convRes.json();
+        toast.error(error.error || "Failed to start conversation");
+      }
+    } catch (error) {
+      console.error("Error starting chat:", error);
+      toast.error("Failed to start chat");
+    }
+  };
+
   const isVerifiedSeller = product.shopStatus === "approved";
 
   return (
@@ -289,7 +333,11 @@ export function ProductDetailClient({ product, userId }: ProductDetailClientProp
                     Visit Store
                   </Button>
                 </Link>
-                <Button variant="outline" className="border-slate-300 hover:bg-white">
+                <Button 
+                  variant="outline" 
+                  className="border-slate-300 hover:bg-white"
+                  onClick={handleChatSeller}
+                >
                   <MessageCircle className="mr-2 h-4 w-4" />
                   Chat
                 </Button>

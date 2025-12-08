@@ -8,6 +8,7 @@ import {
   payments,
   transactions,
   productImages,
+  user,
 } from "@/server/schema/auth-schema";
 import { eq, inArray } from "drizzle-orm";
 import { getServerSession } from "@/server/session";
@@ -20,76 +21,95 @@ export async function GET() {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const sellerId = session.user.id;
+    // Handle database connection errors gracefully
+    try {
+      const sellerId = session.user.id;
 
-    const sellerShops = await db
-      .select({ id: shop.id })
-      .from(shop)
-      .where(eq(shop.sellerId, sellerId));
+      const sellerShops = await db
+        .select({ id: shop.id })
+        .from(shop)
+        .where(eq(shop.sellerId, sellerId));
 
-    if (sellerShops.length === 0) {
-      return NextResponse.json([]);
-    }
+      if (sellerShops.length === 0) {
+        return NextResponse.json([]);
+      }
 
-    const shopIds = sellerShops.map((s) => s.id);
+      const shopIds = sellerShops.map((s) => s.id);
 
-    const sellerProducts = await db
-      .select({ id: products.id })
-      .from(products)
-      .where(inArray(products.shopId, shopIds));
+      const sellerProducts = await db
+        .select({ id: products.id })
+        .from(products)
+        .where(inArray(products.shopId, shopIds));
 
-    const productIds = sellerProducts.map((p) => p.id);
+      const productIds = sellerProducts.map((p) => p.id);
 
-    if (productIds.length === 0) {
-      return NextResponse.json([]);
-    }
+      if (productIds.length === 0) {
+        return NextResponse.json([]);
+      }
 
-    const items = await db
-      .select()
-      .from(orderItems)
-      .where(inArray(orderItems.productId, productIds));
+      const items = await db
+        .select()
+        .from(orderItems)
+        .where(inArray(orderItems.productId, productIds));
 
-    const orderIds = [...new Set(items.map((item) => item.orderId))];
+      const orderIds = [...new Set(items.map((item) => item.orderId))];
 
-    if (orderIds.length === 0) {
-      return NextResponse.json([]);
-    }
+      if (orderIds.length === 0) {
+        return NextResponse.json([]);
+      }
 
-    const ordersList = await db
-      .select()
-      .from(orders)
-      .where(inArray(orders.id, orderIds));
+      // Get orders with buyer information
+      const ordersList = await db
+        .select({
+          id: orders.id,
+          buyerId: orders.buyerId,
+          addressId: orders.addressId,
+          total: orders.total,
+          createdAt: orders.createdAt,
+          updatedAt: orders.updatedAt,
+          buyerName: user.name,
+          buyerFirstName: user.first_name,
+          buyerLastName: user.last_name,
+        })
+        .from(orders)
+        .leftJoin(user, eq(orders.buyerId, user.id))
+        .where(inArray(orders.id, orderIds));
 
-    const allOrderItems = await db
-      .select({
-        orderItem: orderItems,
-        product: products,
-        image: productImages,
-      })
-      .from(orderItems)
-      .leftJoin(products, eq(orderItems.productId, products.id))
-      .leftJoin(productImages, eq(productImages.productId, products.id))
-      .where(inArray(orderItems.orderId, orderIds));
+      const allOrderItems = await db
+        .select({
+          orderItem: orderItems,
+          product: products,
+          image: productImages,
+        })
+        .from(orderItems)
+        .leftJoin(products, eq(orderItems.productId, products.id))
+        .leftJoin(productImages, eq(productImages.productId, products.id))
+        .where(inArray(orderItems.orderId, orderIds));
 
-    const allPayments = await db
-      .select()
-      .from(payments)
-      .where(inArray(payments.orderId, orderIds));
+      const allPayments = await db
+        .select()
+        .from(payments)
+        .where(inArray(payments.orderId, orderIds));
 
-    const allTransactions = await db
-      .select()
-      .from(transactions)
-      .where(inArray(transactions.orderId, orderIds));
+      const allTransactions = await db
+        .select()
+        .from(transactions)
+        .where(inArray(transactions.orderId, orderIds));
 
-    // 🟩 Type-safe product item group
-    type GroupedOrderItem = {
-      orderItem: typeof orderItems.$inferSelect;
-      product: (typeof products.$inferSelect & { images: unknown[] }) | null;
-    };
+      // 🟩 Type-safe product item group
+      type GroupedOrderItem = {
+        orderItem: typeof orderItems.$inferSelect;
+        product: (typeof products.$inferSelect & { images: unknown[] }) | null;
+      };
 
-    const transformedOrders = ordersList.map((order) => {
+      const transformedOrders = ordersList.map((orderRow) => {
+      const buyerName = orderRow.buyerName || 
+        (orderRow.buyerFirstName && orderRow.buyerLastName 
+          ? `${orderRow.buyerFirstName} ${orderRow.buyerLastName}`.trim()
+          : orderRow.buyerFirstName || orderRow.buyerLastName || null);
+      
       const orderItemsForOrder = allOrderItems.filter(
-        (item) => item.orderItem.orderId === order.id
+        (item) => item.orderItem.orderId === orderRow.id
       );
 
       const itemsWithProducts = orderItemsForOrder.reduce(
@@ -136,18 +156,19 @@ export async function GET() {
           : null,
       }));
 
-      const payment = allPayments.find((p) => p.orderId === order.id);
+      const payment = allPayments.find((p) => p.orderId === orderRow.id);
       const orderTransactions = allTransactions.filter(
-        (t) => t.orderId === order.id
+        (t) => t.orderId === orderRow.id
       );
 
       return {
-        id: order.id,
-        buyerId: order.buyerId,
-        addressId: order.addressId,
-        total: order.total ? Number(order.total) : null,
-        createdAt: order.createdAt,
-        updatedAt: order.updatedAt,
+        id: orderRow.id,
+        buyerId: orderRow.buyerId,
+        buyerName: buyerName,
+        addressId: orderRow.addressId,
+        total: orderRow.total ? Number(orderRow.total) : null,
+        createdAt: orderRow.createdAt,
+        updatedAt: orderRow.updatedAt,
         items,
         payment: payment
           ? {
@@ -177,9 +198,26 @@ export async function GET() {
         status: payment?.status?.toLowerCase() || "pending",
         type: orderTransactions[0]?.transactionType || "online",
       };
-    });
+      });
 
-    return NextResponse.json(transformedOrders);
+      return NextResponse.json(transformedOrders);
+    } catch (dbError: any) {
+      // Check for database connection errors
+      const isConnectionError = 
+        dbError?.cause?.code === "ECONNRESET" ||
+        dbError?.cause?.code === "PROTOCOL_CONNECTION_LOST" ||
+        dbError?.cause?.errno === -4077 ||
+        dbError?.message?.includes("ECONNRESET");
+
+      if (isConnectionError) {
+        console.error("Database connection error in orders API:", dbError);
+        return NextResponse.json(
+          { error: "Database connection error. Please try again." },
+          { status: 503 } // Service Unavailable
+        );
+      }
+      throw dbError; // Re-throw if it's not a connection error
+    }
   } catch (error) {
     // 🟩 FIX: error is unknown → properly narrowed
     if (error instanceof Error) {

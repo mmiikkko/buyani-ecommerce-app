@@ -18,27 +18,52 @@ export async function GET(req: NextRequest) {
     const shopId = searchParams.get("id");
     const statusFilter = searchParams.get("status"); // "approved", "pending", or null for all
 
+    // Handle database connection errors with retry
+    const executeQuery = async <T>(queryFn: () => Promise<T>, retries = 3): Promise<T> => {
+      for (let attempt = 0; attempt < retries; attempt++) {
+        try {
+          return await queryFn();
+        } catch (error: any) {
+          const isConnectionError = 
+            error?.cause?.code === "ECONNRESET" ||
+            error?.cause?.code === "PROTOCOL_CONNECTION_LOST" ||
+            error?.cause?.errno === -4077 ||
+            error?.message?.includes("ECONNRESET");
+
+          if (isConnectionError && attempt < retries - 1) {
+            const delay = Math.min(100 * Math.pow(2, attempt), 1000);
+            await new Promise(resolve => setTimeout(resolve, delay));
+            continue;
+          }
+          throw error;
+        }
+      }
+      throw new Error("Query failed after retries");
+    };
+
     // If shopId is provided, return single shop
     if (shopId) {
-      const shopItem = await db
-        .select({
-          id: shop.id,
-          sellerId: shop.sellerId,
-          shopName: shop.shopName,
-          shopRating: shop.shopRating,
-          description: shop.description,
-          imageURL: shop.imageURL,
-          status: shop.status,
-          createdAt: shop.createdAt,
-          updatedAt: shop.updatedAt,
-          ownerName: user.name,
-          ownerFirstName: user.first_name,
-          ownerLastName: user.last_name,
-        })
-        .from(shop)
-        .leftJoin(user, eq(shop.sellerId, user.id))
-        .where(eq(shop.id, shopId))
-        .limit(1);
+      const shopItem = await executeQuery(async () => {
+        return await db
+          .select({
+            id: shop.id,
+            sellerId: shop.sellerId,
+            shopName: shop.shopName,
+            shopRating: shop.shopRating,
+            description: shop.description,
+            imageURL: shop.imageURL,
+            status: shop.status,
+            createdAt: shop.createdAt,
+            updatedAt: shop.updatedAt,
+            ownerName: user.name,
+            ownerFirstName: user.first_name,
+            ownerLastName: user.last_name,
+          })
+          .from(shop)
+          .leftJoin(user, eq(shop.sellerId, user.id))
+          .where(eq(shop.id, shopId))
+          .limit(1);
+      });
 
       if (!shopItem.length) {
         return corsResponse(
@@ -50,13 +75,15 @@ export async function GET(req: NextRequest) {
       const shopData = shopItem[0];
       
       // Get product count
-      const productCount = await db
-        .select({ count: sql<number>`count(*)` })
-        .from(products)
-        .where(and(
-          eq(products.shopId, shopData.id),
-          eq(products.isAvailable, true)
-        ));
+      const productCount = await executeQuery(async () => {
+        return await db
+          .select({ count: sql<number>`count(*)` })
+          .from(products)
+          .where(and(
+            eq(products.shopId, shopData.id),
+            eq(products.isAvailable, true)
+          ));
+      });
 
       return corsResponse({
         id: shopData.id,
@@ -78,47 +105,8 @@ export async function GET(req: NextRequest) {
     // Build query with optional status filter
     let shopsList;
     if (statusFilter && statusFilter !== "all") {
-      shopsList = await db
-        .select({
-          id: shop.id,
-          sellerId: shop.sellerId,
-          shopName: shop.shopName,
-          shopRating: shop.shopRating,
-          description: shop.description,
-          imageURL: shop.imageURL,
-          status: shop.status,
-          createdAt: shop.createdAt,
-          updatedAt: shop.updatedAt,
-          ownerName: user.name,
-          ownerFirstName: user.first_name,
-          ownerLastName: user.last_name,
-        })
-        .from(shop)
-        .leftJoin(user, eq(shop.sellerId, user.id))
-        .where(eq(shop.status, statusFilter));
-    } else {
-      // Return all shops (for status=all or no filter, but default to approved for backward compatibility)
-      if (statusFilter === "all") {
-        shopsList = await db
-          .select({
-            id: shop.id,
-            sellerId: shop.sellerId,
-            shopName: shop.shopName,
-            shopRating: shop.shopRating,
-            description: shop.description,
-            imageURL: shop.imageURL,
-            status: shop.status,
-            createdAt: shop.createdAt,
-            updatedAt: shop.updatedAt,
-            ownerName: user.name,
-            ownerFirstName: user.first_name,
-            ownerLastName: user.last_name,
-          })
-          .from(shop)
-          .leftJoin(user, eq(shop.sellerId, user.id));
-      } else {
-        // Default: return approved shops only (for backward compatibility)
-        shopsList = await db
+      shopsList = await executeQuery(async () => {
+        return await db
           .select({
             id: shop.id,
             sellerId: shop.sellerId,
@@ -135,20 +123,67 @@ export async function GET(req: NextRequest) {
           })
           .from(shop)
           .leftJoin(user, eq(shop.sellerId, user.id))
-          .where(eq(shop.status, "approved"));
+          .where(eq(shop.status, statusFilter));
+      });
+    } else {
+      // Return all shops (for status=all or no filter, but default to approved for backward compatibility)
+      if (statusFilter === "all") {
+        shopsList = await executeQuery(async () => {
+          return await db
+            .select({
+              id: shop.id,
+              sellerId: shop.sellerId,
+              shopName: shop.shopName,
+              shopRating: shop.shopRating,
+              description: shop.description,
+              imageURL: shop.imageURL,
+              status: shop.status,
+              createdAt: shop.createdAt,
+              updatedAt: shop.updatedAt,
+              ownerName: user.name,
+              ownerFirstName: user.first_name,
+              ownerLastName: user.last_name,
+            })
+            .from(shop)
+            .leftJoin(user, eq(shop.sellerId, user.id));
+        });
+      } else {
+        // Default: return approved shops only (for backward compatibility)
+        shopsList = await executeQuery(async () => {
+          return await db
+            .select({
+              id: shop.id,
+              sellerId: shop.sellerId,
+              shopName: shop.shopName,
+              shopRating: shop.shopRating,
+              description: shop.description,
+              imageURL: shop.imageURL,
+              status: shop.status,
+              createdAt: shop.createdAt,
+              updatedAt: shop.updatedAt,
+              ownerName: user.name,
+              ownerFirstName: user.first_name,
+              ownerLastName: user.last_name,
+            })
+            .from(shop)
+            .leftJoin(user, eq(shop.sellerId, user.id))
+            .where(eq(shop.status, "approved"));
+        });
       }
     }
 
     // Get product counts for each shop
     const shopsWithCounts = await Promise.all(
       shopsList.map(async (shopItem) => {
-        const productCount = await db
-          .select({ count: sql<number>`count(*)` })
-          .from(products)
-          .where(and(
-            eq(products.shopId, shopItem.id),
-            eq(products.isAvailable, true)
-          ));
+        const productCount = await executeQuery(async () => {
+          return await db
+            .select({ count: sql<number>`count(*)` })
+            .from(products)
+            .where(and(
+              eq(products.shopId, shopItem.id),
+              eq(products.isAvailable, true)
+            ));
+        });
 
         return {
           id: shopItem.id,
@@ -169,10 +204,25 @@ export async function GET(req: NextRequest) {
     );
 
     return corsResponse(shopsWithCounts);
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error fetching shops:", error);
+    
+    // Check for database connection errors
+    const isConnectionError = 
+      error?.cause?.code === "ECONNRESET" ||
+      error?.cause?.code === "PROTOCOL_CONNECTION_LOST" ||
+      error?.cause?.errno === -4077 ||
+      error?.message?.includes("ECONNRESET");
+
+    if (isConnectionError) {
+      return corsResponse(
+        { error: "Database connection error. Please try again." },
+        503 // Service Unavailable
+      );
+    }
+
     return corsResponse(
-      { error: "Failed to fetch shops" },
+      { error: "Failed to fetch shops", details: error?.message || "Unknown error" },
       500
     );
   }

@@ -151,6 +151,7 @@ export default function Orders() {
         filter={filter}
         search={search}
         onStatusUpdate={handleOrderStatusUpdate}
+        onRefresh={() => fetchOrders(false)}
       />
     </section>
   );

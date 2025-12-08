@@ -344,3 +344,51 @@ export const reviews = mysqlTable("reviews", {
 (table) => ({
   reviewUnique: unique("review_unique").on(table.orderId, table.buyerId),
 }));
+
+export const conversations = mysqlTable("conversations", {
+  id: varchar("id", { length: 36 }).primaryKey(),
+  
+  customerId: varchar("customer_id", { length: 36 })
+    .notNull()
+    .references(() => user.id, { onDelete: "cascade" }),
+  
+  sellerId: varchar("seller_id", { length: 36 })
+    .notNull()
+    .references(() => user.id, { onDelete: "cascade" }),
+  
+  productId: varchar("product_id", { length: 36 })
+    .references(() => products.id, { onDelete: "set null" }),
+  
+  lastMessageAt: timestamp("last_message_at", { fsp: 3 }).defaultNow(),
+  createdAt: timestamp("created_at", { fsp: 3 }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { fsp: 3 })
+    .$onUpdate(() => new Date())
+    .notNull(),
+},
+(table) => ({
+  uniqueConversation: unique("unique_conversation").on(
+    table.customerId,
+    table.sellerId,
+    table.productId
+  ),
+}));
+
+export const messages = mysqlTable("messages", {
+  id: varchar("id", { length: 36 }).primaryKey(),
+  
+  conversationId: varchar("conversation_id", { length: 36 })
+    .notNull()
+    .references(() => conversations.id, { onDelete: "cascade" }),
+  
+  senderId: varchar("sender_id", { length: 36 })
+    .notNull()
+    .references(() => user.id, { onDelete: "cascade" }),
+  
+  content: text("content").notNull(),
+  isRead: boolean("is_read").default(false).notNull(),
+  
+  createdAt: timestamp("created_at", { fsp: 3 }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { fsp: 3 })
+    .$onUpdate(() => new Date())
+    .notNull(),
+});

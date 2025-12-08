@@ -63,6 +63,8 @@ export async function GET(req: NextRequest) {
           .where(inArray(productImages.productId, productIds))
       : [];
 
+    console.log(`Found ${productList.length} products, ${allImages.length} images for customer UI`);
+
     // Group images by productId
     const imagesByProduct = new Map<string, typeof allImages>();
     for (const img of allImages) {

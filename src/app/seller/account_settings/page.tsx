@@ -1,5 +1,6 @@
 "use client"
 import { useState, useRef, useEffect } from "react";
+import Image from "next/image";
 import { SearchInput, Input } from "@/components/ui/input";
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -26,7 +27,9 @@ import {
   CheckCircle2,
   Clock,
   Info,
-  Loader2
+  Loader2,
+  Upload,
+  X
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
@@ -67,7 +70,9 @@ export default function AccountSettingsPage() {
     const [shopForm, setShopForm] = useState({
       shopName: "",
       description: "",
+      imageURL: "",
     });
+    const [shopImagePreview, setShopImagePreview] = useState<string>("");
 
     // refs for scrolling
     const refs = {
@@ -104,7 +109,9 @@ export default function AccountSettingsPage() {
               setShopForm({
                 shopName: data.shop.shopName || "",
                 description: data.shop.description || "",
+                imageURL: data.shop.imageURL || "",
               });
+              setShopImagePreview(data.shop.imageURL || "");
             }
           }
         } catch (error) {
@@ -124,8 +131,8 @@ export default function AccountSettingsPage() {
         const s = search.toLowerCase();
     
         // eslint-disable-next-line react-hooks/immutability
-        if (s.includes("profile")) scrollToSection("profile");
-        else if (s.includes("shop")) scrollToSection("shopInfo");
+        if (s.includes("profile") && !s.includes("store")) scrollToSection("profile");
+        else if (s.includes("shop") || s.includes("store")) scrollToSection("shopInfo");
         else if (s.includes("contact") || s.includes("address")) scrollToSection("contactAddress");
         else if (s.includes("ship")) scrollToSection("shippingInfo");
         else if (s.includes("pay") || s.includes("bank") || s.includes("gcash"))
@@ -176,6 +183,31 @@ export default function AccountSettingsPage() {
       }
     };
 
+    const handleShopImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+
+      // Check file size (max 2MB)
+      if (file.size > 2 * 1024 * 1024) {
+        toast.error("Image size must be less than 2MB");
+        return;
+      }
+
+      // Check file type
+      if (!file.type.startsWith("image/")) {
+        toast.error("Please select an image file");
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const base64 = reader.result as string;
+        setShopImagePreview(base64);
+        setShopForm({ ...shopForm, imageURL: base64 });
+      };
+      reader.readAsDataURL(file);
+    };
+
     const handleShopUpdate = async () => {
       if (!shopData) return;
       
@@ -187,6 +219,7 @@ export default function AccountSettingsPage() {
           body: JSON.stringify({
             shopName: shopForm.shopName,
             description: shopForm.description || null,
+            imageURL: shopForm.imageURL || null,
           }),
         });
 
@@ -195,12 +228,13 @@ export default function AccountSettingsPage() {
           throw new Error(errorData.error || "Failed to update shop");
         }
 
-        toast.success("Shop information updated successfully");
+        toast.success("Store profile updated successfully");
         // Refresh data
         const shopResponse = await fetch("/api/sellers/shop");
         if (shopResponse.ok) {
           const data = await shopResponse.json();
           setShopData(data.shop);
+          setShopImagePreview(data.shop?.imageURL || "");
         }
       } catch (error) {
         console.error("Error updating shop:", error);
@@ -373,9 +407,9 @@ export default function AccountSettingsPage() {
                           <Store className="h-5 w-5 text-blue-600" />
                         </div>
                         <div>
-                          <CardTitle className="text-xl">Shop Information</CardTitle>
+                          <CardTitle className="text-xl">Store Profile</CardTitle>
                           <CardDescription className="mt-1">
-                            Manage your shop details and branding
+                            Manage your store profile, branding, and shop details
                           </CardDescription>
                         </div>
                       </div>
@@ -393,6 +427,62 @@ export default function AccountSettingsPage() {
                     </div>
                   </CardHeader>
                   <CardContent className="space-y-5">
+                    {/* Shop Logo/Image Upload */}
+                    <div className="space-y-2">
+                      <Label htmlFor="shopImage" className="text-sm font-medium">Store Logo/Image</Label>
+                      <div className="flex items-start gap-4">
+                        <div className="relative w-32 h-32 border-2 border-dashed border-gray-300 rounded-lg overflow-hidden bg-gray-50 flex items-center justify-center">
+                          {shopImagePreview ? (
+                            <>
+                              {shopImagePreview.startsWith("data:image/") ? (
+                                <img
+                                  src={shopImagePreview}
+                                  alt="Shop logo"
+                                  className="w-full h-full object-cover"
+                                />
+                              ) : (
+                                <Image
+                                  src={shopImagePreview}
+                                  alt="Shop logo"
+                                  width={128}
+                                  height={128}
+                                  className="w-full h-full object-cover"
+                                  unoptimized={true}
+                                />
+                              )}
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setShopImagePreview("");
+                                  setShopForm({ ...shopForm, imageURL: "" });
+                                }}
+                                className="absolute top-1 right-1 p-1 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors"
+                              >
+                                <X className="h-3 w-3" />
+                              </button>
+                            </>
+                          ) : (
+                            <div className="text-center p-4">
+                              <Store className="h-8 w-8 mx-auto text-gray-400 mb-2" />
+                              <p className="text-xs text-gray-500">No image</p>
+                            </div>
+                          )}
+                        </div>
+                        <div className="flex-1 space-y-2">
+                          <Input
+                            id="shopImage"
+                            type="file"
+                            accept="image/*"
+                            onChange={handleShopImageUpload}
+                            className="h-10"
+                          />
+                          <p className="text-xs text-muted-foreground">
+                            Upload your store logo or banner image (max 2MB). Recommended: 400x400px for logo, 1200x400px for banner.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
                     <div className="space-y-2">
                       <Label htmlFor="shopName" className="text-sm font-medium">Shop Name</Label>
                       <Input 
@@ -402,20 +492,23 @@ export default function AccountSettingsPage() {
                         placeholder="Enter your shop name" 
                         className="h-10"
                       />
+                      <p className="text-xs text-muted-foreground">
+                        This is your store's display name visible to customers
+                      </p>
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="description" className="text-sm font-medium">Shop Description</Label>
+                      <Label htmlFor="description" className="text-sm font-medium">Store Description</Label>
                       <Textarea 
                         id="description"
                         value={shopForm.description || ""}
                         onChange={(e) => setShopForm({ ...shopForm, description: e.target.value })}
-                        placeholder="Describe your shop, products, and what makes it special…" 
+                        placeholder="Describe your store, products, and what makes it special…" 
                         rows={5}
                         className="resize-none"
                       />
                       <p className="text-xs text-muted-foreground">
-                        A good description helps customers understand your shop better
+                        A detailed description helps customers understand your store better and builds trust
                       </p>
                     </div>
 
@@ -443,7 +536,7 @@ export default function AccountSettingsPage() {
                         className="w-full sm:w-auto cursor-pointer bg-blue-600 hover:bg-blue-700 text-white" 
                       >
                         <Save className="h-4 w-4 mr-2" />
-                        Save Shop Information
+                        Save Store Profile
                       </LoadingButton>
                     </div>
                   </CardContent>
@@ -459,7 +552,7 @@ export default function AccountSettingsPage() {
                         <Store className="h-5 w-5 text-blue-600" />
                       </div>
                       <div>
-                        <CardTitle className="text-xl">Shop Information</CardTitle>
+                        <CardTitle className="text-xl">Store Profile</CardTitle>
                         <CardDescription className="mt-1">
                           Create a shop to start selling your products
                         </CardDescription>
