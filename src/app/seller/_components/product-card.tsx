@@ -54,11 +54,6 @@ export function ProductCard({
 
       {/* ACTION BUTTONS */}
       <div className="flex items-center justify-between px-5 pb-4 pt-3 border-t">
-        <button className="flex items-center gap-1 text-yellow-600 hover:text-yellow-700 text-sm font-medium border rounded-md px-3 py-2 cursor-pointer">
-          <Star size={18} />
-          Feature
-        </button>
-
         <button className="flex items-center gap-1 text-blue-600 hover:text-blue-700 text-sm font-medium border rounded-md px-3 py-2 cursor-pointer">
           <PenLine size={18} />
           Edit
