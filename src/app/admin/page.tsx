@@ -35,35 +35,40 @@ export default function AdminDashboard() {
   }, []);
 
   return (
-    <section className="relative min-h-screen min-w-full overflow-hidden space-y-5 mt-18 mx-3">
-      <h1 className="text-xl font-bold mb-1 text-[#2E7D32]">
-        Welcome back
-      </h1>
-      <p>Welcome back! Here&apos;s what&apos;s happening in Buyani Marketplace today! </p>
+    <div className="relative min-h-screen bg-gradient-to-b from-emerald-50 via-white to-slate-50">
+      <div className="mx-auto max-w-6xl px-4 py-8 space-y-8">
+        <div className="rounded-2xl border border-emerald-100 bg-white/80 backdrop-blur-sm shadow-sm p-6">
+          <h1 className="text-2xl font-bold text-emerald-700">Welcome back</h1>
+          <p className="text-slate-600 mt-1">
+            Here&apos;s what&apos;s happening in Buyani Marketplace today.
+          </p>
+        </div>
 
-      {/* Activity*/}
-      <section className="flex flex-wrap min-h-[50%] min-w-[90%] max-w-[100%] justify-center">
-        {loading ? (
-          <p>Loading stats...</p>
-        ) : (
-          <CardActivity
-            totalRevenue={`₱${Number(stats.totalRevenue).toLocaleString("en-US", {
-              minimumFractionDigits: 2,
-              maximumFractionDigits: 2,
-            })}`}
-            totalOrders={stats.totalOrders}
-            activeUsers={stats.activeUsers}
-            activeSellers={stats.activeSellers}
-          />
-        )}
-      </section>
+        <div className="rounded-2xl border border-emerald-100 bg-white/80 backdrop-blur-sm shadow-sm p-6">
+          {loading ? (
+            <p className="text-slate-600">Loading stats...</p>
+          ) : (
+            <CardActivity
+              totalRevenue={`₱${Number(stats.totalRevenue).toLocaleString("en-US", {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2,
+              })}`}
+              totalOrders={stats.totalOrders}
+              activeUsers={stats.activeUsers}
+              activeSellers={stats.activeSellers}
+            />
+          )}
+        </div>
 
-      {/* Pending Seller Approvals and Recent Activities */}
-      <section className="flex min-h-[50%] min-w-[90%] max-w-[100%] justify-center items-center gap-8">
-        <PendingApprovals />
-        <RecentActivity />
-      </section>
-
-    </section>
+        <div className="grid gap-6 lg:grid-cols-2">
+          <div className="rounded-2xl border border-emerald-100 bg-white/80 backdrop-blur-sm shadow-sm p-4">
+            <PendingApprovals />
+          </div>
+          <div className="rounded-2xl border border-emerald-100 bg-white/80 backdrop-blur-sm shadow-sm p-4">
+            <RecentActivity />
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }

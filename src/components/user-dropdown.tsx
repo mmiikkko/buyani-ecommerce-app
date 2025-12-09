@@ -52,8 +52,8 @@ export function UserDropdown({ user }: UserDropdownProps) {
             <span>Settings</span>
           </Link>
         </DropdownMenuItem>
-        {user.role.includes(USER_ROLES.ADMIN) && <AdminItem />}
-        {user.role.includes(USER_ROLES.SELLER) && <SellerItem />}
+        {user.role === USER_ROLES.ADMIN && <AdminItem />}
+        {user.role === USER_ROLES.SELLER && <SellerItem />}
         <SignOutItem />
       </DropdownMenuContent>
     </DropdownMenu>

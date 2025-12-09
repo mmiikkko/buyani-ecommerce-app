@@ -11,6 +11,7 @@ interface ShopCardProps {
 
 export function ShopCard({ shop }: ShopCardProps) {
   const rating = shop.shop_rating ? parseFloat(shop.shop_rating) : 0;
+  const hasRating = rating > 0;
 
   return (
     <Link
@@ -40,12 +41,16 @@ export function ShopCard({ shop }: ShopCardProps) {
         </h3>
 
         {/* Rating */}
-        {rating > 0 && (
-          <div className="flex items-center gap-1">
-            <Star className="h-4 w-4 fill-amber-400 text-amber-400" />
-            <span className="text-sm font-medium text-slate-700">{rating.toFixed(1)}</span>
-          </div>
-        )}
+        <div className="flex items-center gap-1">
+          <Star
+            className={`h-4 w-4 ${
+              hasRating ? "fill-amber-400 text-amber-400" : "text-slate-300"
+            }`}
+          />
+          <span className="text-sm font-medium text-slate-700">
+            {rating.toFixed(1)}
+          </span>
+        </div>
 
         {/* Product Count */}
         <p className="text-sm text-slate-600">

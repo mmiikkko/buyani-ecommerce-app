@@ -147,14 +147,11 @@ export function RecentOrders({ orders }: RecentOrdersProps)  {
 
         {recentOrders.map((order) => {
           const status = order.status?.toLowerCase() || "pending";
-<<<<<<< HEAD
-          const isAccepted = status === "confirmed" || status === "accepted";
-          const isRejected = status === "rejected";
-=======
           const isRejected = status === "rejected" || status === "cancelled";
           const isDelivered = status === "delivered";
           const isCompleted = status === "completed" || status === "complete";
-          const isShipped = status === "shipped" || status === "out_for_delivery";
+          const isShipped =
+            status === "shipped" || status === "out_for_delivery";
           const isAccepted =
             status === "confirmed" ||
             status === "accepted" ||
@@ -162,8 +159,6 @@ export function RecentOrders({ orders }: RecentOrdersProps)  {
             isShipped ||
             isDelivered ||
             isCompleted;
-          const isPending = !isAccepted && !isRejected;
->>>>>>> fb4764c (Local changes)
 
           return (
             <div

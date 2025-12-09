@@ -29,6 +29,14 @@ export function ShopDetailClient({ shop, shopId }: ShopDetailClientProps) {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [chatting, setChatting] = useState(false);
+  const [averageRating, setAverageRating] = useState(
+    shop.shop_rating ? parseFloat(shop.shop_rating) : 0
+  );
+  const [ratingCount, setRatingCount] = useState(0);
+  const [canRate, setCanRate] = useState(false);
+  const [userRating, setUserRating] = useState(5);
+  const [hasSubmittedRating, setHasSubmittedRating] = useState(false);
+  const [ratingSubmitting, setRatingSubmitting] = useState(false);
   const session = authClient.useSession();
   const user = session.data?.user;
   const isAuthenticated = !!user;
@@ -44,7 +52,25 @@ export function ShopDetailClient({ shop, shopId }: ShopDetailClientProps) {
       .finally(() => setLoading(false));
   }, [shopId]);
 
-  const rating = shop.shop_rating ? parseFloat(shop.shop_rating) : 0;
+  useEffect(() => {
+    async function loadRating() {
+      try {
+        const res = await fetch(`/api/shops/${shopId}/rating`);
+        if (!res.ok) return;
+        const data = await res.json();
+        setAverageRating(Number(data.average || 0));
+        setRatingCount(Number(data.count || 0));
+        if (typeof data.canRate === "boolean") setCanRate(data.canRate);
+        if (typeof data.existingRating === "number") {
+          setUserRating(Number(data.existingRating) || 5);
+          setHasSubmittedRating(true);
+        }
+      } catch (error) {
+        console.error("Failed to load shop rating", error);
+      }
+    }
+    loadRating();
+  }, [shopId]);
 
   const ensureAuthenticated = useCallback(() => {
     if (!isAuthenticated) {
@@ -89,6 +115,46 @@ export function ShopDetailClient({ shop, shopId }: ShopDetailClientProps) {
     }
   }, [ensureAuthenticated, shop.seller_id]);
 
+  const handleSubmitRating = useCallback(async () => {
+    if (!ensureAuthenticated()) return;
+    if (!canRate) {
+      toast.error("You can only rate after purchasing from this shop.");
+      return;
+    }
+
+    try {
+      setRatingSubmitting(true);
+      const res = await fetch(`/api/shops/${shopId}/rating`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ rating: userRating }),
+      });
+
+      if (!res.ok) {
+        const error = await res.json().catch(() => ({}));
+        throw new Error(error.error || "Failed to submit rating");
+      }
+
+      toast.success("Thanks for rating this shop!");
+
+      // Refresh rating summary
+      const summary = await fetch(`/api/shops/${shopId}/rating`).then((r) =>
+        r.json()
+      );
+      setAverageRating(Number(summary.average || 0));
+      setRatingCount(Number(summary.count || 0));
+      if (typeof summary.canRate === "boolean") setCanRate(false);
+      setHasSubmittedRating(true);
+      if (typeof summary.existingRating === "number") {
+        setUserRating(Number(summary.existingRating) || 5);
+      }
+    } catch (error: any) {
+      toast.error(error?.message || "Unable to submit rating");
+    } finally {
+      setRatingSubmitting(false);
+    }
+  }, [ensureAuthenticated, canRate, shopId, userRating]);
+
   return (
     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
       {/* Back Button */}
@@ -115,53 +181,105 @@ export function ShopDetailClient({ shop, shopId }: ShopDetailClientProps) {
             )}
           </div>
 
-          {/* Shop Info */}
+          {/* Shop Info + Rating */}
           <div className="flex-1 p-6 md:p-8">
-            <div className="space-y-4">
-              <div>
-                <h1 className="text-3xl font-bold text-slate-900 mb-2">{shop.shop_name}</h1>
+            <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
+              <div className="space-y-4 lg:max-w-2xl">
+                <div>
+                  <h1 className="text-3xl font-bold text-slate-900 mb-2">{shop.shop_name}</h1>
 
-                {rating > 0 && (
                   <div className="flex items-center gap-2 mb-2">
                     <Star className="h-5 w-5 fill-amber-400 text-amber-400" />
-                    <span className="text-lg font-semibold text-slate-700">{rating.toFixed(1)}</span>
+                    <span className="text-lg font-semibold text-slate-700">
+                      {averageRating.toFixed(1)}
+                    </span>
                     <span className="text-sm text-slate-500">
-                      ({shop.products || 0} {shop.products === 1 ? "product" : "products"})
+                      ({ratingCount} {ratingCount === 1 ? "rating" : "ratings"})
                     </span>
                   </div>
-                )}
 
-                {shop.owner_name && (
-                  <p className="text-sm text-slate-600">
-                    by <span className="font-medium">{shop.owner_name}</span>
+                  {shop.owner_name && (
+                    <p className="text-sm text-slate-600">
+                      by <span className="font-medium">{shop.owner_name}</span>
+                    </p>
+                  )}
+                </div>
+
+                {shop.description && <p className="text-slate-700 leading-relaxed">{shop.description}</p>}
+
+                <div className="flex flex-wrap gap-3 pt-2">
+                  <Button
+                    variant="outline"
+                    className="border-slate-300 hover:bg-white"
+                    onClick={handleContactSeller}
+                    disabled={chatting}
+                  >
+                    <MessageCircle className="mr-2 h-4 w-4" /> Contact Seller
+                  </Button>
+                </div>
+
+                <div className="flex flex-wrap gap-3 pt-2">
+                  {shop.status === "approved" && (
+                    <div className="flex items-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-2">
+                      <Shield className="h-4 w-4 text-emerald-600" />
+                      <span className="text-sm font-medium text-emerald-700">Verified Shop</span>
+                    </div>
+                  )}
+                  <div className="flex items-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-2">
+                    <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+                    <span className="text-sm font-medium text-emerald-700">Quality Guaranteed</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="w-full lg:w-80 rounded-xl border border-emerald-100 bg-emerald-50/60 p-4 shadow-sm space-y-4">
+                <div className="flex items-center gap-2">
+                  <Star className="h-5 w-5 text-amber-400 fill-amber-400" />
+                  <h4 className="text-lg font-semibold text-slate-900">Rate this shop</h4>
+                </div>
+                <p className="text-sm text-slate-600">
+                  Only customers who purchased from this shop can leave a rating.
+                </p>
+                <div className="flex items-center gap-2">
+                  {[1, 2, 3, 4, 5].map((value) => (
+                    <button
+                      key={value}
+                      type="button"
+                      onClick={() => setUserRating(value)}
+                      className="focus:outline-none transition-transform hover:scale-105"
+                      disabled={!canRate || ratingSubmitting || hasSubmittedRating}
+                    >
+                      <Star
+                        className={`h-6 w-6 ${
+                          userRating >= value ? "fill-amber-400 text-amber-400" : "text-slate-300"
+                        }`}
+                      />
+                    </button>
+                  ))}
+                </div>
+                <Button
+                  onClick={handleSubmitRating}
+                  disabled={!canRate || ratingSubmitting || hasSubmittedRating}
+                  className="w-full bg-emerald-600 hover:bg-emerald-700 text-white"
+                >
+                  {hasSubmittedRating
+                    ? "Rating submitted"
+                    : ratingSubmitting
+                    ? "Submitting..."
+                    : canRate
+                    ? "Submit rating"
+                    : "Purchase to rate"}
+                </Button>
+                {!canRate && !hasSubmittedRating && (
+                  <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg p-2">
+                    Rate button unlocks after your first order from this shop.
                   </p>
                 )}
-              </div>
-
-              {shop.description && <p className="text-slate-700 leading-relaxed">{shop.description}</p>}
-
-              <div className="flex flex-wrap gap-3 pt-2">
-                <Button
-                  variant="outline"
-                  className="border-slate-300 hover:bg-white"
-                  onClick={handleContactSeller}
-                  disabled={chatting}
-                >
-                  <MessageCircle className="mr-2 h-4 w-4" /> Contact Seller
-                </Button>
-              </div>
-
-              <div className="flex flex-wrap gap-3 pt-2">
-                {shop.status === "approved" && (
-                  <div className="flex items-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-2">
-                    <Shield className="h-4 w-4 text-emerald-600" />
-                    <span className="text-sm font-medium text-emerald-700">Verified Shop</span>
-                  </div>
+                {hasSubmittedRating && (
+                  <p className="text-xs text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-lg p-2">
+                    Thanks! You already rated this shop.
+                  </p>
                 )}
-                <div className="flex items-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-2">
-                  <CheckCircle2 className="h-4 w-4 text-emerald-600" />
-                  <span className="text-sm font-medium text-emerald-700">Quality Guaranteed</span>
-                </div>
               </div>
             </div>
           </div>
