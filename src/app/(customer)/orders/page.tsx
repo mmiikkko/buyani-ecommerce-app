@@ -15,7 +15,9 @@ import {
   XCircle,
   ShoppingBag,
   AlertCircle,
+  X,
 } from "lucide-react";
+import Image from "next/image";
 import type { Order } from "@/types/orders";
 import { toast } from "sonner";
 
@@ -24,6 +26,7 @@ const STATUS_MAP: Record<string, { label: string; tone: string; icon: React.Elem
   accepted: { label: "Accepted", tone: "bg-emerald-100 text-emerald-800", icon: CheckCircle2 },
   confirmed: { label: "Accepted", tone: "bg-emerald-100 text-emerald-800", icon: CheckCircle2 },
   rejected: { label: "Rejected", tone: "bg-red-100 text-red-800", icon: XCircle },
+  cancelled: { label: "Cancelled", tone: "bg-slate-100 text-slate-800", icon: XCircle },
   shipped: { label: "Shipped", tone: "bg-blue-100 text-blue-800", icon: Truck },
   delivered: { label: "Delivered", tone: "bg-emerald-100 text-emerald-800", icon: Package },
 };
@@ -54,6 +57,7 @@ export default function CustomerOrdersPage() {
     { value: "shipped", label: "Shipped" },
     { value: "delivered", label: "Delivered" },
     { value: "rejected", label: "Rejected" },
+    { value: "cancelled", label: "Cancelled" },
   ];
 
   const fetchOrders = async (showLoading = true) => {
@@ -139,6 +143,34 @@ export default function CustomerOrdersPage() {
       } else {
         toast.error("Unable to load orders");
       }
+    } finally {
+      setActionId(null);
+    }
+  };
+
+  const cancelOrder = async (orderId: string) => {
+    if (!confirm("Are you sure you want to cancel this order? The items will be returned to stock.")) {
+      return;
+    }
+    try {
+      setActionId(orderId);
+      const res = await fetch(`/api/orders?id=${orderId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: "cancelled" }),
+      });
+      if (!res.ok) {
+        throw new Error("Failed to cancel order");
+      }
+      setOrders((prev) =>
+        prev.map((o) =>
+          o.id === orderId || o.orderId === orderId ? { ...o, status: "cancelled" } : o
+        )
+      );
+      toast.success("Order cancelled successfully. Stock has been restored.");
+      fetchOrders(false);
+    } catch (error: any) {
+      toast.error(error?.message || "Could not cancel order");
     } finally {
       setActionId(null);
     }
@@ -246,14 +278,36 @@ export default function CustomerOrdersPage() {
                   </CardHeader>
                   <CardContent className="space-y-3">
                     {order.items?.length ? (
-                      <div className="divide-y rounded-lg border bg-slate-50/60">
+                      <div className="space-y-2">
                         {order.items.map((item, idx) => (
                           <div
                             key={idx}
-                            className="flex items-center justify-between px-3 py-2 text-sm text-slate-700"
+                            className="flex items-center gap-3 rounded-lg border bg-slate-50/60 p-3"
                           >
-                            <span className="truncate pr-2">{item.productName || "Item"}</span>
-                            <span className="text-slate-900 font-medium">x{item.quantity}</span>
+                            {item.productImage ? (
+                              <div className="relative h-16 w-16 flex-shrink-0 overflow-hidden rounded-lg border border-slate-200 bg-white">
+                                <Image
+                                  src={item.productImage}
+                                  alt={item.productName || "Product"}
+                                  fill
+                                  className="object-cover"
+                                  sizes="64px"
+                                />
+                              </div>
+                            ) : (
+                              <div className="flex h-16 w-16 flex-shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-slate-100">
+                                <Package className="h-6 w-6 text-slate-400" />
+                              </div>
+                            )}
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium text-slate-900 truncate">
+                                {item.productName || "Item"}
+                              </p>
+                              <p className="text-xs text-slate-500">Quantity: {item.quantity}</p>
+                              <p className="text-xs font-semibold text-emerald-700">
+                                ₱{Number(item.subtotal || 0).toFixed(2)}
+                              </p>
+                            </div>
                           </div>
                         ))}
                       </div>
@@ -273,18 +327,30 @@ export default function CustomerOrdersPage() {
                         <span className="font-medium text-slate-900">{order.payment.paymentMethod}</span>
                       </p>
                     )}
-                {["accepted", "confirmed", "shipped"].includes(order.status || "") && (
-                  <div className="flex justify-end">
-                    <Button
-                      size="sm"
-                      className="bg-emerald-600 hover:bg-emerald-700"
-                      onClick={() => markAsReceived(order.id || order.orderId)}
-                      disabled={actionId === (order.id || order.orderId)}
-                    >
-                      {actionId === (order.id || order.orderId) ? "Saving..." : "Mark as received"}
-                    </Button>
-                  </div>
-                )}
+                    <div className="flex flex-wrap gap-2 pt-2 justify-end">
+                      {order.status === "pending" && (
+                        <Button
+                          size="sm"
+                          variant="destructive"
+                          onClick={() => cancelOrder(order.id || order.orderId)}
+                          disabled={actionId === (order.id || order.orderId)}
+                          className="flex items-center gap-2"
+                        >
+                          <X className="h-4 w-4" />
+                          {actionId === (order.id || order.orderId) ? "Cancelling..." : "Cancel Order"}
+                        </Button>
+                      )}
+                      {["accepted", "confirmed", "shipped"].includes(order.status || "") && (
+                        <Button
+                          size="sm"
+                          className="bg-emerald-600 hover:bg-emerald-700"
+                          onClick={() => markAsReceived(order.id || order.orderId)}
+                          disabled={actionId === (order.id || order.orderId)}
+                        >
+                          {actionId === (order.id || order.orderId) ? "Saving..." : "Mark as received"}
+                        </Button>
+                      )}
+                    </div>
                   </CardContent>
                 </Card>
               ))}

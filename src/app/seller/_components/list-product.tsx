@@ -323,7 +323,8 @@ export function AddProducts({ onAdd, onUpdate, productToEdit, onEditComplete }: 
           {/* IMAGES */}
           <TabsContent value="images" className="mt-4">
             <div className="border p-4 rounded-md space-y-3">
-            <input
+            <div className="space-y-2">
+              <input
                 type="file"
                 accept="image/*"
                 multiple
@@ -331,7 +332,16 @@ export function AddProducts({ onAdd, onUpdate, productToEdit, onEditComplete }: 
                   const files = e.target.files;
                   if (!files) return;
 
-                  Array.from(files).forEach((file) => {
+                  const currentCount = imagePreviews.filter(img => img && img !== "/placeholder.png" && img.startsWith("data:image/")).length;
+                  const filesToAdd = Array.from(files);
+                  const totalAfterAdd = currentCount + filesToAdd.length;
+
+                  if (totalAfterAdd > 10) {
+                    setError(`Maximum 10 images allowed. You currently have ${currentCount} image(s) and tried to add ${filesToAdd.length} more.`);
+                    return;
+                  }
+
+                  filesToAdd.forEach((file) => {
                     // Optional size limit (recommended)
                     if (file.size > 2 * 1024 * 1024) {
                       setError("Each image must be under 2MB");
@@ -341,12 +351,23 @@ export function AddProducts({ onAdd, onUpdate, productToEdit, onEditComplete }: 
                     const reader = new FileReader();
                     reader.onloadend = () => {
                       const base64 = reader.result as string;
-                      setImagePreviews((prev) => [...prev, base64]);
+                      setImagePreviews((prev) => {
+                        const filtered = prev.filter(img => img && img !== "/placeholder.png" && img.startsWith("data:image/"));
+                        if (filtered.length >= 10) {
+                          setError("Maximum 10 images allowed");
+                          return prev;
+                        }
+                        return [...prev, base64];
+                      });
                     };
                     reader.readAsDataURL(file);
                   });
                 }}
               />
+              <p className="text-xs text-gray-500">
+                You can upload up to 10 images. Currently: {imagePreviews.filter(img => img && img !== "/placeholder.png" && img.startsWith("data:image/")).length}/10
+              </p>
+            </div>
               <div className="mt-3 grid grid-cols-4 gap-3">
                 {imagePreviews
                   .filter(img => img && img !== "/placeholder.png" && img.startsWith("data:image/"))

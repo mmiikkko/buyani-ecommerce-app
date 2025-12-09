@@ -19,6 +19,7 @@ import {
   MessageCircle,
   Shield,
   CheckCircle2,
+  ArrowLeft,
 } from "lucide-react";
 
 type ProductDetailClientProps = {
@@ -146,6 +147,15 @@ export function ProductDetailClient({ product, userId }: ProductDetailClientProp
 
   return (
     <div className="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+      {/* Back Button */}
+      <Button
+        variant="ghost"
+        className="mb-6"
+        onClick={() => router.back()}
+      >
+        <ArrowLeft className="h-4 w-4 mr-2" />
+        Back
+      </Button>
       <div className="grid gap-8 lg:grid-cols-2">
         {/* Left Side - Product Images */}
         <div className="space-y-4">
@@ -166,8 +176,8 @@ export function ProductDetailClient({ product, userId }: ProductDetailClientProp
             )}
           </div>
 
-          {/* Image Thumbnails / Carousel Dots */}
-          {productImages.length > 1 ? (
+          {/* Image Thumbnails */}
+          {productImages.length > 1 && (
             <div className="flex items-center justify-center gap-2">
               {productImages.map((url, index) => (
                 <button
@@ -181,17 +191,6 @@ export function ProductDetailClient({ product, userId }: ProductDetailClientProp
                 >
                   <Image src={url} alt={`${product.productName} ${index + 1}`} fill className="object-cover" />
                 </button>
-              ))}
-            </div>
-          ) : (
-            <div className="flex items-center justify-center gap-2">
-              {[0, 1, 2].map((index) => (
-                <div
-                  key={index}
-                  className={`h-2 w-2 rounded-full ${
-                    index === selectedImageIndex ? "bg-emerald-500" : "bg-slate-300"
-                  }`}
-                />
               ))}
             </div>
           )}

@@ -142,6 +142,13 @@ export function DeliveryStep({ initialData, user, onSubmit, loading }: DeliveryS
         if (!response.ok) {
           throw new Error("Failed to save address");
         }
+
+        const data = await response.json();
+        if (data?.address) {
+          // add to saved list immediately so user sees it
+          setSavedAddresses((prev) => [data.address, ...prev]);
+          setSelectedAddressId(data.address.id);
+        }
       } catch (error) {
         console.error("Error saving address:", error);
         // Continue anyway - the address data is still valid for checkout

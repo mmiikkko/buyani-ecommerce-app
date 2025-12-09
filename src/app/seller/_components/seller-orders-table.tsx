@@ -10,7 +10,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { Eye, Check, X } from "lucide-react";
+import { Eye, Check, X, Truck } from "lucide-react";
 import type { Order } from "@/types/orders";
 import { toast } from "sonner";
 
@@ -79,6 +79,37 @@ function OrdersTable({
       }
       
       // Refresh the orders list
+      if (onRefresh) {
+        onRefresh();
+      }
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : "Failed to update order";
+      toast.error(errorMessage);
+    } finally {
+      setProcessingOrder(null);
+    }
+  };
+
+  const handleMarkShipped = async (orderId: string) => {
+    try {
+      setProcessingOrder(orderId);
+      const res = await fetch(`/api/sellers/orders/${orderId}/status`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: "shipped" }),
+      });
+
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.error || "Failed to update order status");
+      }
+
+      toast.success("Order marked as shipped");
+
+      if (onStatusUpdate) {
+        onStatusUpdate(orderId, "shipped");
+      }
+
       if (onRefresh) {
         onRefresh();
       }
@@ -186,22 +217,54 @@ function OrdersTable({
                       const orderStatus = order.status?.toLowerCase() || order.payment?.status?.toLowerCase() || "";
                       const isAccepted = orderStatus === "confirmed" || orderStatus === "accepted";
                       const isRejected = orderStatus === "rejected";
-                      const isProcessed = isAccepted || isRejected;
+                      const isShipped = orderStatus === "shipped";
+                      const isCompleted = orderStatus === "completed" || orderStatus === "complete";
+                      const isDelivered = orderStatus === "delivered";
 
-                      if (isProcessed) {
+                      if (isRejected) {
                         return (
-                          <div className="flex items-center gap-2">
-                            {isAccepted ? (
-                              <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
-                                <Check className="h-3 w-3 mr-1" />
-                                Accepted
-                              </span>
-                            ) : (
-                              <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-red-100 text-red-800">
-                                <X className="h-3 w-3 mr-1" />
-                                Rejected
-                              </span>
-                            )}
+                          <div className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-red-100 text-red-800">
+                            <X className="h-3 w-3 mr-1" />
+                            Rejected
+                          </div>
+                        );
+                      }
+
+                      if (isCompleted || isDelivered) {
+                        return (
+                          <div className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
+                            <Check className="h-3 w-3 mr-1" />
+                            {isDelivered ? "Delivered" : "Completed"}
+                          </div>
+                        );
+                      }
+
+                      if (isShipped) {
+                        return (
+                          <div className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
+                            <Truck className="h-3 w-3 mr-1" />
+                            Shipped
+                          </div>
+                        );
+                      }
+
+                      if (isAccepted) {
+                        return (
+                          <div className="flex gap-2 items-center">
+                            <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
+                              <Check className="h-3 w-3 mr-1" />
+                              Accepted
+                            </span>
+                            <Button
+                              variant="default"
+                              size="sm"
+                              onClick={() => handleMarkShipped(orderId)}
+                              disabled={processingOrder === orderId}
+                              className="bg-blue-600 hover:bg-blue-700 text-white"
+                            >
+                              <Truck className="h-3 w-3 mr-1" />
+                              Mark Shipped
+                            </Button>
                           </div>
                         );
                       }

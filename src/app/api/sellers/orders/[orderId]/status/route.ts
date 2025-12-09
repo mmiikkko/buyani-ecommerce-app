@@ -18,11 +18,12 @@ export async function PUT(
 
     const resolvedParams = await Promise.resolve(params);
     const { orderId } = resolvedParams;
-    const { status } = await req.json(); // "accepted" or "rejected"
+    const { status } = await req.json(); // "accepted" | "rejected" | "shipped"
 
-    if (!status || (status !== "accepted" && status !== "rejected")) {
+    const allowedStatuses = ["accepted", "rejected", "shipped"] as const;
+    if (!status || !allowedStatuses.includes(status)) {
       return NextResponse.json(
-        { error: "Invalid status. Must be 'accepted' or 'rejected'" },
+        { error: "Invalid status. Must be 'accepted', 'rejected', or 'shipped'" },
         { status: 400 }
       );
     }
@@ -47,12 +48,15 @@ export async function PUT(
       .where(eq(payments.orderId, orderId))
       .limit(1);
 
+    const normalizedStatus =
+      status === "accepted" ? "confirmed" : status === "rejected" ? "rejected" : "shipped";
+
     if (existingPayment.length > 0) {
       // Update existing payment status
       await db
         .update(payments)
         .set({
-          status: status === "accepted" ? "confirmed" : "rejected",
+          status: normalizedStatus,
           updatedAt: new Date(),
         })
         .where(eq(payments.orderId, orderId));
@@ -61,7 +65,7 @@ export async function PUT(
       await db.insert(payments).values({
         id: uuidv4(),
         orderId: orderId,
-        status: status === "accepted" ? "confirmed" : "rejected",
+        status: normalizedStatus,
         createdAt: new Date(),
         updatedAt: new Date(),
       });
@@ -74,7 +78,7 @@ export async function PUT(
       userId: session.user.id,
       orderId: orderId,
       transactionType: "online",
-      remarks: `Seller ${status} the order`,
+      remarks: `Seller ${status === "shipped" ? "shipped" : status} the order`,
       createdAt: new Date(),
       updatedAt: new Date(),
     });
@@ -82,7 +86,7 @@ export async function PUT(
     return NextResponse.json({
       success: true,
       message: `Order ${status} successfully`,
-      status: status === "accepted" ? "confirmed" : "rejected",
+      status: normalizedStatus,
     });
   } catch (error) {
     console.error("Error updating seller order status:", error);

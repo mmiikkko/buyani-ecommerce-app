@@ -3,7 +3,18 @@ import { unauthorized } from "next/navigation";
 import { getCartItems } from "@/lib/queries/cart";
 import { CheckoutClient } from "./checkout-client";
 
-export default async function CheckoutPage() {
+type SearchParams = { [key: string]: string | string[] | undefined };
+
+export default async function CheckoutPage({
+  searchParams,
+}: {
+  searchParams: Promise<SearchParams> | SearchParams;
+}) {
+  // Handle both promise and plain object forms of searchParams
+  const resolvedParams =
+    typeof (searchParams as any)?.then === "function"
+      ? await (searchParams as Promise<SearchParams>)
+      : (searchParams as SearchParams | undefined) ?? {};
   const session = await getServerSession();
   const user = session?.user;
 
@@ -11,9 +22,24 @@ export default async function CheckoutPage() {
     unauthorized();
   }
 
-  const cartItems = await getCartItems(user.id);
+  // Parse selected item IDs from query (?items=id1,id2)
+  const rawItems = resolvedParams.items;
+  const itemsParam = Array.isArray(rawItems) ? rawItems[0] : rawItems;
+  const selectedIds =
+    typeof itemsParam === "string"
+      ? itemsParam
+          .split(",")
+          .map((id) => id.trim())
+          .filter(Boolean)
+      : [];
 
-  if (cartItems.length === 0) {
+  const cartItems = await getCartItems(user.id);
+  const checkoutItems =
+    selectedIds.length > 0
+      ? cartItems.filter((item) => selectedIds.includes(item.id))
+      : cartItems;
+
+  if (checkoutItems.length === 0) {
     return (
       <main className="relative min-h-screen bg-slate-50">
         <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
@@ -32,7 +58,7 @@ export default async function CheckoutPage() {
 
   return (
     <main className="relative min-h-screen bg-slate-50">
-      <CheckoutClient cartItems={cartItems} userId={user.id} user={user} />
+      <CheckoutClient cartItems={checkoutItems} userId={user.id} user={user} />
     </main>
   );
 }

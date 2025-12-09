@@ -9,7 +9,7 @@ import {
   productInventory,
   shop,
 } from "@/server/schema/auth-schema";
-import { eq, inArray } from "drizzle-orm";
+import { and, eq, inArray, sql } from "drizzle-orm";
 import { getServerSession } from "@/server/session";
 import { v4 as uuidv4 } from "uuid";
 
@@ -88,7 +88,13 @@ export async function GET() {
     const productsList = await db
       .select()
       .from(products)
-      .where(inArray(products.shopId, shopIds));
+      .where(
+        and(
+          inArray(products.shopId, shopIds),
+          // Hide soft-deleted items from the seller listing to reflect removals
+          sql`${products.status} != 'Deleted'`
+        )
+      );
 
     const productIds = productsList.map((p) => p.id);
 
