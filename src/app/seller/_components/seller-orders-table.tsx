@@ -71,12 +71,10 @@ function OrdersTable({
         throw new Error(error.error || "Failed to update order status");
       }
 
-      // Call the parent's status update handler if provided
       if (onStatusUpdate) {
         onStatusUpdate(orderId, status === "accepted" ? "confirmed" : "rejected");
       }
-      
-      // Refresh the orders list
+
       if (onRefresh) {
         onRefresh();
       }
@@ -121,18 +119,13 @@ function OrdersTable({
     const now = new Date();
     return (orders ?? []).filter((order) => {
       const firstItem = order.items?.[0];
-      const productName =
-        firstItem?.product?.productName ??
-        firstItem?.productName ??
-        firstItem?.productId ??
-        "Unknown";
+      const productName = firstItem?.productName || firstItem?.productId || "Unknown";
       const customer = order.buyerName ?? order.buyerId ?? "Unknown";
       const orderId = (order.orderId || order.id || "").toLowerCase();
       const statusRaw = order.status?.toLowerCase() || order.payment?.status?.toLowerCase() || "";
       const normalizedStatus =
         statusRaw === "confirmed" ? "accepted" : statusRaw || "pending";
 
-      // Status filter
       if (filter !== "all") {
         if (filter === "recent") {
           const created = order.createdAt ? new Date(order.createdAt) : null;
@@ -150,7 +143,6 @@ function OrdersTable({
         }
       }
 
-      // Search filter
       if (search.trim() !== "") {
         const s = search.toLowerCase();
         if (
@@ -169,7 +161,6 @@ function OrdersTable({
   const pageCount = Math.max(1, Math.ceil(filteredOrders.length / rowsPerPage));
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     setCurrentPage(1);
   }, [filter, search]);
 
@@ -203,11 +194,7 @@ function OrdersTable({
           <TableBody>
             {currentRows.map((order, idx) => {
               const firstItem = order.items?.[0];
-              const productName =
-                firstItem?.product?.productName ??
-                firstItem?.productName ??
-                firstItem?.productId ??
-                "Unknown";
+              const productName = firstItem?.productName || firstItem?.productId || "Unknown";
               const buyerName = order.buyerName ?? order.buyerId ?? "Unknown Customer";
               const orderId = order.orderId || order.id || `order-${idx}`;
 
