@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/server/drizzle";
-import { shop, user } from "@/server/schema/auth-schema";
+import { shop, user, USER_ROLES } from "@/server/schema/auth-schema";
 import { eq } from "drizzle-orm";
 import { getServerSession } from "@/server/session";
 import { v4 as uuidv4 } from "uuid";
@@ -125,10 +125,10 @@ export async function POST(req: NextRequest) {
       .where(eq(user.id, userId))
       .limit(1);
 
-    if (currentUser.length > 0 && currentUser[0].role !== "seller") {
+    if (currentUser.length > 0 && currentUser[0].role !== USER_ROLES.SELLER) {
       await db
         .update(user)
-        .set({ role: "pending_seller" })
+        .set({ role: USER_ROLES.PENDING_SELLER })
         .where(eq(user.id, userId));
     }
 

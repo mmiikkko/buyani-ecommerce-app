@@ -15,6 +15,8 @@ export const USER_ROLES = {
   ADMIN: "admin",
   SELLER: "seller",
   CUSTOMER: "customer",
+  PENDING_SELLER: "pending_seller",
+  SUSPENDED: "suspended",
 };
 
 export const user = mysqlTable("user", {

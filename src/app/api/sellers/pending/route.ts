@@ -2,7 +2,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/server/drizzle";
-import { user } from "@/server/schema/auth-schema";
+import { user, USER_ROLES } from "@/server/schema/auth-schema";
 import { eq } from "drizzle-orm";
 
 export async function POST(req: NextRequest) {
@@ -11,7 +11,7 @@ export async function POST(req: NextRequest) {
 
   // Update the user's role to "pending_seller"
   await db.update(user)
-    .set({ role: "pending_seller" })
+    .set({ role: USER_ROLES.PENDING_SELLER })
     .where(eq(user.id, userId));
 
   return NextResponse.json({ success: true });

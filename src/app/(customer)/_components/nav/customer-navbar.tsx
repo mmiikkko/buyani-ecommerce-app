@@ -44,7 +44,11 @@ export default function Navbar({ className }: NavbarProps) {
   const user = session.data?.user;
   const isLoading = session.isPending || session.isRefetching;
   const isAuthenticated = !!user;
-  const isSeller = user?.role === USER_ROLES.SELLER;
+  const [hasSuspendedShop, setHasSuspendedShop] = useState(false);
+  const isSuspendedRole = user?.role === "suspended";
+  const isSellerRole =
+    user?.role === USER_ROLES.SELLER || user?.role === USER_ROLES.ADMIN;
+  const isSeller = !isSuspendedRole && !hasSuspendedShop && isSellerRole;
 
   // Initialize search query from URL if on products page
   useEffect(() => {
@@ -112,6 +116,7 @@ export default function Navbar({ className }: NavbarProps) {
     if (!isAuthenticated || !user?.id) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setCartCount(0);
+      setHasSuspendedShop(false);
       return;
     }
 
@@ -157,6 +162,30 @@ export default function Navbar({ className }: NavbarProps) {
       fetchCartCount();
     }
   }, [pathname, isAuthenticated, user?.id]);
+
+  // Fetch shop status to detect suspended shops; show CTA if suspended
+  useEffect(() => {
+    let active = true;
+    async function loadShopStatus() {
+      if (!isAuthenticated) {
+        if (active) setHasSuspendedShop(false);
+        return;
+      }
+      try {
+        const res = await fetch("/api/sellers/shop");
+        if (!res.ok) return;
+        const data = await res.json();
+        const suspended = data?.shop?.status === "suspended";
+        if (active) setHasSuspendedShop(Boolean(suspended));
+      } catch {
+        // ignore
+      }
+    }
+    loadShopStatus();
+    return () => {
+      active = false;
+    };
+  }, [isAuthenticated]);
 
   return (
     <nav

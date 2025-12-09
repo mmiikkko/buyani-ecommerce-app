@@ -5,8 +5,11 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
 import { AdminSearchbar } from "./admin-users-searchbar";
-import { BadgeAlert, Undo2, Trash2, Check } from "lucide-react";
+import { BadgeAlert, Undo2, Trash2, Check, Eye, Package, Store, Tag, DollarSign, Box, AlertCircle, Sparkles } from "lucide-react";
 import { AdminProductModal } from "./admin-product-modal";
+import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
+import { toast } from "sonner";
 
 // ------------------------------------------------------------
 // API PRODUCT TYPE (from /api/products)
@@ -180,148 +183,298 @@ export function AdminProducts() {
       let matchesFilter = true;
 
       if (filter === "new") matchesFilter = isNewProduct(p.dateAdded);
-      else if (filter === "flagged") matchesFilter = p.status === "flagged";
       else if (filter === "removed") matchesFilter = p.status === "removed";
 
       return matchesSearch && matchesFilter;
     });
-  }, [products, search, filter, isNewProduct]);
+  }, [products, search, filter]);
+
+  // ------------------------------------------------------------
+  // STATS CALCULATION
+  // ------------------------------------------------------------
+  const stats = useMemo(() => {
+    const total = products.length;
+    const newProducts = products.filter(p => isNewProduct(p.dateAdded)).length;
+    const removed = products.filter(p => p.status === "removed").length;
+    return { total, newProducts, removed };
+  }, [products]);
 
   // ------------------------------------------------------------
   // RENDER
   // ------------------------------------------------------------
-  if (loading) return <p className="p-4">Loading products...</p>;
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
+          {[...Array(6)].map((_, i) => (
+            <Card key={i} className="rounded-xl overflow-hidden">
+              <Skeleton className="h-48 w-full" />
+              <CardContent className="p-5 space-y-3">
+                <Skeleton className="h-5 w-3/4" />
+                <Skeleton className="h-4 w-full" />
+                <Skeleton className="h-4 w-1/2" />
+                <Skeleton className="h-10 w-full" />
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="px-5 w-full min-h-screen bg-green-50 rounded-xl pb-10">
-
-      {/* SEARCH + FILTER BAR */}
-      <AdminSearchbar
-        placeholder="Search by product name or shop owner"
-        filterOptions={[
-          { value: "all", label: "All Products" },
-          { value: "new", label: "Newly Added" },
-          { value: "flagged", label: "Flagged" },
-          { value: "removed", label: "Removed" },
-        ]}
-        onFilterChange={setFilter}
-        onSearchChange={setSearch}
-      />
-
-      {/* PRODUCT GRID */}
-      <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6 items-start">
-        {filteredProducts.map((product) => (
-          <Card key={product.id} className="overflow-hidden shadow-sm">
-            <div className="relative w-full h-48">
-              <Image
-                src={product.image}
-                alt={product.name}
-                fill
-                className="object-cover"
-              />
-
-              {/* NEW BADGE */}
-              {isNewProduct(product.dateAdded) && (
-                <span className="absolute top-3 left-3 bg-blue-600 text-white px-3 py-1 text-xs rounded-full">
-                  New
-                </span>
-              )}
-
-              {/* FLAGGED BADGE */}
-              {product.status === "flagged" && (
-                <span className="absolute top-3 right-3 bg-red-600 text-white px-3 py-1 text-xs rounded-full flex items-center gap-1">
-                  <BadgeAlert className="w-3 h-3" />
-                  {product.flags} Reports
-                </span>
-              )}
+    <div className="space-y-6 pt-2">
+      {/* STATS CARDS */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200">
+          <CardContent className="p-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs text-gray-600 mb-1">Total Products</p>
+                <p className="text-xl font-bold text-gray-800">{stats.total}</p>
+              </div>
+              <div className="p-2 bg-blue-600 rounded-lg">
+                <Package className="h-4 w-4 text-white" />
+              </div>
             </div>
+          </CardContent>
+        </Card>
 
-            <CardContent className="p-4">
-              <h3 className="font-semibold text-lg">{product.name}</h3>
-              <p className="text-sm text-gray-500">{product.description}</p>
-
-              <div className="mt-3 text-sm">
-                <p className="font-medium">{product.shopOwner}</p>
-                <p className="text-gray-600">Category: {product.category}</p>
+        <Card className="bg-gradient-to-br from-emerald-50 to-emerald-100 border-emerald-200">
+          <CardContent className="p-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs text-gray-600 mb-1">New Products</p>
+                <p className="text-xl font-bold text-gray-800">{stats.newProducts}</p>
               </div>
-
-              <div className="flex justify-between mt-3 text-sm font-medium">
-                <span>₱{product.price}</span>
-                <span>Stock: {product.stock}</span>
+              <div className="p-2 bg-emerald-600 rounded-lg">
+                <Sparkles className="h-4 w-4 text-white" />
               </div>
+            </div>
+          </CardContent>
+        </Card>
 
-              <p className="text-xs mt-2 text-gray-500">
-                Added: {product.dateAdded}
-              </p>
-
-              {/* FLAG REASON */}
-              {product.status === "flagged" && product.reason && (
-                <div className="bg-red-100 text-red-700 text-sm p-2 rounded-md mt-3">
-                  <span className="font-medium">Reason:</span> {product.reason}
-                </div>
-              )}
-
-              {/* ACTION BUTTONS */}
-              <div className="mt-4 flex flex-col gap-2">
-                {product.status === "flagged" && (
-                  <>
-                    <Button
-                      size="sm"
-                      className="bg-green-600 hover:bg-green-700 cursor-pointer"
-                      onClick={() =>
-                        updateProduct(product.id, { status: "normal", flags: 0 })
-                      }
-                    >
-                      <Check className="w-4 h-4 mr-1" />
-                      Mark as Safe
-                    </Button>
-
-                    <Button
-                      size="sm"
-                      variant="destructive"
-                      className="cursor-pointer"
-                      onClick={() =>
-                        updateProduct(product.id, { status: "removed" })
-                      }
-                    >
-                      <Trash2 className="w-4 h-4 mr-1" />
-                      Remove Product
-                    </Button>
-                  </>
-                )}
-
-                {product.status === "removed" && (
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() =>
-                      updateProduct(product.id, { status: "normal" })
-                    }
-                  >
-                    <Undo2 className="w-4 h-4 mr-1" />
-                    Restore Product
-                  </Button>
-                )}
+        <Card className="bg-gradient-to-br from-red-50 to-red-100 border-red-200">
+          <CardContent className="p-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs text-gray-600 mb-1">Removed</p>
+                <p className="text-xl font-bold text-gray-800">{stats.removed}</p>
               </div>
+              <div className="p-2 bg-red-600 rounded-lg">
+                <Trash2 className="h-4 w-4 text-white" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
 
-              <Button
-                variant="link"
-                className="mt-2 w-full text-gray-600 cursor-pointer"
-                onClick={() => openModal(product)}
-              >
-                View Full Details
-              </Button>
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
 
-              {/* Delete button (always available) */}
-              <Button
-                className="w-full mt-2 bg-red-600 text-white cursor-pointer"
-                onClick={() => deleteProduct(product.id)}
-              >
-                Delete Permanently
-              </Button>
-            </CardContent>
-          </Card>
-        ))}
+        {/* SEARCH + FILTER BAR */}
+        <AdminSearchbar
+          placeholder="Search by product name or shop owner"
+          filterOptions={[
+            { value: "all", label: "All Products" },
+            { value: "new", label: "Newly Added" },
+            { value: "removed", label: "Removed" },
+          ]}
+          onFilterChange={setFilter}
+          onSearchChange={setSearch}
+        />
+
+        {/* PRODUCT GRID */}
+        {filteredProducts.length === 0 ? (
+          <div className="text-center py-16 bg-gray-50 rounded-xl border-2 border-dashed mt-6">
+            <Package className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+            <p className="text-lg font-semibold text-gray-600 mb-2">No products found</p>
+            <p className="text-sm text-gray-500">
+              {search ? "Try adjusting your search or filter criteria" : "No products match the selected filter"}
+            </p>
+          </div>
+        ) : (
+          <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-4 items-start">
+            {filteredProducts.map((product) => {
+              const isNew = isNewProduct(product.dateAdded);
+              const isFlagged = product.status === "flagged";
+              const isRemoved = product.status === "removed";
+              
+              return (
+                <Card 
+                  key={product.id} 
+                  className={`overflow-hidden shadow-md hover:shadow-lg transition-all duration-300 rounded-xl border ${
+                    isFlagged 
+                      ? "border-red-200 bg-gradient-to-br from-white to-red-50/30" 
+                      : isRemoved
+                      ? "border-gray-200 bg-gradient-to-br from-white to-gray-50/30 opacity-75"
+                      : "border-emerald-100 bg-gradient-to-br from-white to-emerald-50/30"
+                  }`}
+                >
+                  <div className="relative w-full h-40 overflow-hidden">
+                    <Image
+                      src={product.image}
+                      alt={product.name}
+                      fill
+                      className={`object-cover ${isRemoved ? "grayscale opacity-60" : ""}`}
+                    />
+
+                    {/* NEW BADGE */}
+                    {isNew && (
+                      <div className="absolute top-3 left-3">
+                        <Badge className="bg-blue-600 text-white border-0 shadow-md">
+                          <Sparkles className="h-3 w-3 mr-1" />
+                          New
+                        </Badge>
+                      </div>
+                    )}
+
+                    {/* STATUS BADGES */}
+                    {isFlagged && (
+                      <div className="absolute top-3 right-3">
+                        <Badge className="bg-red-600 text-white border-0 shadow-md">
+                          <BadgeAlert className="h-3 w-3 mr-1" />
+                          Flagged
+                        </Badge>
+                      </div>
+                    )}
+
+                    {isRemoved && (
+                      <div className="absolute top-3 right-3">
+                        <Badge className="bg-gray-600 text-white border-0 shadow-md">
+                          <Trash2 className="h-3 w-3 mr-1" />
+                          Removed
+                        </Badge>
+                      </div>
+                    )}
+                  </div>
+
+                  <CardContent className="p-3">
+                    <h3 className="font-bold text-sm text-gray-800 mb-1 line-clamp-2 min-h-[2.5rem]">
+                      {product.name}
+                    </h3>
+                    
+                    {product.description && (
+                      <p className="text-xs text-gray-600 mb-2 line-clamp-1">
+                        {product.description}
+                      </p>
+                    )}
+
+                    <div className="space-y-1 mb-2">
+                      <div className="flex items-center gap-1.5 text-xs text-gray-700">
+                        <Store className="h-3 w-3 text-gray-500" />
+                        <span className="truncate font-medium">{product.shopOwner}</span>
+                      </div>
+                      
+                      <div className="flex items-center gap-1.5 text-xs text-gray-600">
+                        <Tag className="h-3 w-3 text-gray-500" />
+                        <span>{product.category}</span>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between p-2 bg-gray-50 rounded-lg mb-3">
+                      <div className="flex items-center gap-1">
+                        <DollarSign className="h-3 w-3 text-emerald-600" />
+                        <span className="text-sm font-bold text-emerald-600">₱{product.price.toLocaleString()}</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <Box className="h-3 w-3 text-gray-500" />
+                        <span className="text-xs font-medium text-gray-700">
+                          {product.stock}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* FLAG REASON */}
+                    {isFlagged && product.reason && (
+                      <div className="bg-red-50 border border-red-200 text-red-700 text-xs p-2 rounded-lg mb-2">
+                        <div className="flex items-start gap-1.5">
+                          <AlertCircle className="h-3 w-3 mt-0.5 flex-shrink-0" />
+                          <div>
+                            <span className="font-semibold">Flag:</span> {product.reason}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* ACTION BUTTONS */}
+                    <div className="space-y-1.5">
+                      {isFlagged && (
+                        <>
+                          <Button
+                            size="sm"
+                            className="w-full bg-emerald-600 hover:bg-emerald-700 text-white cursor-pointer text-xs h-8 shadow-sm hover:shadow-md transition-shadow"
+                            onClick={async () => {
+                              await updateProduct(product.id, { status: "normal", flags: 0 });
+                              toast.success(`"${product.name}" marked as safe`);
+                            }}
+                          >
+                            <Check className="w-3 h-3 mr-1.5" />
+                            Mark Safe
+                          </Button>
+
+                          <Button
+                            size="sm"
+                            variant="destructive"
+                            className="w-full cursor-pointer text-xs h-8 shadow-sm hover:shadow-md transition-shadow"
+                            onClick={async () => {
+                              await updateProduct(product.id, { status: "removed" });
+                              toast.success(`"${product.name}" is removed`);
+                            }}
+                          >
+                            <Trash2 className="w-3 h-3 mr-1.5" />
+                            Remove
+                          </Button>
+                        </>
+                      )}
+
+                      {isRemoved && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="w-full border-emerald-300 text-emerald-700 hover:bg-emerald-50 cursor-pointer text-xs h-8"
+                          onClick={async () => {
+                            await updateProduct(product.id, { status: "normal" });
+                            toast.success(`"${product.name}" is restored`);
+                          }}
+                        >
+                          <Undo2 className="w-3 h-3 mr-1.5" />
+                          Restore
+                        </Button>
+                      )}
+
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="w-full border-gray-300 hover:bg-gray-50 cursor-pointer text-xs h-8"
+                        onClick={() => openModal(product)}
+                      >
+                        <Eye className="w-3 h-3 mr-1.5" />
+                        Details
+                      </Button>
+
+                      {/* Delete button (always available) */}
+                      <Button
+                        size="sm"
+                        variant="destructive"
+                        className="w-full cursor-pointer text-xs h-8 shadow-sm hover:shadow-md transition-shadow"
+                        onClick={async () => {
+                          if (confirm(`Are you sure you want to permanently delete "${product.name}"?`)) {
+                            await deleteProduct(product.id);
+                            toast.success(`"${product.name}" is permanently deleted`);
+                          }
+                        }}
+                      >
+                        <Trash2 className="w-3 h-3 mr-1.5" />
+                        Delete
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+        )}
+
       </div>
 
       <AdminProductModal 
@@ -329,7 +482,6 @@ export function AdminProducts() {
         onClose={closeModal} 
         product={selectedProduct}
       />
-
     </div>
   );
 }

@@ -122,7 +122,10 @@ export async function GET(req: NextRequest) {
       };
     });
 
-    return corsResponse(productsWithImages);
+    const response = corsResponse(productsWithImages);
+    // Add cache headers (1 minute - products change more frequently)
+    response.headers.set('Cache-Control', 'public, s-maxage=60, stale-while-revalidate=30');
+    return response;
   } catch (error) {
     console.error("Error fetching products:", error);
     return corsResponse(

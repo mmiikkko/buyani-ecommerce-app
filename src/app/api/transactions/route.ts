@@ -1,12 +1,29 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/server/drizzle";
-import { transactions } from "@/server/schema/auth-schema";
-import { eq } from "drizzle-orm";
+import { transactions, user, orders } from "@/server/schema/auth-schema";
+import { eq, desc } from "drizzle-orm";
 import { v4 as uuidv4 } from "uuid";
 
 // GET /api/transactions
 export async function GET(req: NextRequest) {
-  const allTransactions = await db.select().from(transactions);
+  const allTransactions = await db
+    .select({
+      id: transactions.id,
+      userId: transactions.userId,
+      orderId: transactions.orderId,
+      transactionType: transactions.transactionType,
+      remarks: transactions.remarks,
+      createdAt: transactions.createdAt,
+      userName: user.name,
+      userEmail: user.email,
+      orderTotal: orders.total,
+      buyerId: orders.buyerId,
+    })
+    .from(transactions)
+    .leftJoin(orders, eq(transactions.orderId, orders.id))
+    .leftJoin(user, eq(orders.buyerId, user.id)) // Join with buyer, not transaction userId
+    .orderBy(desc(transactions.createdAt));
+  
   return NextResponse.json(allTransactions);
 }
 

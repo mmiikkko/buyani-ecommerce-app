@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { AdminSearchbar } from "../_components/admin-users-searchbar";
 import { AdminUsersTable, AdminUser } from "../_components/admin-users-table";
+import { Users } from "lucide-react";
 
 // Define the APIUser interface to type the fetched data
 interface APIUser {
@@ -13,6 +14,7 @@ interface APIUser {
   role: "admin" | "seller" | "customer" | "suspended";
   emailVerified: boolean;
   createdAt: string;
+  lastActive?: string | null;
 }
 
 export default function AdminUsersPage() {
@@ -51,7 +53,7 @@ export default function AdminUsersPage() {
           fullName: user.name || `${user.first_name || ""} ${user.last_name || ""}`.trim() || "Unknown",
           role: displayRole,
           amount: 0,
-          online: false,
+          lastActive: user.lastActive || null,
           status,
           dateAdded: user.createdAt || new Date().toISOString(),
         };
@@ -78,19 +80,29 @@ export default function AdminUsersPage() {
   });
 
   return (
-    <section className="relative min-h-screen min-w-full overflow-hidden space-y-5 mt-18 mx-3">
-      <h1 className="text-xl font-bold mb-1 text-[#2E7D32]">
-        Users Monitoring
-      </h1>
-      <p>Manage user accounts and user privileges</p>
+    <section className="relative min-h-screen min-w-full overflow-hidden space-y-6 pt-15">
+      <div className="bg-gradient-to-r from-emerald-50 to-slate-50 rounded-xl p-6 border border-emerald-100 shadow-sm">
+        <div className="flex items-center gap-4">
+          <div className="p-3 bg-emerald-600 rounded-lg shadow-md">
+            <Users className="h-6 w-6 text-white" />
+          </div>
+          <div>
+            <h1 className="text-2xl font-bold text-gray-800 mb-1">
+              Users Monitoring
+            </h1>
+            <p className="text-sm text-gray-600">
+              Manage user accounts, roles, and account status
+            </p>
+          </div>
+        </div>
+      </div>
 
       <AdminSearchbar
         placeholder="Search by user ID or name"
         filterOptions={[
-          { value: "all", label: "All" },
+          { value: "all", label: "All Users" },
           { value: "active", label: "Active" },
           { value: "pending", label: "Pending" },
-          { value: "inactive", label: "Inactive" },
           { value: "suspended", label: "Suspended" },
         ]}
         onFilterChange={(val) => setFilter(val)}
@@ -98,7 +110,9 @@ export default function AdminUsersPage() {
       />
 
       {loading ? (
-        <p>Loading users...</p>
+        <div className="text-center py-12">
+          <p className="text-gray-500">Loading users...</p>
+        </div>
       ) : (
         <AdminUsersTable
           users={filteredUsers}

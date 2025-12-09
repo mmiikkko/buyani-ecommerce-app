@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { CardActivity } from "./_components/admin-activity";
 import { PendingApprovals } from "./_components/admin-pending-approvals";
 import { RecentActivity } from "./_components/admin-recent-activity";
+import { Sparkles, Loader2 } from "lucide-react";
 
 export default function AdminDashboard() {
   const [stats, setStats] = useState({
@@ -35,40 +36,55 @@ export default function AdminDashboard() {
   }, []);
 
   return (
-    <div className="relative min-h-screen bg-gradient-to-b from-emerald-50 via-white to-slate-50">
-      <div className="mx-auto max-w-6xl px-4 py-8 space-y-8">
-        <div className="rounded-2xl border border-emerald-100 bg-white/80 backdrop-blur-sm shadow-sm p-6">
-          <h1 className="text-2xl font-bold text-emerald-700">Welcome back</h1>
-          <p className="text-slate-600 mt-1">
-            Here&apos;s what&apos;s happening in Buyani Marketplace today.
-          </p>
-        </div>
-
-        <div className="rounded-2xl border border-emerald-100 bg-white/80 backdrop-blur-sm shadow-sm p-6">
-          {loading ? (
-            <p className="text-slate-600">Loading stats...</p>
-          ) : (
-            <CardActivity
-              totalRevenue={`₱${Number(stats.totalRevenue).toLocaleString("en-US", {
-                minimumFractionDigits: 2,
-                maximumFractionDigits: 2,
-              })}`}
-              totalOrders={stats.totalOrders}
-              activeUsers={stats.activeUsers}
-              activeSellers={stats.activeSellers}
-            />
-          )}
-        </div>
-
-        <div className="grid gap-6 lg:grid-cols-2">
-          <div className="rounded-2xl border border-emerald-100 bg-white/80 backdrop-blur-sm shadow-sm p-4">
-            <PendingApprovals />
+    <section className="relative min-h-screen min-w-full overflow-hidden space-y-6 pt-15">
+      {/* Welcome Header Section */}
+      <div className="bg-gradient-to-r from-emerald-50 to-slate-50 rounded-xl p-6 border border-emerald-100 shadow-sm">
+        <div className="flex items-center gap-4">
+          <div className="p-3 bg-emerald-600 rounded-lg shadow-md">
+            <Sparkles className="h-6 w-6 text-white" />
           </div>
-          <div className="rounded-2xl border border-emerald-100 bg-white/80 backdrop-blur-sm shadow-sm p-4">
-            <RecentActivity />
+          <div>
+            <h1 className="text-2xl font-bold text-gray-800 mb-1">
+              Welcome back
+            </h1>
+            <p className="text-sm text-gray-600">
+              Here&apos;s what&apos;s happening in Buyani Marketplace today.
+            </p>
           </div>
         </div>
       </div>
-    </div>
+
+      {/* Stats Cards Section */}
+      <div className="rounded-xl border border-emerald-100 bg-white/80 backdrop-blur-sm shadow-md p-6">
+        {loading ? (
+          <div className="flex items-center justify-center py-12">
+            <div className="inline-flex items-center gap-2 text-gray-600">
+              <Loader2 className="h-5 w-5 animate-spin" />
+              <p>Loading dashboard statistics...</p>
+            </div>
+          </div>
+        ) : (
+          <CardActivity
+            totalRevenue={`₱${Number(stats.totalRevenue).toLocaleString("en-US", {
+              minimumFractionDigits: 2,
+              maximumFractionDigits: 2,
+            })}`}
+            totalOrders={stats.totalOrders}
+            activeUsers={stats.activeUsers}
+            activeSellers={stats.activeSellers}
+          />
+        )}
+      </div>
+
+      {/* Bottom Grid Section */}
+      <div className="grid gap-6 lg:grid-cols-2">
+        <div className="rounded-xl border border-emerald-100 bg-white/80 backdrop-blur-sm shadow-md p-6">
+          <PendingApprovals />
+        </div>
+        <div className="rounded-xl border border-emerald-100 bg-white/80 backdrop-blur-sm shadow-md p-6">
+          <RecentActivity />
+        </div>
+      </div>
+    </section>
   );
 }

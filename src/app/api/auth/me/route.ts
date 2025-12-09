@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "@/server/session";
 import { db } from "@/server/drizzle";
-import { shop, user } from "@/server/schema/auth-schema";
+import { shop, user, account } from "@/server/schema/auth-schema";
 import { eq } from "drizzle-orm";
 
 // GET /api/auth/me - Get current user info
@@ -34,6 +34,22 @@ export async function GET(req: NextRequest) {
       .where(eq(shop.sellerId, userId))
       .limit(1);
 
+    // Check account providers to determine if user has password or OAuth
+    const userAccounts = await db
+      .select({
+        providerId: account.providerId,
+        hasPassword: account.password,
+      })
+      .from(account)
+      .where(eq(account.userId, userId));
+
+    const hasPasswordAccount = userAccounts.some(
+      (acc) => acc.providerId === "credential" && acc.hasPassword
+    );
+    const hasOAuthAccount = userAccounts.some(
+      (acc) => acc.providerId === "google"
+    );
+
     return NextResponse.json({
       id: currentUser.id,
       name: currentUser.name,
@@ -44,6 +60,8 @@ export async function GET(req: NextRequest) {
       emailVerified: currentUser.emailVerified,
       image: currentUser.image,
       hasShop: userShop.length > 0,
+      hasPassword: hasPasswordAccount,
+      hasOAuth: hasOAuthAccount,
       shop: userShop.length > 0 ? {
         id: userShop[0].id,
         shopName: userShop[0].shopName,

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/server/drizzle";
 import { getServerSession } from "@/server/session";
-import { conversations, user, products, shop } from "@/server/schema/auth-schema";
+import { conversations, user, products, shop, messages } from "@/server/schema/auth-schema";
 import { eq, or, and, desc } from "drizzle-orm";
 import { v4 as uuidv4 } from "uuid";
 
@@ -143,6 +143,64 @@ export async function POST(req: NextRequest) {
     console.error("Error creating conversation:", error);
     return NextResponse.json(
       { error: "Failed to create conversation" },
+      { status: 500 }
+    );
+  }
+}
+
+// DELETE /api/conversations?id=xxx - Delete a conversation
+export async function DELETE(req: NextRequest) {
+  try {
+    const session = await getServerSession();
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const { searchParams } = new URL(req.url);
+    const conversationId = searchParams.get("id");
+    
+    if (!conversationId) {
+      return NextResponse.json(
+        { error: "Conversation ID is required" },
+        { status: 400 }
+      );
+    }
+
+    const userId = session.user.id;
+
+    // Verify the user is part of this conversation
+    const conversation = await db
+      .select()
+      .from(conversations)
+      .where(eq(conversations.id, conversationId))
+      .limit(1);
+
+    if (conversation.length === 0) {
+      return NextResponse.json(
+        { error: "Conversation not found" },
+        { status: 404 }
+      );
+    }
+
+    const conv = conversation[0];
+    if (conv.customerId !== userId && conv.sellerId !== userId) {
+      return NextResponse.json(
+        { error: "Unauthorized to delete this conversation" },
+        { status: 403 }
+      );
+    }
+
+    // Delete all messages in the conversation first
+    await db.delete(messages).where(eq(messages.conversationId, conversationId));
+
+    // Delete the conversation
+    await db.delete(conversations).where(eq(conversations.id, conversationId));
+
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error("Error deleting conversation:", error);
+    return NextResponse.json(
+      { error: "Failed to delete conversation" },
       { status: 500 }
     );
   }

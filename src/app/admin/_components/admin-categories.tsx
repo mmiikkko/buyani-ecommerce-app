@@ -4,8 +4,9 @@ import { useState, useEffect, useCallback } from "react";
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Trash2, RefreshCw } from "lucide-react";
+import { Trash2, RefreshCw, Tag, Plus } from "lucide-react";
 import { toast } from "sonner";
+import { Badge } from "@/components/ui/badge";
 import type { Category } from "@/types/categories";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -100,19 +101,24 @@ export function AdminCategories() {
   };
 
   return (
-    <Card>
-      <CardHeader className="flex flex-row items-center justify-between">
-        <CardTitle>Manage Categories</CardTitle>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => fetchCategories()}
-          disabled={loading}
-          className="flex items-center gap-2"
-        >
-          <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
-          Refresh
-        </Button>
+    <Card className="shadow-md border border-gray-200">
+      <CardHeader className="bg-gradient-to-r from-gray-50 to-gray-100 border-b">
+        <div className="flex flex-row items-center justify-between">
+          <CardTitle className="text-xl font-bold text-gray-800 flex items-center gap-2">
+            <Tag className="h-5 w-5 text-emerald-600" />
+            Manage Categories
+          </CardTitle>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => fetchCategories()}
+            disabled={loading}
+            className="flex items-center gap-2 border-gray-300 hover:bg-gray-50"
+          >
+            <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
+            Refresh
+          </Button>
+        </div>
       </CardHeader>
 
       <CardContent className="space-y-3">
@@ -134,34 +140,48 @@ export function AdminCategories() {
         )}
 
         {!loading && !error && categories.length === 0 && (
-          <div className="text-center py-8 text-muted-foreground">
-            <p>No categories found. Add your first category below.</p>
+          <div className="text-center py-12 bg-gray-50 rounded-lg border-2 border-dashed">
+            <Tag className="h-12 w-12 text-gray-400 mx-auto mb-3" />
+            <p className="text-gray-600 font-medium mb-1">No categories found</p>
+            <p className="text-sm text-gray-500">Add your first category below</p>
           </div>
         )}
 
-        {!loading && !error && categories.map((cat) => (
-          <div key={cat.id} className="flex items-center justify-between border p-3 rounded-lg">
-            <span>{cat.categoryName}</span>
-            <Button
-              variant="destructive"
-              size="icon"
-              className="cursor-pointer"
-              onClick={() => deleteCategory(cat.id, cat.categoryName)}
-              disabled={deleting === cat.id}
-            >
-              {deleting === cat.id ? (
-                <RefreshCw className="h-4 w-4 animate-spin" />
-              ) : (
-                <Trash2 className="h-4 w-4" />
-              )}
-            </Button>
+        {!loading && !error && categories.length > 0 && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            {categories.map((cat) => (
+              <div 
+                key={cat.id} 
+                className="flex items-center justify-between border border-gray-200 p-4 rounded-lg bg-white hover:shadow-md transition-shadow group"
+              >
+                <div className="flex items-center gap-2 flex-1 min-w-0">
+                  <div className="p-2 bg-emerald-100 rounded-lg">
+                    <Tag className="h-4 w-4 text-emerald-600" />
+                  </div>
+                  <span className="font-medium text-gray-800 truncate">{cat.categoryName}</span>
+                </div>
+                <Button
+                  variant="destructive"
+                  size="icon"
+                  className="cursor-pointer ml-2 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                  onClick={() => deleteCategory(cat.id, cat.categoryName)}
+                  disabled={deleting === cat.id}
+                >
+                  {deleting === cat.id ? (
+                    <RefreshCw className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Trash2 className="h-4 w-4" />
+                  )}
+                </Button>
+              </div>
+            ))}
           </div>
-        ))}
+        )}
       </CardContent>
 
-      <CardFooter className="flex gap-3">
+      <CardFooter className="flex gap-3 bg-gray-50 border-t">
         <Input
-          placeholder="New category..."
+          placeholder="Enter new category name..."
           value={newCat}
           onChange={(e) => setNewCat(e.target.value)}
           onKeyDown={(e) => {
@@ -170,9 +190,10 @@ export function AdminCategories() {
             }
           }}
           disabled={adding}
+          className="flex-1"
         />
         <Button
-          className="cursor-pointer"
+          className="cursor-pointer bg-emerald-600 hover:bg-emerald-700 text-white"
           onClick={addCategory}
           disabled={adding || !newCat.trim()}
         >
@@ -182,7 +203,10 @@ export function AdminCategories() {
               Adding...
             </>
           ) : (
-            "Add"
+            <>
+              <Plus className="h-4 w-4 mr-2" />
+              Add Category
+            </>
           )}
         </Button>
       </CardFooter>

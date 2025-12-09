@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useTransition } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { addToCart } from "@/lib/queries/cart";
 import { AddToCartModal } from "../../_components/add-to-cart-modal";
+import { Loader2 } from "lucide-react";
 import {
   ShoppingCart,
   Star,
@@ -39,8 +40,10 @@ type Review = {
 
 export function ProductDetailClient({ product, userId }: ProductDetailClientProps) {
   const router = useRouter();
+  const [isPending, startTransition] = useTransition();
   const [modalOpen, setModalOpen] = useState(false);
   const [isBuying, setIsBuying] = useState(false);
+  const [isAddingToCart, setIsAddingToCart] = useState(false);
   const [quantity, setQuantity] = useState(1);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [reviews, setReviews] = useState<Review[]>([]);
@@ -105,7 +108,12 @@ export function ProductDetailClient({ product, userId }: ProductDetailClientProp
     if (!ensureAuthenticated(`/products/${product.id}`)) {
       return;
     }
-    setModalOpen(true);
+    setIsAddingToCart(true);
+    // Small delay for visual feedback
+    setTimeout(() => {
+      setModalOpen(true);
+      setIsAddingToCart(false);
+    }, 50);
   };
 
   const handleBuyNow = async () => {
@@ -120,7 +128,9 @@ export function ProductDetailClient({ product, userId }: ProductDetailClientProp
         toast.error(result.error ?? "Failed to add item to cart.");
         return;
       }
-      router.push("/cart?checkout=1");
+      startTransition(() => {
+        router.push("/cart?checkout=1");
+      });
     } catch (error) {
       console.error(error);
       toast.error("Failed to start checkout.");
@@ -231,9 +241,18 @@ export function ProductDetailClient({ product, userId }: ProductDetailClientProp
       <Button
         variant="ghost"
         className="mb-6"
-        onClick={() => router.back()}
+        onClick={() => {
+          startTransition(() => {
+            router.back();
+          });
+        }}
+        disabled={isPending}
       >
-        <ArrowLeft className="h-4 w-4 mr-2" />
+        {isPending ? (
+          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+        ) : (
+          <ArrowLeft className="h-4 w-4 mr-2" />
+        )}
         Back
       </Button>
       <div className="grid gap-8 lg:grid-cols-2">
@@ -359,19 +378,35 @@ export function ProductDetailClient({ product, userId }: ProductDetailClientProp
           {/* Action Buttons */}
           <div className="flex flex-wrap items-center gap-3">
             <Button
-              className="flex-1 bg-emerald-600 px-6 py-6 text-base font-semibold text-white hover:bg-emerald-700 disabled:opacity-50"
+              className="flex-1 bg-emerald-600 px-6 py-6 text-base font-semibold text-white hover:bg-emerald-700 disabled:opacity-50 transition-all"
               onClick={handleAddToCart}
-              disabled={isOutOfStock}
+              disabled={isOutOfStock || isAddingToCart}
             >
-              <ShoppingCart className="mr-2 h-5 w-5" />
-              Add to Cart
+              {isAddingToCart ? (
+                <>
+                  <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                  Adding...
+                </>
+              ) : (
+                <>
+                  <ShoppingCart className="mr-2 h-5 w-5" />
+                  Add to Cart
+                </>
+              )}
             </Button>
             <Button
-              className="flex-1 bg-orange-500 px-6 py-6 text-base font-semibold text-white hover:bg-orange-600 disabled:opacity-50"
+              className="flex-1 bg-orange-500 px-6 py-6 text-base font-semibold text-white hover:bg-orange-600 disabled:opacity-50 transition-all"
               onClick={handleBuyNow}
               disabled={isBuying || isOutOfStock}
             >
-              {isBuying ? "Processing..." : "Buy Now"}
+              {isBuying ? (
+                <>
+                  <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                  Processing...
+                </>
+              ) : (
+                "Buy Now"
+              )}
             </Button>
           </div>
 

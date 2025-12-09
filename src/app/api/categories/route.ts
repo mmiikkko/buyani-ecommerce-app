@@ -17,33 +17,37 @@ export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
     const withCounts = searchParams.get("withCounts") === "true";
 
-    const allCategories = await db.select().from(categories);
-
     if (withCounts) {
-      // Get product counts for each category
-      const categoriesWithCounts = await Promise.all(
-        allCategories.map(async (category) => {
-          const productCount = await db
-            .select({ count: sql<number>`count(*)` })
-            .from(products)
-            .leftJoin(shop, eq(products.shopId, shop.id))
-            .where(and(
-              eq(products.categoryId, category.id),
-              eq(products.isAvailable, true),
-              eq(shop.status, "approved")
-            ));
-
-          return {
-            ...category,
-            productCount: Number(productCount[0]?.count || 0),
-          };
+      // Optimized: Single query with GROUP BY instead of N+1 queries
+      const categoriesWithCounts = await db
+        .select({
+          id: categories.id,
+          categoryName: categories.categoryName,
+          productCount: sql<number>`COUNT(DISTINCT CASE WHEN ${products.id} IS NOT NULL AND ${shop.status} = 'approved' THEN ${products.id} END)`,
         })
-      );
+        .from(categories)
+        .leftJoin(
+          products,
+          and(
+            eq(products.categoryId, categories.id),
+            eq(products.isAvailable, true),
+            sql`${products.status} != 'Deleted'`
+          )
+        )
+        .leftJoin(shop, eq(products.shopId, shop.id))
+        .groupBy(categories.id, categories.categoryName);
 
-      return corsResponse(categoriesWithCounts);
+      const response = corsResponse(categoriesWithCounts);
+      // Add cache headers (2 minutes)
+      response.headers.set('Cache-Control', 'public, s-maxage=120, stale-while-revalidate=60');
+      return response;
     }
 
-    return corsResponse(allCategories);
+    const allCategories = await db.select().from(categories);
+    const response = corsResponse(allCategories);
+    // Add cache headers (5 minutes)
+    response.headers.set('Cache-Control', 'public, s-maxage=300, stale-while-revalidate=120');
+    return response;
   } catch (error) {
     console.error("Error fetching categories:", error);
     return corsResponse(

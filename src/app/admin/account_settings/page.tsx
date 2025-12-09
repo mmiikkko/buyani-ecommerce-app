@@ -1,12 +1,13 @@
 "use client"
 import { useState, useRef, useEffect } from "react";
 import { SearchInput, Input } from "@/components/ui/input";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { LoadingButton } from "@/components/loading-button";
 import { toast } from "sonner";
 import { authClient } from "@/server/auth-client";
+import { User, Shield, Lock, Mail, Save, Search, UserCircle } from "lucide-react";
 
 interface UserData {
   id: string;
@@ -145,130 +146,212 @@ export default function AdminAccountSettingsPage() {
 
     if (loading) {
       return (
-        <section className="relative min-h-screen min-w-full overflow-hidden space-y-5 mt-30 ml-5 mr-5 w-full flex flex-col pr-8">
-          <h1 className="text-xl font-bold text-[#2E7D32]">Account Settings</h1>
+        <section className="relative min-h-screen min-w-full overflow-hidden space-y-6 pt-15">
+          <div className="bg-gradient-to-r from-emerald-50 to-slate-50 rounded-xl p-6 border border-emerald-100 shadow-sm">
+            <div className="flex items-center gap-4">
+              <div className="p-3 bg-emerald-600 rounded-lg shadow-md">
+                <UserCircle className="h-6 w-6 text-white" />
+              </div>
+              <div>
+                <h1 className="text-2xl font-bold text-gray-800 mb-1">
+                  Account Settings
+                </h1>
+                <p className="text-sm text-gray-600">
+                  Manage your account profile and security settings
+                </p>
+              </div>
+            </div>
+          </div>
           <div className="text-center py-12">
-            <p className="text-slate-500">Loading account settings...</p>
+            <p className="text-gray-500">Loading account settings...</p>
           </div>
         </section>
       );
     }
 
     return (
-        <section className="relative min-h-screen min-w-full overflow-hidden space-y-5 mt-30 ml-5 mr-5 w-full flex flex-col pr-8">
-            <h1 className="text-xl font-bold text-[#2E7D32]">Account Settings</h1>
+        <section className="relative min-h-screen min-w-full overflow-hidden space-y-6 pt-15">
+            {/* Header Section */}
+            <div className="bg-gradient-to-r from-emerald-50 to-slate-50 rounded-xl p-6 border border-emerald-100 shadow-sm">
+                <div className="flex items-center gap-4">
+                    <div className="p-3 bg-emerald-600 rounded-lg shadow-md">
+                        <UserCircle className="h-6 w-6 text-white" />
+                    </div>
+                    <div>
+                        <h1 className="text-2xl font-bold text-gray-800 mb-1">
+                            Account Settings
+                        </h1>
+                        <p className="text-sm text-gray-600">
+                            Manage your account profile and security settings
+                        </p>
+                    </div>
+                </div>
+            </div>
 
-            {/* SEARCH BAR — top, highest z-index */}
-            <div className=" min-w-[80%] fixed top-15 z-3 bg-#EBFEEC maw-w-full mt-3 px-3 pb-3 pt-3">
-            <SearchInput
-                placeholder="Search settings…"
-                value={search}
-                className="border-mt bg-white"
-                onChange={(e) => setSearch(e.target.value)}
-            />
+            {/* Search Bar */}
+            <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-4">
+                <div className="relative">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                    <SearchInput
+                        placeholder="Search settings…"
+                        value={search}
+                        className="pl-10 border-gray-300 bg-white"
+                        onChange={(e) => setSearch(e.target.value)}
+                    />
+                </div>
             </div>
 
             {/* ---------------- PROFILE SECTION ---------------- */}
             <Card
                 ref={refs.profile}
-                className={`${highlighted === "profile" ? highlightStyle : ""}`}
+                className={`shadow-md border border-gray-200 ${highlighted === "profile" ? highlightStyle : ""}`}
             >
-                <CardHeader>
-                <CardTitle>Profile</CardTitle>
+                <CardHeader className="bg-gradient-to-r from-emerald-50 to-emerald-100/50 border-b border-emerald-100">
+                    <div className="flex items-center gap-3">
+                        <div className="p-2 bg-emerald-600 rounded-lg">
+                            <User className="h-5 w-5 text-white" />
+                        </div>
+                        <div>
+                            <CardTitle className="text-xl text-gray-800">Profile Information</CardTitle>
+                            <CardDescription className="text-sm text-gray-600 mt-1">
+                                Update your personal information and account details
+                            </CardDescription>
+                        </div>
+                    </div>
                 </CardHeader>
-                <CardContent className="space-y-4">
+                <CardContent className="space-y-6 pt-6">
                 <div>
-                    <Label htmlFor="name">Full Name</Label>
+                    <Label htmlFor="name" className="text-sm font-semibold text-gray-700 mb-2 block">
+                        Full Name
+                    </Label>
                     <Input 
                       id="name"
                       value={profileForm.name}
                       onChange={(e) => setProfileForm({ ...profileForm, name: e.target.value })}
-                      placeholder="Your name" 
+                      placeholder="Your full name" 
+                      className="border-gray-300 focus:border-emerald-500 focus:ring-emerald-500"
                     />
                 </div>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <Label htmlFor="firstName">First Name</Label>
+                    <Label htmlFor="firstName" className="text-sm font-semibold text-gray-700 mb-2 block">
+                        First Name
+                    </Label>
                     <Input 
                       id="firstName"
                       value={profileForm.firstName}
                       onChange={(e) => setProfileForm({ ...profileForm, firstName: e.target.value })}
                       placeholder="First name" 
+                      className="border-gray-300 focus:border-emerald-500 focus:ring-emerald-500"
                     />
                   </div>
                   <div>
-                    <Label htmlFor="lastName">Last Name</Label>
+                    <Label htmlFor="lastName" className="text-sm font-semibold text-gray-700 mb-2 block">
+                        Last Name
+                    </Label>
                     <Input 
                       id="lastName"
                       value={profileForm.lastName}
                       onChange={(e) => setProfileForm({ ...profileForm, lastName: e.target.value })}
                       placeholder="Last name" 
+                      className="border-gray-300 focus:border-emerald-500 focus:ring-emerald-500"
                     />
                   </div>
                 </div>
                 <div>
-                    <Label htmlFor="email">Email</Label>
+                    <Label htmlFor="email" className="text-sm font-semibold text-gray-700 mb-2 block flex items-center gap-2">
+                        <Mail className="h-4 w-4" />
+                        Email Address
+                    </Label>
                     <Input 
                       id="email"
                       value={profileForm.email}
                       disabled
                       placeholder="Email" 
                       type="email" 
+                      className="bg-gray-50 border-gray-200 text-gray-600"
                     />
-                    <p className="text-xs text-muted-foreground mt-1">
-                      Email cannot be changed here. Use the profile settings page.
+                    <p className="text-xs text-gray-500 mt-2 flex items-center gap-1">
+                        <Mail className="h-3 w-3" />
+                        Email cannot be changed here. Use the profile settings page.
                     </p>
                 </div>
                 <div>
-                    <Label>Role</Label>
+                    <Label className="text-sm font-semibold text-gray-700 mb-2 block flex items-center gap-2">
+                        <Shield className="h-4 w-4" />
+                        Account Role
+                    </Label>
                     <Input 
                       value={userData?.role || ""} 
                       disabled
                       placeholder="Role" 
+                      className="bg-gray-50 border-gray-200 text-gray-600 capitalize"
                     />
-                    <p className="text-xs text-muted-foreground mt-1">
-                      Your account role
+                    <p className="text-xs text-gray-500 mt-2">
+                        Your current account role and permissions
                     </p>
                 </div>
-                <LoadingButton 
-                  onClick={handleProfileUpdate}
-                  loading={saving}
-                  className="cursor-pointer" 
-                  variant="outline"
-                >
-                  Save Profile Changes
-                </LoadingButton>
+                <div className="pt-4 border-t border-gray-200">
+                    <LoadingButton 
+                      onClick={handleProfileUpdate}
+                      loading={saving}
+                      className="cursor-pointer bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm" 
+                    >
+                      <Save className="h-4 w-4 mr-2" />
+                      Save Profile Changes
+                    </LoadingButton>
+                </div>
                 </CardContent>
             </Card>
 
             {/* ---------------- SECURITY SECTION ---------------- */}
             <Card
                 ref={refs.security}
-                className={`${highlighted === "security" ? highlightStyle : ""}`}
+                className={`shadow-md border border-gray-200 ${highlighted === "security" ? highlightStyle : ""}`}
             >
-                <CardHeader>
-                <CardTitle>Security</CardTitle>
+                <CardHeader className="bg-gradient-to-r from-emerald-50 to-emerald-100/50 border-b border-emerald-100">
+                    <div className="flex items-center gap-3">
+                        <div className="p-2 bg-emerald-600 rounded-lg">
+                            <Lock className="h-5 w-5 text-white" />
+                        </div>
+                        <div>
+                            <CardTitle className="text-xl text-gray-800">Security Settings</CardTitle>
+                            <CardDescription className="text-sm text-gray-600 mt-1">
+                                Manage your account security and authentication preferences
+                            </CardDescription>
+                        </div>
+                    </div>
                 </CardHeader>
-                <CardContent className="space-y-4">
+                <CardContent className="space-y-6 pt-6">
                 <div>
-                    <Label>Password</Label>
+                    <Label className="text-sm font-semibold text-gray-700 mb-2 block flex items-center gap-2">
+                        <Lock className="h-4 w-4" />
+                        Password Management
+                    </Label>
                     <Input 
                       type="password"
                       placeholder="Change password" 
                       disabled 
+                      className="bg-gray-50 border-gray-200 text-gray-600"
                     />
-                    <p className="text-xs text-muted-foreground mt-1">
-                      Password management coming soon
+                    <p className="text-xs text-gray-500 mt-2 flex items-center gap-1">
+                        <Lock className="h-3 w-3" />
+                        Password management feature coming soon
                     </p>
                 </div>
                 <div>
-                    <Label>Two-Factor Authentication</Label>
+                    <Label className="text-sm font-semibold text-gray-700 mb-2 block flex items-center gap-2">
+                        <Shield className="h-4 w-4" />
+                        Two-Factor Authentication
+                    </Label>
                     <Input 
                       placeholder="2FA settings" 
                       disabled 
+                      className="bg-gray-50 border-gray-200 text-gray-600"
                     />
-                    <p className="text-xs text-muted-foreground mt-1">
-                      Two-factor authentication coming soon
+                    <p className="text-xs text-gray-500 mt-2 flex items-center gap-1">
+                        <Shield className="h-3 w-3" />
+                        Two-factor authentication feature coming soon
                     </p>
                 </div>
                 </CardContent>

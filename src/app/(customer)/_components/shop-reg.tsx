@@ -39,6 +39,8 @@ type SellerValues = z.infer<typeof sellerSchema>;
 export function SellerRegisterForm() {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
+  const [submitted, setSubmitted] = useState(false);
+  const [submittedShop, setSubmittedShop] = useState<string>("");
 
   const form = useForm<SellerValues>({
     resolver: zodResolver(sellerSchema),
@@ -65,8 +67,12 @@ export function SellerRegisterForm() {
       }
 
       const data = await res.json();
-      toast.success(data.message || "Shop application submitted successfully!");
-      router.push("/");
+      toast.success(
+        data.message ||
+          "Shop application submitted successfully! Your application is pending approval."
+      );
+      setSubmittedShop(values.shopName);
+      setSubmitted(true);
     } catch (e) {
         const err = e as Error;
         console.log(err.message);
@@ -74,6 +80,46 @@ export function SellerRegisterForm() {
   }
 
   const loading = form.formState.isSubmitting;
+
+  if (submitted) {
+    return (
+      <div className="flex items-center justify-center w-full">
+        <Card className="w-full max-w-lg shadow-2xl border-0 bg-white/90 backdrop-blur-sm">
+          <CardHeader className="space-y-3 pb-4">
+            <CardTitle className="text-2xl font-bold text-slate-900">
+              Application Submitted
+            </CardTitle>
+            <CardDescription className="text-base text-slate-600">
+              Your shop application is pending admin approval.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="p-4 bg-amber-50 rounded-lg border border-amber-200">
+              <p className="text-sm font-medium text-amber-800">
+                {submittedShop || "Your shop"} has been submitted and is awaiting review.
+                We will notify you once it is approved.
+              </p>
+            </div>
+            <div className="flex flex-col gap-3">
+              <Button
+                className="w-full h-11 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold shadow-lg"
+                onClick={() => router.push("/")}
+              >
+                Return Home
+              </Button>
+              <Button
+                variant="outline"
+                className="w-full h-11 border-slate-200 hover:bg-slate-50"
+                onClick={() => router.push("/become-seller")}
+              >
+                Refresh Status
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col lg:flex-row items-center justify-center w-full max-w-6xl mx-auto gap-8 lg:gap-12">

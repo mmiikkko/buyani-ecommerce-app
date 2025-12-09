@@ -11,6 +11,7 @@ interface ProductCardProps {
 
 export function ProductCard({ product }: ProductCardProps) {
   // Safely extract image URL with multiple fallbacks
+  // Optimized for performance with prefetching
   const getPrimaryImage = (): string | null => {
     try {
       const images = product.images;
@@ -55,6 +56,7 @@ export function ProductCard({ product }: ProductCardProps) {
   return (
     <Link
       href={`/products/${product.id}`}
+      prefetch={true}
       className="group block rounded-xl border border-slate-200 bg-white overflow-hidden shadow-sm hover:shadow-md transition-all duration-200 hover:-translate-y-0.5"
     >
       {/* Product Image */}
@@ -66,6 +68,8 @@ export function ProductCard({ product }: ProductCardProps) {
             fill
             className="object-cover group-hover:scale-105 transition-transform duration-200"
             unoptimized={primaryImage.startsWith("data:")}
+            loading="lazy"
+            sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 20vw"
             onError={(e) => {
               // Fallback if image fails to load
               const target = e.target as HTMLImageElement;

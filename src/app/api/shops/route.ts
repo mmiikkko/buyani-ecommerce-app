@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/server/drizzle';
 import { shop, user, products, USER_ROLES } from '@/server/schema/auth-schema';
-import { eq, and, sql } from 'drizzle-orm';
+import { eq, and, sql, inArray } from 'drizzle-orm';
 import { getServerSession } from '@/server/session';
 import { v4 as uuidv4 } from 'uuid'; // For unique IDs
 import { corsResponse, corsOptions } from '@/lib/api-utils';
@@ -172,38 +172,54 @@ export async function GET(req: NextRequest) {
       }
     }
 
-    // Get product counts for each shop
-    const shopsWithCounts = await Promise.all(
-      shopsList.map(async (shopItem) => {
-        const productCount = await executeQuery(async () => {
+    // Optimized: Get product counts in a single query using GROUP BY
+    const shopIds = shopsList.map(s => s.id);
+    const productCounts = shopIds.length > 0
+      ? await executeQuery(async () => {
           return await db
-            .select({ count: sql<number>`count(*)` })
+            .select({
+              shopId: products.shopId,
+              count: sql<number>`COUNT(*)`,
+            })
             .from(products)
             .where(and(
-              eq(products.shopId, shopItem.id),
-              eq(products.isAvailable, true)
-            ));
-        });
+              inArray(products.shopId, shopIds),
+              eq(products.isAvailable, true),
+              sql`${products.status} != 'Deleted'`
+            ))
+            .groupBy(products.shopId);
+        })
+      : [];
 
-        return {
-          id: shopItem.id,
-          seller_id: shopItem.sellerId,
-          shop_name: shopItem.shopName,
-          shop_rating: shopItem.shopRating,
-          description: shopItem.description,
-          image: shopItem.imageURL,
-          status: shopItem.status,
-          created_at: shopItem.createdAt,
-          updated_at: shopItem.updatedAt,
-          owner_name: shopItem.ownerName || 
-            `${shopItem.ownerFirstName || ""} ${shopItem.ownerLastName || ""}`.trim() ||
-            "Unknown",
-          products: Number(productCount[0]?.count || 0),
-        };
-      })
-    );
+    // Create a map for quick lookup
+    const countMap = new Map<string, number>();
+    for (const pc of productCounts) {
+      countMap.set(pc.shopId, Number(pc.count || 0));
+    }
 
-    return corsResponse(shopsWithCounts);
+    // Combine shops with their product counts
+    const shopsWithCounts = shopsList.map((shopItem) => ({
+      id: shopItem.id,
+      seller_id: shopItem.sellerId,
+      shop_name: shopItem.shopName,
+      shop_rating: shopItem.shopRating,
+      description: shopItem.description,
+      image: shopItem.imageURL,
+      status: shopItem.status,
+      created_at: shopItem.createdAt,
+      updated_at: shopItem.updatedAt,
+      owner_name: shopItem.ownerName || 
+        `${shopItem.ownerFirstName || ""} ${shopItem.ownerLastName || ""}`.trim() ||
+        "Unknown",
+      products: countMap.get(shopItem.id) || 0,
+    }));
+
+    const response = corsResponse(shopsWithCounts);
+    // Add cache headers for approved shops (2 minutes)
+    if (!statusFilter || statusFilter === "approved") {
+      response.headers.set('Cache-Control', 'public, s-maxage=120, stale-while-revalidate=60');
+    }
+    return response;
   } catch (error: any) {
     console.error("Error fetching shops:", error);
     
@@ -263,11 +279,17 @@ export async function PUT(req: NextRequest) {
 
     // Check if user is admin (can modify any shop) or shop owner
     const isAdmin = session.user.role?.includes(USER_ROLES.ADMIN) ?? false;
+    let shopRecord:
+      | {
+          id: string;
+          sellerId: string;
+        }
+      | null = null;
     
     if (!isAdmin) {
       // Verify shop belongs to the seller (non-admins only)
       const shopData = await db
-        .select()
+        .select({ id: shop.id, sellerId: shop.sellerId })
         .from(shop)
         .where(and(eq(shop.id, shopId), eq(shop.sellerId, session.user.id)))
         .limit(1);
@@ -275,21 +297,47 @@ export async function PUT(req: NextRequest) {
       if (shopData.length === 0) {
         return NextResponse.json({ error: "Shop not found or unauthorized" }, { status: 404 });
       }
+      shopRecord = shopData[0];
     } else {
-      // Admin: just verify shop exists
-      const shopExists = await db
-        .select({ id: shop.id })
+      // Admin: just verify shop exists and capture sellerId for role updates
+      const shopData = await db
+        .select({ id: shop.id, sellerId: shop.sellerId })
         .from(shop)
         .where(eq(shop.id, shopId))
         .limit(1);
 
-      if (shopExists.length === 0) {
+      if (shopData.length === 0) {
         return NextResponse.json({ error: "Shop not found" }, { status: 404 });
       }
+      shopRecord = shopData[0];
     }
 
     const updates = await req.json();
-    await db.update(shop).set({ ...updates, updatedAt: new Date() }).where(eq(shop.id, shopId));
+
+    await db
+      .update(shop)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(shop.id, shopId));
+
+    // Keep user role in sync with shop status changes
+    if (updates.status && shopRecord) {
+      let nextRole: string | null = null;
+      if (updates.status === "approved") {
+        nextRole = USER_ROLES.SELLER;
+      } else if (updates.status === "pending") {
+        nextRole = USER_ROLES.PENDING_SELLER;
+      } else if (updates.status === "suspended") {
+        nextRole = USER_ROLES.SUSPENDED;
+      }
+
+      if (nextRole) {
+        await db
+          .update(user)
+          .set({ role: nextRole })
+          .where(eq(user.id, shopRecord.sellerId));
+      }
+    }
+
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error("Error updating shop:", error);

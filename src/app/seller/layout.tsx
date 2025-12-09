@@ -6,6 +6,9 @@ import { ReactNode } from "react";
 import { getServerSession } from "@/server/session";
 import { USER_ROLES } from "@/server/schema/auth-schema";
 import { unauthorized, redirect } from "next/navigation";
+import { db } from "@/server/drizzle";
+import { shop } from "@/server/schema/auth-schema";
+import { eq } from "drizzle-orm";
 
 export default async function SellerLayout({
   children,
@@ -20,8 +23,22 @@ export default async function SellerLayout({
     redirect("/sign-in?redirect=/seller");
   }
 
-  // Check if user has seller role
-  if (!user.role.includes(USER_ROLES.SELLER)) {
+  // Check if user has seller role or is admin (admins retain seller access)
+  if (
+    !user.role.includes(USER_ROLES.SELLER) &&
+    !user.role.includes(USER_ROLES.ADMIN)
+  ) {
+    unauthorized();
+  }
+
+  // Block access if the seller's shop is suspended
+  const [shopRow] = await db
+    .select({ status: shop.status })
+    .from(shop)
+    .where(eq(shop.sellerId, user.id))
+    .limit(1);
+
+  if (shopRow?.status === "suspended") {
     unauthorized();
   }
 

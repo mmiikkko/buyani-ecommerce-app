@@ -84,15 +84,29 @@ export function SignInForm() {
   async function handleSocialSignIn(provider: "google") {
     setError(null);
     setLoading(true);
-    const { error } = await authClient.signIn.social({
-      provider,
-      callbackURL: redirect ?? "/profile",
-    });
+    
+    try {
+      const callbackURL = redirect || "/";
+      const { error, data } = await authClient.signIn.social({
+        provider,
+        callbackURL,
+      });
 
-    setLoading(false);
-
-    if (error) {
-      setError(error.message || "Something went wrong");
+      if (error) {
+        setError(error.message || "Something went wrong");
+        toast.error(error.message || "Failed to sign in with Google");
+        setLoading(false);
+      } else if (data?.url) {
+        // Redirect to Google OAuth URL - don't set loading to false as we're redirecting
+        window.location.href = data.url;
+      } else {
+        setLoading(false);
+      }
+    } catch (err) {
+      console.error("Google sign-in error:", err);
+      setError("Failed to sign in with Google. Please try again.");
+      toast.error("Failed to sign in with Google");
+      setLoading(false);
     }
   }
 

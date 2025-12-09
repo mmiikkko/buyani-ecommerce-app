@@ -16,6 +16,7 @@ export function ShopCard({ shop }: ShopCardProps) {
   return (
     <Link
       href={`/shops/${shop.id}`}
+      prefetch={true}
       className="group block rounded-xl border border-slate-200 bg-white overflow-hidden shadow-sm hover:shadow-md transition-all duration-200 hover:-translate-y-0.5"
     >
       {/* Shop Image */}
@@ -26,6 +27,8 @@ export function ShopCard({ shop }: ShopCardProps) {
             alt={shop.shop_name}
             fill
             className="object-cover group-hover:scale-105 transition-transform duration-200"
+            loading="lazy"
+            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
           />
         ) : (
           <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-emerald-50 to-amber-50">

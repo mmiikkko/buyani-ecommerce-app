@@ -10,15 +10,18 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { Eye, UserX, UserCheck, Trash2 } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent } from "@/components/ui/card";
+import { Eye, UserX, UserCheck, Trash2, Users, Mail, Shield, Store, User as UserIcon, Calendar } from "lucide-react";
 import { toast } from "sonner";
+import { USER_ROLES } from "@/server/schema/auth-schema";
 
 export interface AdminUser {
   id: string;
   fullName: string;
   role: "Customer" | "Seller" | "Admin" | "Suspended";
   amount: number;
-  online: boolean;
+  lastActive: string | null;
   status: "active" | "pending" | "suspended";
   dateAdded: string;
   originalRole?: string; // Store original role before suspension
@@ -69,20 +72,20 @@ export function AdminUsersTable({
 
   const [actionLoading, setActionLoading] = useState<string | null>(null);
 
-  // Suspend seller by demoting them back to "customer"
+  // Suspend seller accounts and block seller access
   const handleSuspend = async (userId: string, userName: string) => {
-    if (!confirm(`Suspend ${userName}? They will be demoted to customer and must re-apply to sell.`)) return;
+    if (!confirm(`Suspend ${userName}? Their seller access will be revoked and they must re-apply.`)) return;
     
     setActionLoading(userId);
     try {
       const res = await fetch(`/api/users?id=${userId}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ role: "customer" }),
+        body: JSON.stringify({ role: USER_ROLES.SUSPENDED }),
       });
       
       if (res.ok) {
-        toast.success(`${userName} has been demoted to customer`);
+        toast.success(`${userName} has been suspended`);
         onRefresh?.();
       } else {
         toast.error("Failed to suspend user");
@@ -104,7 +107,7 @@ export function AdminUsersTable({
       const res = await fetch(`/api/users?id=${userId}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ role: "customer" }),
+        body: JSON.stringify({ role: USER_ROLES.CUSTOMER }),
       });
       
       if (res.ok) {
@@ -145,135 +148,300 @@ export function AdminUsersTable({
     }
   };
 
+  const stats = useMemo(() => {
+    const total = filtered.length;
+    const active = filtered.filter(u => u.status === "active").length;
+    const pending = filtered.filter(u => u.status === "pending").length;
+    const suspended = filtered.filter(u => u.status === "suspended").length;
+    // Count users active in last 15 minutes
+    const now = new Date();
+    const fifteenMinutesAgo = new Date(now.getTime() - 15 * 60 * 1000);
+    const recentlyActive = filtered.filter(u => {
+      if (!u.lastActive) return false;
+      const lastActive = new Date(u.lastActive);
+      return lastActive > fifteenMinutesAgo;
+    }).length;
+    return { total, active, pending, suspended, recentlyActive };
+  }, [filtered]);
+
   return (
-    <div className="w-full p-6 bg-green-50 min-h-screen">
-      <div className="space-y-3">
-        {filtered.length === 0 && (
-          <div className="w-full text-center py-6 text-muted-foreground border rounded-md bg-white">
-            No users found.
-          </div>
-        )}
+    <div className="space-y-6">
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 pt-6">
+        <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200">
+          <CardContent className="p-1.5">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-[10px] text-gray-600 mb-0">Total Users</p>
+                <p className="text-base font-bold text-gray-800">{stats.total}</p>
+              </div>
+              <div className="p-1 bg-blue-600 rounded-lg">
+                <Users className="h-2.5 w-2.5 text-white" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
-        {filtered.length > 0 && (
-          <Table className="bg-white rounded-xl shadow-sm">
-            <TableHeader>
-              <TableRow>
-                <TableHead>User ID</TableHead>
-                <TableHead>Customer</TableHead>
-                <TableHead>Role</TableHead>
-                <TableHead>Amount</TableHead>
-                <TableHead>Online</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Date added</TableHead>
-                <TableHead>Actions</TableHead>
-              </TableRow>
-            </TableHeader>
+        <Card className="bg-gradient-to-br from-emerald-50 to-emerald-100 border-emerald-200">
+          <CardContent className="p-1.5">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-[10px] text-gray-600 mb-0">Active</p>
+                <p className="text-base font-bold text-gray-800">{stats.active}</p>
+              </div>
+              <div className="p-1 bg-emerald-600 rounded-lg">
+                <UserCheck className="h-2.5 w-2.5 text-white" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
-            <TableBody>
-              {currentRows.map((user) => (
-                <TableRow key={user.id}>
-                  <TableCell className="font-medium">{user.id}</TableCell>
-                  <TableCell>{user.fullName}</TableCell>
-                  <TableCell>{user.role}</TableCell>
-                  <TableCell>₱{user.amount}</TableCell>
+        <Card className="bg-gradient-to-br from-amber-50 to-amber-100 border-amber-200">
+          <CardContent className="p-1.5">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-[10px] text-gray-600 mb-0">Pending</p>
+                <p className="text-base font-bold text-gray-800">{stats.pending}</p>
+              </div>
+              <div className="p-1 bg-amber-600 rounded-lg">
+                <Mail className="h-2.5 w-2.5 text-white" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
-                  <TableCell>
-                    <span
-                      className={`w-3 h-3 rounded-full inline-block ${
-                        user.online ? "bg-green-500" : "bg-gray-400"
-                      }`}
-                    ></span>
-                  </TableCell>
-
-                  <TableCell>
-                    <span
-                      className={`text-xs px-2 py-1 rounded-full capitalize
-                      ${
-                        user.status === "active"
-                          ? "bg-green-100 text-green-700"
-                          : user.status === "pending"
-                          ? "bg-orange-100 text-orange-700"
-                          : "bg-red-100 text-red-700"
-                      }`}
-                    >
-                      {user.status}
-                    </span>
-                  </TableCell>
-
-                  <TableCell className="text-sm text-muted-foreground">
-                    {new Date(user.dateAdded).toLocaleString()}
-                  </TableCell>
-
-                  <TableCell className="flex items-center gap-2">
-                    <Button variant="ghost" size="icon" title="View Details">
-                      <Eye className="h-4 w-4" />
-                    </Button>
-                    
-                    {/* Show Suspend or Restore button based on status */}
-                    {user.role === "Suspended" || user.status === "suspended" ? (
-                      <Button 
-                        className="bg-green-600 hover:bg-green-700 text-white text-xs px-3 py-1 cursor-pointer"
-                        onClick={() => handleRestore(user.id, user.fullName)}
-                        disabled={actionLoading === user.id}
-                        title="Restore User"
-                      >
-                        <UserCheck className="h-3 w-3 mr-1" />
-                        {actionLoading === user.id ? "..." : "Restore"}
-                      </Button>
-                    ) : user.role !== "Admin" ? (
-                      <Button 
-                        className="bg-orange-600 hover:bg-orange-700 text-white text-xs px-3 py-1 cursor-pointer"
-                        onClick={() => handleSuspend(user.id, user.fullName)}
-                        disabled={actionLoading === user.id}
-                        title="Suspend User"
-                      >
-                        <UserX className="h-3 w-3 mr-1" />
-                        {actionLoading === user.id ? "..." : "Suspend"}
-                      </Button>
-                    ) : null}
-
-                    {/* Delete button - don't show for admin users */}
-                    {user.role !== "Admin" && (
-                      <Button 
-                        variant="destructive"
-                        size="sm"
-                        className="text-xs px-2 py-1 cursor-pointer"
-                        onClick={() => handleDelete(user.id, user.fullName)}
-                        disabled={actionLoading === user.id}
-                        title="Delete User"
-                      >
-                        <Trash2 className="h-3 w-3" />
-                      </Button>
-                    )}
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        )}
-
-        <div className="flex justify-between items-center mt-2">
-          <Button
-            variant="outline"
-            disabled={currentPage === 1}
-            onClick={() => setCurrentPage((p) => p - 1)}
-          >
-            Previous
-          </Button>
-
-          <span className="text-sm">
-            Page {currentPage} of {pageCount}
-          </span>
-
-          <Button
-            variant="outline"
-            disabled={currentPage === pageCount}
-            onClick={() => setCurrentPage((p) => p + 1)}
-          >
-            Next
-          </Button>
-        </div>
+        <Card className="bg-gradient-to-br from-red-50 to-red-100 border-red-200">
+          <CardContent className="p-1.5">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-[10px] text-gray-600 mb-0">Suspended</p>
+                <p className="text-base font-bold text-gray-800">{stats.suspended}</p>
+              </div>
+              <div className="p-1 bg-red-600 rounded-lg">
+                <UserX className="h-2.5 w-2.5 text-white" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
+
+      <Card className="shadow-md border border-gray-200">
+        <CardContent className="p-0">
+          {filtered.length === 0 ? (
+            <div className="text-center py-16 bg-gray-50">
+              <Users className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+              <p className="text-lg font-semibold text-gray-600 mb-2">No users found</p>
+              <p className="text-sm text-gray-500">
+                {search ? "Try adjusting your search criteria" : "No users match the selected filter"}
+              </p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto px-4">
+              <Table>
+                <TableHeader>
+                  <TableRow className="bg-gray-50">
+                    <TableHead className="font-semibold text-gray-700 py-2">
+                      <div className="flex items-center gap-1.5">
+                        <UserIcon className="h-3 w-3" />
+                        <span className="text-xs">User ID</span>
+                      </div>
+                    </TableHead>
+                    <TableHead className="font-semibold text-gray-700 py-2">
+                      <div className="flex items-center gap-1.5">
+                        <Users className="h-3 w-3" />
+                        <span className="text-xs">Customer</span>
+                      </div>
+                    </TableHead>
+                    <TableHead className="font-semibold text-gray-700 py-2">
+                      <div className="flex items-center gap-1.5">
+                        <Shield className="h-3 w-3" />
+                        <span className="text-xs">Role</span>
+                      </div>
+                    </TableHead>
+                    <TableHead className="font-semibold text-gray-700 py-2">
+                      <div className="flex items-center gap-1.5">
+                        <Calendar className="h-3 w-3" />
+                        <span className="text-xs">Last Active</span>
+                      </div>
+                    </TableHead>
+                    <TableHead className="font-semibold text-gray-700 py-2">
+                      <div className="flex items-center gap-1.5">
+                        <Mail className="h-3 w-3" />
+                        <span className="text-xs">Status</span>
+                      </div>
+                    </TableHead>
+                    <TableHead className="font-semibold text-gray-700 py-2">
+                      <div className="flex items-center gap-1.5">
+                        <Calendar className="h-3 w-3" />
+                        <span className="text-xs">Date Added</span>
+                      </div>
+                    </TableHead>
+                    <TableHead className="font-semibold text-gray-700 py-2 text-xs">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+
+                <TableBody>
+                  {currentRows.map((user, index) => (
+                    <TableRow 
+                      key={user.id}
+                      className={`hover:bg-gray-50 transition-colors ${index % 2 === 0 ? "bg-white" : "bg-gray-50/50"}`}
+                    >
+                      <TableCell className="font-medium text-gray-800 font-mono text-xs py-1.5">
+                        {user.id.slice(0, 8)}...
+                      </TableCell>
+                      <TableCell className="text-gray-700 font-medium text-xs py-1.5">
+                        {user.fullName}
+                      </TableCell>
+                      <TableCell className="py-1.5">
+                        <Badge 
+                          className={
+                            user.role === "Admin" 
+                              ? "bg-purple-600 text-white border-0 text-xs py-0"
+                              : user.role === "Seller"
+                              ? "bg-blue-600 text-white border-0 text-xs py-0"
+                              : user.role === "Suspended"
+                              ? "bg-red-600 text-white border-0 text-xs py-0"
+                              : "bg-gray-600 text-white border-0 text-xs py-0"
+                          }
+                        >
+                          {user.role === "Admin" && <Shield className="h-2.5 w-2.5 mr-1" />}
+                          {user.role === "Seller" && <Store className="h-2.5 w-2.5 mr-1" />}
+                          {user.role}
+                        </Badge>
+                      </TableCell>
+
+                      <TableCell className="text-xs text-gray-600 py-1.5">
+                        {user.lastActive ? (
+                          <div className="flex flex-col">
+                            <span>
+                              {new Date(user.lastActive).toLocaleDateString("en-US", {
+                                month: "short",
+                                day: "numeric",
+                              })}
+                            </span>
+                            <span className="text-[10px] text-gray-500">
+                              {new Date(user.lastActive).toLocaleTimeString("en-US", {
+                                hour: "2-digit",
+                                minute: "2-digit",
+                              })}
+                            </span>
+                          </div>
+                        ) : (
+                          <span className="text-gray-400 italic text-xs">Never</span>
+                        )}
+                      </TableCell>
+
+                      <TableCell className="py-1.5">
+                        <Badge 
+                          className={
+                            user.status === "active"
+                              ? "bg-emerald-100 text-emerald-700 border-emerald-200 text-xs py-0"
+                              : user.status === "pending"
+                              ? "bg-amber-100 text-amber-700 border-amber-200 text-xs py-0"
+                              : "bg-red-100 text-red-700 border-red-200 text-xs py-0"
+                          }
+                        >
+                          {user.status === "active" && <UserCheck className="h-2.5 w-2.5 mr-1" />}
+                          {user.status === "pending" && <Mail className="h-2.5 w-2.5 mr-1" />}
+                          {user.status === "suspended" && <UserX className="h-2.5 w-2.5 mr-1" />}
+                          {user.status}
+                        </Badge>
+                      </TableCell>
+
+                      <TableCell className="text-xs text-gray-600 py-1.5">
+                        {new Date(user.dateAdded).toLocaleDateString("en-US", {
+                          year: "numeric",
+                          month: "short",
+                          day: "numeric",
+                        })}
+                      </TableCell>
+
+                      <TableCell className="py-1.5">
+                        <div className="flex items-center gap-1.5">
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="h-7 w-7"
+                            title="View Details"
+                          >
+                            <Eye className="h-3 w-3" />
+                          </Button>
+                          
+                          {/* Show Suspend or Restore button based on status */}
+                          {user.role === "Suspended" || user.status === "suspended" ? (
+                            <Button 
+                              size="sm"
+                              className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs cursor-pointer h-7 px-2"
+                              onClick={() => handleRestore(user.id, user.fullName)}
+                              disabled={actionLoading === user.id}
+                              title="Restore User"
+                            >
+                              <UserCheck className="h-2.5 w-2.5 mr-1" />
+                              {actionLoading === user.id ? "..." : "Restore"}
+                            </Button>
+                          ) : user.role !== "Admin" ? (
+                            <Button 
+                              size="sm"
+                              className="bg-amber-600 hover:bg-amber-700 text-white text-xs cursor-pointer h-7 px-2"
+                              onClick={() => handleSuspend(user.id, user.fullName)}
+                              disabled={actionLoading === user.id}
+                              title="Suspend User"
+                            >
+                              <UserX className="h-2.5 w-2.5 mr-1" />
+                              {actionLoading === user.id ? "..." : "Suspend"}
+                            </Button>
+                          ) : null}
+
+                          {/* Delete button - don't show for admin users */}
+                          {user.role !== "Admin" && (
+                            <Button 
+                              variant="destructive"
+                              size="sm"
+                              className="text-xs cursor-pointer h-7 w-7 p-0"
+                              onClick={() => handleDelete(user.id, user.fullName)}
+                              disabled={actionLoading === user.id}
+                              title="Delete User"
+                            >
+                              <Trash2 className="h-2.5 w-2.5" />
+                            </Button>
+                          )}
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+
+          {/* Pagination */}
+          {filtered.length > 0 && (
+            <div className="flex justify-between items-center p-4 bg-gray-50 border-t">
+              <Button
+                variant="outline"
+                disabled={currentPage === 1}
+                onClick={() => setCurrentPage((p) => p - 1)}
+                className="border-gray-300"
+              >
+                Previous
+              </Button>
+
+              <span className="text-sm text-gray-600">
+                Page {currentPage} of {pageCount}
+              </span>
+
+              <Button
+                variant="outline"
+                disabled={currentPage === pageCount}
+                onClick={() => setCurrentPage((p) => p + 1)}
+                className="border-gray-300"
+              >
+                Next
+              </Button>
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }
