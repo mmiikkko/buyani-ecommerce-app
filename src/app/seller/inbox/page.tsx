@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { MessageCircle, Send, Loader2 } from "lucide-react";
 import { toast } from "sonner";
@@ -32,7 +33,7 @@ export default function SellerInbox() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const conversationIdParam = searchParams.get("conversationId");
-  
+  const chatAreaRef = useRef<HTMLDivElement>(null);
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [selectedConversation, setSelectedConversation] = useState<string | null>(
     conversationIdParam || null
@@ -252,96 +253,100 @@ useEffect(() => {
           </CardContent>
         </Card>
 
-        {/* Chat Area */}
-        <Card className="lg:col-span-2 flex flex-col h-[600px]">
-          {selectedConversation && selectedConv ? (
-            <>
-              <CardHeader className="border-b bg-emerald-50">
-                <CardTitle className="text-lg">
-                  {selectedConv.customerName}
-                </CardTitle>
-                {selectedConv.productName && (
-                  <p className="text-sm text-muted-foreground mt-1">
-                    About: {selectedConv.productName}
-                  </p>
-                )}
-              </CardHeader>
-              <CardContent className="flex-1 flex flex-col p-0">
-                {/* Messages */}
-                <div className="flex-1 overflow-y-auto p-4 space-y-4">
-                  {messages.map((message) => {
-                    const isOwnMessage = message.senderId === currentUserId;
-                    return (
-                      <div
-                        key={message.id}
-                        className={`flex ${isOwnMessage ? "justify-end" : "justify-start"}`}
-                      >
-                        <div
-                          className={`max-w-[70%] rounded-lg p-3 ${
-                            isOwnMessage
-                              ? "bg-[#2E7D32] text-white"
-                              : "bg-slate-200 text-slate-900"
-                          }`}
-                        >
-                          <p className="text-sm">{message.content}</p>
-                          <p
-                            className={`text-xs mt-1 ${
-                              isOwnMessage ? "text-emerald-100" : "text-slate-500"
-                            }`}
-                          >
-                            {new Date(message.createdAt).toLocaleTimeString([], {
-                              hour: "2-digit",
-                              minute: "2-digit",
-                            })}
-                          </p>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
+{/* Chat Area */}
+<Card className="lg:col-span-2 flex flex-col h-[600px]">
+  {selectedConversation && selectedConv ? (
+    <>
+      {/* Header */}
+      <CardHeader className="border-b bg-emerald-50">
+        <CardTitle className="text-lg">{selectedConv.customerName}</CardTitle>
+        {selectedConv.productName && (
+          <p className="text-sm text-muted-foreground mt-1">
+            About: {selectedConv.productName}
+          </p>
+        )}
+      </CardHeader>
 
-                {/* Message Input */}
-                <div className="border-t p-4 bg-white">
-                  <div className="flex gap-2">
-                    <Input
-                      value={messageContent}
-                      onChange={(e) => setMessageContent(e.target.value)}
-                      onKeyPress={(e) => {
-                        if (e.key === "Enter" && !e.shiftKey) {
-                          e.preventDefault();
-                          sendMessage();
-                        }
-                      }}
-                      placeholder="Type your message..."
-                      disabled={sending}
-                      className="flex-1"
-                    />
-                    <Button
-                      onClick={sendMessage}
-                      disabled={!messageContent.trim() || sending}
-                      className="bg-[#2E7D32] hover:bg-[#2E7D32]/90"
-                    >
-                      {sending ? (
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                      ) : (
-                        <Send className="h-4 w-4" />
-                      )}
-                    </Button>
-                  </div>
+      {/* Messages */}
+      <CardContent className="flex-1 flex flex-col p-0">
+        <div
+          className="flex-1 overflow-y-auto p-4 space-y-4"
+          style={{ overflowAnchor: "auto" }}
+          ref={chatAreaRef} // Attach the ref to the chat area
+        >
+          {messages.map((message) => {
+            const isOwnMessage = message.senderId === currentUserId;
+            return (
+              <div
+                key={message.id}
+                className={`flex ${isOwnMessage ? "justify-end" : "justify-start"}`}
+              >
+                <div
+                  className={`max-w-[70%] break-words rounded-lg p-3 ${
+                    isOwnMessage
+                      ? "bg-[#2E7D32] text-white"
+                      : "bg-slate-200 text-slate-900"
+                  }`}
+                >
+                  <p className="text-sm">{message.content}</p>
+                  <p
+                    className={`text-xs mt-1 ${
+                      isOwnMessage ? "text-emerald-100" : "text-slate-500"
+                    }`}
+                  >
+                    {new Date(message.createdAt).toLocaleTimeString([], {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}
+                  </p>
                 </div>
-              </CardContent>
-            </>
-          ) : (
-            <CardContent className="flex items-center justify-center h-full">
-              <div className="text-center">
-                <MessageCircle className="h-12 w-12 text-muted-foreground/30 mx-auto mb-3" />
-                <p className="text-muted-foreground">
-                  Select a conversation to start chatting
-                </p>
               </div>
-            </CardContent>
-          )}
-        </Card>
+            );
+          })}
+        </div>
+
+        {/* Message Input */}
+        <div className="border-t p-4 bg-white sticky bottom-0">
+          <div className="flex gap-2">
+            <Input
+              value={messageContent}
+              onChange={(e) => setMessageContent(e.target.value)}
+              onKeyPress={(e) => {
+                if (e.key === "Enter" && !e.shiftKey) {
+                  e.preventDefault();
+                  sendMessage();
+                }
+              }}
+              placeholder="Type your message..."
+              disabled={sending}
+              className="flex-1"
+            />
+            <Button
+              onClick={sendMessage}
+              disabled={!messageContent.trim() || sending}
+              className="bg-[#2E7D32] hover:bg-[#2E7D32]/90"
+            >
+              {sending ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Send className="h-4 w-4" />
+              )}
+            </Button>
+          </div>
+        </div>
+      </CardContent>
+    </>
+  ) : (
+    <CardContent className="flex items-center justify-center h-full">
+      <div className="text-center">
+        <MessageCircle className="h-12 w-12 text-muted-foreground/30 mx-auto mb-3" />
+        <p className="text-muted-foreground">
+          Select a conversation to start chatting
+        </p>
+      </div>
+    </CardContent>
+  )}
+</Card>
       </div>
     </section>
   );

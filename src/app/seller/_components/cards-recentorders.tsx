@@ -149,7 +149,6 @@ export function RecentOrders({ orders }: RecentOrdersProps)  {
           const status = order.status?.toLowerCase() || "pending";
           const isAccepted = status === "confirmed" || status === "accepted";
           const isRejected = status === "rejected";
-          const isPending = !isAccepted && !isRejected;
 
           return (
             <div
