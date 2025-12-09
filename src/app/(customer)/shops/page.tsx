@@ -7,33 +7,44 @@ import type { Shop } from "@/types/shops";
 export default function ShopsPage() {
   const [shops, setShops] = useState<Shop[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    fetch("/api/shops")
-      .then((res) => {
+    const loadShops = async () => {
+      try {
+        const res = await fetch("/api/shops", { cache: "no-store" });
         if (!res.ok) {
-          throw new Error(`HTTP error! status: ${res.status}`);
-        }
-        return res.json();
-      })
-      .then((data) => {
-        // Ensure data is an array
-        if (!Array.isArray(data)) {
-          console.error("Expected array but got:", data);
-          // If it's an error object, log it
-          if (data && typeof data === 'object' && 'error' in data) {
-            console.error("API error:", data.error);
+          // Try to read error details from the response
+          let message = `Failed to load shops (status ${res.status})`;
+          try {
+            const data = await res.json();
+            if (data?.error) {
+              message = data.error;
+            }
+          } catch {
+            // ignore parse errors, keep default message
           }
+          throw new Error(message);
+        }
+
+        const data = await res.json();
+        if (!Array.isArray(data)) {
+          setError("Unexpected response from server.");
           setShops([]);
           return;
         }
         setShops(data);
-      })
-      .catch((err) => {
+        setError(null);
+      } catch (err) {
         console.error("Error fetching shops:", err);
+        setError(err instanceof Error ? err.message : "Failed to load shops.");
         setShops([]);
-      })
-      .finally(() => setLoading(false));
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadShops();
   }, []);
 
   return (
@@ -58,6 +69,17 @@ export default function ShopsPage() {
           {loading ? (
             <div className="text-center py-12">
               <p className="text-slate-500">Loading shops...</p>
+            </div>
+          ) : error ? (
+            <div className="text-center py-12 space-y-2">
+              <p className="text-red-600 font-semibold">Could not load shops.</p>
+              <p className="text-slate-500 text-sm">{error}</p>
+              <button
+                onClick={() => window.location.reload()}
+                className="text-sm text-emerald-600 hover:underline"
+              >
+                Retry
+              </button>
             </div>
           ) : shops.length === 0 ? (
             <div className="text-center py-12">

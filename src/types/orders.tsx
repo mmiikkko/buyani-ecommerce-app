@@ -5,6 +5,7 @@ export type OrderItem = {
   productName: string;
   quantity: number;
   subtotal: number;
+  productImage?: string | null;
 };
 
 export type Order = {

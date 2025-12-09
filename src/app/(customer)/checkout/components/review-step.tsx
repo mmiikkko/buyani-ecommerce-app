@@ -52,6 +52,10 @@ export function ReviewStep({
       toast.error("Please complete all steps before placing order");
       return;
     }
+    if (!cartItems || cartItems.length === 0) {
+      toast.error("No items selected for checkout.");
+      return;
+    }
 
     setIsProcessing(true);
     try {
@@ -59,6 +63,7 @@ export function ReviewStep({
       const response = await fetch("/api/orders", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify({
           address,
           paymentMethod,
@@ -66,11 +71,28 @@ export function ReviewStep({
         }),
       });
 
+      let result: any = null;
       if (!response.ok) {
-        throw new Error("Failed to place order");
+        try {
+          const errorData = await response.json();
+          const message = errorData?.error || errorData?.message || "Failed to place order";
+          throw new Error(message);
+        } catch (err) {
+          // If response is not JSON, fall back to text if available
+          try {
+            const text = await response.text();
+            throw new Error(text || "Failed to place order");
+          } catch {
+            throw new Error("Failed to place order");
+          }
+        }
+      } else {
+        try {
+          result = await response.json();
+        } catch {
+          throw new Error("Failed to place order");
+        }
       }
-
-      const result = await response.json();
 
       // Handle GCash payment - redirect to PayMongo
       if (paymentMethod === "gcash") {
@@ -103,7 +125,8 @@ export function ReviewStep({
       router.push("/settings/orders");
     } catch (error) {
       console.error("Error placing order:", error);
-      toast.error("Failed to place order. Please try again.");
+      const message = error instanceof Error ? error.message : "Failed to place order. Please try again.";
+      toast.error(message);
     } finally {
       setIsProcessing(false);
     }

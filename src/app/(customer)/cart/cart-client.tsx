@@ -226,7 +226,14 @@ export function CartClient({ initialItems, userId }: CartClientProps) {
               <Button
                 className="w-full bg-emerald-600 hover:bg-emerald-700"
                 size="lg"
-                onClick={() => router.push("/checkout")}
+                onClick={() => {
+                  const ids = Array.from(selectedItems);
+                  router.push(
+                    ids.length > 0
+                      ? `/checkout?items=${encodeURIComponent(ids.join(","))}`
+                      : "/checkout"
+                  );
+                }}
                 disabled={selectedItems.size === 0}
               >
                 Proceed to Checkout ({selectedItems.size} {selectedItems.size === 1 ? "item" : "items"})

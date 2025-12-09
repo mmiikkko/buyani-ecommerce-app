@@ -9,6 +9,8 @@ import {
   payments,
   user,
   products,
+  productInventory,
+  productImages,
 } from '@/server/schema/auth-schema';
 import { eq, inArray } from 'drizzle-orm';
 import { getServerSession } from '@/server/session';
@@ -39,7 +41,7 @@ export async function GET(req: NextRequest) {
       .leftJoin(user, eq(orders.buyerId, user.id))
       .where(eq(orders.buyerId, session.user.id));
 
-    // fetch items for each order
+    // fetch items for each order with product images
     const orderIds = userOrders.map((o) => o.id);
     const items = orderIds.length
       ? await db
@@ -54,6 +56,32 @@ export async function GET(req: NextRequest) {
           .leftJoin(products, eq(orderItems.productId, products.id))
           .where(inArray(orderItems.orderId, orderIds))
       : [];
+
+    // Fetch product images for each product
+    const productIds = [...new Set(items.map((i) => i.productId).filter(Boolean))];
+    const images = productIds.length
+      ? await db
+          .select({
+            productId: productImages.productId,
+            imageUrl: productImages.url,
+          })
+          .from(productImages)
+          .where(inArray(productImages.productId, productIds))
+      : [];
+
+    // Group images by productId and get primary image (first one)
+    const productImageMap = new Map<string, string>();
+    images.forEach((img) => {
+      if (img.productId && img.imageUrl && !productImageMap.has(img.productId)) {
+        productImageMap.set(img.productId, img.imageUrl);
+      }
+    });
+
+    // Add image URL to each item
+    const itemsWithImages = items.map((item) => ({
+      ...item,
+      productImage: productImageMap.get(item.productId || "") || null,
+    }));
 
     const paymentsData = orderIds.length
       ? await db
@@ -70,7 +98,7 @@ export async function GET(req: NextRequest) {
 
     const withItems = userOrders.map((o) => ({
       ...o,
-      items: items.filter((i) => i.orderId === o.id),
+      items: itemsWithImages.filter((i) => i.orderId === o.id),
       payment: paymentsData.find((p) => p.orderId === o.id),
     }));
 
@@ -161,6 +189,30 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    // Check stock availability before creating order
+    const productIds = items.map((item: any) => item.productId);
+    const inventory = await db
+      .select()
+      .from(productInventory)
+      .where(inArray(productInventory.productId, productIds));
+
+    for (const item of items) {
+      const inv = inventory.find((inv) => inv.productId === item.productId);
+      if (!inv || (Number(inv.quantityInStock || 0)) < item.quantity) {
+        const product = await db
+          .select({ productName: products.productName })
+          .from(products)
+          .where(eq(products.id, item.productId))
+          .limit(1);
+        return NextResponse.json(
+          {
+            error: `Insufficient stock for ${product[0]?.productName || "product"}. Available: ${inv?.quantityInStock || 0}, Requested: ${item.quantity}`,
+          },
+          { status: 400 }
+        );
+      }
+    }
+
     // Create order
     const orderId = uuidv4();
     await db.insert(orders).values({
@@ -170,7 +222,7 @@ export async function POST(req: NextRequest) {
       total: String(subtotal),
     });
 
-    // Create order items
+    // Create order items and decrease stock
     for (const item of items) {
       await db.insert(orderItems).values({
         id: uuidv4(),
@@ -179,6 +231,25 @@ export async function POST(req: NextRequest) {
         quantity: item.quantity,
         subtotal: String((item.price || 0) * item.quantity),
       });
+
+      // Decrease product stock
+      const inventory = await db
+        .select()
+        .from(productInventory)
+        .where(eq(productInventory.productId, item.productId))
+        .limit(1);
+
+      if (inventory.length > 0) {
+        const currentStock = Number(inventory[0].quantityInStock || 0);
+        const newStock = Math.max(0, currentStock - item.quantity);
+        await db
+          .update(productInventory)
+          .set({
+            quantityInStock: newStock,
+            itemsSold: (Number(inventory[0].itemsSold || 0) + item.quantity),
+          })
+          .where(eq(productInventory.productId, item.productId));
+      }
     }
 
     // Create payment record
@@ -195,17 +266,28 @@ export async function POST(req: NextRequest) {
       status: isCOD || isGCash ? "pending" : "completed", // COD and GCash are pending until confirmed
     });
 
-    // Clear cart
+    // Clear only the checked-out cart items, keep others intact
     const cart = await db
       .select()
       .from(carts)
       .where(eq(carts.buyerId, session.user.id))
       .limit(1);
 
-    if (cart.length > 0) {
+    const cartItemIds = Array.isArray(items)
+      ? items
+          .map((item: any) => item.id)
+          .filter((id: string | undefined) => Boolean(id))
+      : [];
+
+    if (cart.length > 0 && cartItemIds.length > 0) {
       await db
         .delete(cartItems)
-        .where(eq(cartItems.cartId, cart[0].id));
+        .where(
+          and(
+            eq(cartItems.cartId, cart[0].id),
+            inArray(cartItems.id, cartItemIds as string[])
+          )
+        );
     }
 
     return NextResponse.json({
@@ -226,12 +308,108 @@ export async function POST(req: NextRequest) {
 
 // PUT /api/orders?id=xxx
 export async function PUT(req: NextRequest) {
-  const { searchParams } = new URL(req.url);
-  const orderId = searchParams.get("id");
-  if (!orderId) return NextResponse.json({ error: "Missing id" }, { status: 400 });
-  const updates = await req.json();
-  await db.update(orders).set(updates).where(eq(orders.id, orderId));
-  return NextResponse.json({ success: true });
+  try {
+    const { searchParams } = new URL(req.url);
+    const orderId = searchParams.get("id");
+    if (!orderId) return NextResponse.json({ error: "Missing id" }, { status: 400 });
+    
+    const session = await getServerSession();
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const updates = await req.json();
+    
+    // Verify order belongs to user
+    const order = await db
+      .select()
+      .from(orders)
+      .where(eq(orders.id, orderId))
+      .limit(1);
+
+    if (order.length === 0) {
+      return NextResponse.json({ error: "Order not found" }, { status: 404 });
+    }
+
+    if (order[0].buyerId !== session.user.id) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
+    }
+
+    // If order is being cancelled, restore stock
+    if (updates.status === "cancelled" || updates.status === "rejected") {
+      // Get order items
+      const orderItemsData = await db
+        .select({
+          productId: orderItems.productId,
+          quantity: orderItems.quantity,
+        })
+        .from(orderItems)
+        .where(eq(orderItems.orderId, orderId));
+
+      // Restore stock for each item
+      for (const item of orderItemsData) {
+        const inventory = await db
+          .select()
+          .from(productInventory)
+          .where(eq(productInventory.productId, item.productId))
+          .limit(1);
+
+        if (inventory.length > 0) {
+          const currentStock = Number(inventory[0].quantityInStock || 0);
+          const currentSold = Number(inventory[0].itemsSold || 0);
+          await db
+            .update(productInventory)
+            .set({
+              quantityInStock: currentStock + item.quantity,
+              itemsSold: Math.max(0, currentSold - item.quantity),
+            })
+            .where(eq(productInventory.productId, item.productId));
+        }
+      }
+    }
+
+    // Update payment status (status is stored in payments table, not orders table)
+    if (updates.status) {
+      const existingPayment = await db
+        .select()
+        .from(payments)
+        .where(eq(payments.orderId, orderId))
+        .limit(1);
+
+      if (existingPayment.length > 0) {
+        await db
+          .update(payments)
+          .set({
+            status: updates.status,
+            updatedAt: new Date(),
+          })
+          .where(eq(payments.orderId, orderId));
+      } else {
+        // Create payment record if it doesn't exist
+        await db.insert(payments).values({
+          id: uuidv4(),
+          orderId: orderId,
+          status: updates.status,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        });
+      }
+    }
+
+    // Update other order fields if provided (excluding status which is in payments)
+    const { status, ...orderUpdates } = updates;
+    if (Object.keys(orderUpdates).length > 0) {
+      await db.update(orders).set(orderUpdates).where(eq(orders.id, orderId));
+    }
+
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error("Error updating order:", error);
+    return NextResponse.json(
+      { error: "Failed to update order" },
+      { status: 500 }
+    );
+  }
 }
 
 // DELETE /api/orders?id=xxx

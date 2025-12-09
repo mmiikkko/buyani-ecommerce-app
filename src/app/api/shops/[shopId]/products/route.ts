@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/server/drizzle';
 import { products, productImages, productInventory, shop } from '@/server/schema/auth-schema';
-import { eq, and, inArray } from 'drizzle-orm';
+import { eq, and, inArray, sql } from 'drizzle-orm';
 
 // GET /api/shops/[shopId]/products - Get products for a specific shop
 export async function GET(
@@ -57,7 +57,9 @@ export async function GET(
       .leftJoin(shop, eq(products.shopId, shop.id))
       .where(and(
         eq(products.shopId, shopId),
-        eq(products.isAvailable, true)
+        eq(products.isAvailable, true),
+        // Exclude deleted products
+        sql`${products.status} != 'Deleted'`
       ));
 
     // Get all images for products
