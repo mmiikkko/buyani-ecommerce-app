@@ -68,17 +68,7 @@ export default function Orders() {
         throw new Error("Failed to update order status");
       }
 
-      if (newStatus === "confirmed" || newStatus === "accepted") {
-        toast.success("Order confirmed successfully");
-      } else if (newStatus === "rejected") {
-        toast.success("Order rejected successfully");
-      } else if (newStatus === "shipped") {
-        toast.success("Order marked as shipped");
-      } else if (newStatus === "delivered") {
-        toast.success("Order delivered successfully");
-      } else {
-        toast.success("Order updated successfully");
-      }
+      toast.success(`Order ${newStatus} successfully`);
       
       // Refetch orders to get the latest data
       await fetchOrders(false);
