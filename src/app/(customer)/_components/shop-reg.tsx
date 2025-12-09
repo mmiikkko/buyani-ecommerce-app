@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { Button } from "@/components/ui/button";
 import Logo from "@/assets/logo/Logo.png";
 import { LoadingButton } from "@/components/loading-button";
 import {
