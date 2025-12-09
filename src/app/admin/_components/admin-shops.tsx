@@ -4,7 +4,6 @@ import { Button } from "@/components/ui/button";
 import Image from "next/image";
 import type { Shop } from "@/types/shops";
 import { AdminShopModal } from "./admin-shops-modal"; // <-- ADD THIS
-import { toast } from "sonner";
 
 export function AdminShops() {
   const [shops, setShops] = useState<Shop[]>([]);
@@ -97,7 +96,6 @@ export function AdminShops() {
                     className="text-white cursor-pointer"
                     onClick={async () => {
                       try {
-                        // Suspend shop and demote seller back to customer
                         const res = await fetch(`/api/shops?id=${shop.id}`, {
                           method: "PUT",
                           headers: { "Content-Type": "application/json" },
@@ -105,22 +103,12 @@ export function AdminShops() {
                         });
 
                         if (res.ok) {
-                          await fetch(`/api/users?id=${shop.seller_id}`, {
-                            method: "PUT",
-                            headers: { "Content-Type": "application/json" },
-                            body: JSON.stringify({ role: "customer" }),
-                          });
-
                           const refreshRes = await fetch("/api/shops?status=all");
                           const refreshData = await refreshRes.json();
                           setShops(refreshData || []);
-                          toast.success("Shop suspended and seller demoted to customer.");
-                        } else {
-                          toast.error("Failed to suspend shop.");
                         }
                       } catch (error) {
                         console.error("Error suspending shop:", error);
-                        toast.error("Error suspending shop.");
                       }
                     }}
                   >

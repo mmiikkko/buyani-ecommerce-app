@@ -69,20 +69,20 @@ export function AdminUsersTable({
 
   const [actionLoading, setActionLoading] = useState<string | null>(null);
 
-  // Suspend seller by demoting them back to "customer"
+  // Suspend user by changing their role to "suspended"
   const handleSuspend = async (userId: string, userName: string) => {
-    if (!confirm(`Suspend ${userName}? They will be demoted to customer and must re-apply to sell.`)) return;
+    if (!confirm(`Are you sure you want to suspend ${userName}?`)) return;
     
     setActionLoading(userId);
     try {
       const res = await fetch(`/api/users?id=${userId}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ role: "customer" }),
+        body: JSON.stringify({ role: "suspended" }),
       });
       
       if (res.ok) {
-        toast.success(`${userName} has been demoted to customer`);
+        toast.success(`${userName} has been suspended`);
         onRefresh?.();
       } else {
         toast.error("Failed to suspend user");

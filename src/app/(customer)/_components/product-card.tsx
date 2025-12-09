@@ -49,7 +49,6 @@ export function ProductCard({ product }: ProductCardProps) {
   
   const primaryImage = getPrimaryImage();
   const rating = product.rating ? Number(product.rating) : 0;
-  const hasRating = rating > 0;
   const price = product.price ?? 0;
 
   return (
@@ -86,16 +85,12 @@ export function ProductCard({ product }: ProductCardProps) {
         </h3>
 
         {/* Rating */}
-        <div className="flex items-center gap-1">
-          <Star
-            className={`h-4 w-4 ${
-              hasRating ? "fill-amber-400 text-amber-400" : "text-slate-300"
-            }`}
-          />
-          <span className="text-sm font-medium text-slate-700">
-            {rating.toFixed(1)}
-          </span>
-        </div>
+        {rating > 0 && (
+          <div className="flex items-center gap-1">
+            <Star className="h-4 w-4 fill-amber-400 text-amber-400" />
+            <span className="text-sm font-medium text-slate-700">{rating.toFixed(1)}</span>
+          </div>
+        )}
 
         {/* Price */}
         <div className="flex items-baseline gap-1">

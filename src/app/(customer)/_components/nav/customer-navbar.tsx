@@ -44,7 +44,7 @@ export default function Navbar({ className }: NavbarProps) {
   const user = session.data?.user;
   const isLoading = session.isPending || session.isRefetching;
   const isAuthenticated = !!user;
-  const isSeller = user?.role === USER_ROLES.SELLER;
+  const isSeller = user?.role?.includes(USER_ROLES.SELLER) ?? false;
 
   // Initialize search query from URL if on products page
   useEffect(() => {
