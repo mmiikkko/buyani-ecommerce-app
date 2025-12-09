@@ -28,7 +28,6 @@ import {
   Clock,
   Info,
   Loader2,
-  Upload,
   X
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -493,7 +492,7 @@ export default function AccountSettingsPage() {
                         className="h-10"
                       />
                       <p className="text-xs text-muted-foreground">
-                        This is your store's display name visible to customers
+                        This is your store display name visible to customers
                       </p>
                     </div>
 
@@ -563,7 +562,7 @@ export default function AccountSettingsPage() {
                     <div className="text-center py-6 space-y-3">
                       <Store className="h-12 w-12 mx-auto text-muted-foreground/50" />
                       <p className="text-muted-foreground">
-                        You don't have a shop yet. Create one to start selling!
+                        You do not have a shop yet. Create one to start selling!
                       </p>
                     </div>
                   </CardContent>
