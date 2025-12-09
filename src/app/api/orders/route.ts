@@ -283,7 +283,7 @@ export async function POST(req: NextRequest) {
       await db
         .delete(cartItems)
         .where(
-          and(
+          (
             eq(cartItems.cartId, cart[0].id),
             inArray(cartItems.id, cartItemIds as string[])
           )
