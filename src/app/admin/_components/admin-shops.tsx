@@ -472,17 +472,21 @@ export function AdminShops() {
         )}
       </div>
 
-      {/* MODAL RENDER */}
       {selectedShop && (
-        <AdminShopModal
-          open={modalOpen}
-          onClose={() => {
-            setModalOpen(false);
-            setSelectedShop(null);
-          }}
-          shop={selectedShop}
-        />
-      )}
+      <AdminShopModal
+        open={modalOpen}
+        onClose={() => {
+          setModalOpen(false);
+          setSelectedShop(null);
+        }}
+        shop={{
+          ...selectedShop,
+          description: selectedShop.description ?? undefined,
+          image: selectedShop.image ?? undefined,
+        }}
+      />
+    )}
+
     </div>
   );
 }
