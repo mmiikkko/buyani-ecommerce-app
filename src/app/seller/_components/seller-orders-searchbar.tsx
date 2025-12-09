@@ -47,8 +47,8 @@ export function SellerOrdersSearchbar({
             Pending
           </DropdownMenuItem>
 
-          <DropdownMenuItem onClick={() => onFilterChange("confirmed")}>
-            Completed
+          <DropdownMenuItem onClick={() => onFilterChange("accepted")}>
+            Accepted
           </DropdownMenuItem>
 
           <DropdownMenuItem onClick={() => onFilterChange("cancelled")}>
@@ -57,6 +57,14 @@ export function SellerOrdersSearchbar({
 
           <DropdownMenuItem onClick={() => onFilterChange("shipped")}>
             Shipped
+          </DropdownMenuItem>
+
+          <DropdownMenuItem onClick={() => onFilterChange("delivered")}>
+            Delivered
+          </DropdownMenuItem>
+
+          <DropdownMenuItem onClick={() => onFilterChange("recent")}>
+            New (last 7 days)
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>

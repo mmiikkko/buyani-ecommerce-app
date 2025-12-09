@@ -71,8 +71,6 @@ function OrdersTable({
         throw new Error(error.error || "Failed to update order status");
       }
 
-      toast.success(`Order ${status} successfully`);
-      
       // Call the parent's status update handler if provided
       if (onStatusUpdate) {
         onStatusUpdate(orderId, status === "accepted" ? "confirmed" : "rejected");
@@ -104,8 +102,6 @@ function OrdersTable({
         throw new Error(error.error || "Failed to update order status");
       }
 
-      toast.success("Order marked as shipped");
-
       if (onStatusUpdate) {
         onStatusUpdate(orderId, "shipped");
       }
@@ -122,17 +118,41 @@ function OrdersTable({
   };
 
   const filteredOrders = useMemo(() => {
+    const now = new Date();
     return (orders ?? []).filter((order) => {
       const firstItem = order.items?.[0];
-      const productName = firstItem?.productId ?? firstItem?.productName ?? "Unknown";
+      const productName =
+        firstItem?.product?.productName ??
+        firstItem?.productName ??
+        firstItem?.productId ??
+        "Unknown";
       const customer = order.buyerName ?? order.buyerId ?? "Unknown";
+      const orderId = (order.orderId || order.id || "").toLowerCase();
+      const statusRaw = order.status?.toLowerCase() || order.payment?.status?.toLowerCase() || "";
+      const normalizedStatus =
+        statusRaw === "confirmed" ? "accepted" : statusRaw || "pending";
 
-      // no real status in type, skipping filter unless you manage a temp status in frontend
-      if (filter !== "all") return true;
+      // Status filter
+      if (filter !== "all") {
+        if (filter === "recent") {
+          const created = order.createdAt ? new Date(order.createdAt) : null;
+          const daysDiff = created ? (now.getTime() - created.getTime()) / (1000 * 60 * 60 * 24) : Infinity;
+          if (daysDiff > 7) return false;
+        } else if (filter === "accepted") {
+          if (!(normalizedStatus === "accepted")) return false;
+        } else if (filter === "pending") {
+          if (!(normalizedStatus === "" || normalizedStatus === "pending")) return false;
+        } else if (filter === "delivered") {
+          if (!(normalizedStatus === "delivered" || normalizedStatus === "completed" || normalizedStatus === "complete"))
+            return false;
+        } else {
+          if (normalizedStatus !== filter) return false;
+        }
+      }
 
+      // Search filter
       if (search.trim() !== "") {
         const s = search.toLowerCase();
-        const orderId = (order.orderId || order.id || "").toLowerCase();
         if (
           !orderId.includes(s) &&
           !customer.toLowerCase().includes(s) &&
@@ -183,7 +203,11 @@ function OrdersTable({
           <TableBody>
             {currentRows.map((order, idx) => {
               const firstItem = order.items?.[0];
-              const productName = firstItem?.productId ?? firstItem?.productName ?? "Unknown";
+              const productName =
+                firstItem?.product?.productName ??
+                firstItem?.productName ??
+                firstItem?.productId ??
+                "Unknown";
               const buyerName = order.buyerName ?? order.buyerId ?? "Unknown Customer";
               const orderId = order.orderId || order.id || `order-${idx}`;
 

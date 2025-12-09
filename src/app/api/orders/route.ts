@@ -12,7 +12,7 @@ import {
   productInventory,
   productImages,
 } from '@/server/schema/auth-schema';
-import { eq, inArray } from 'drizzle-orm';
+import { eq, inArray, and } from 'drizzle-orm';
 import { getServerSession } from '@/server/session';
 import { v4 as uuidv4 } from 'uuid';
 
