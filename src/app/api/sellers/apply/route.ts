@@ -56,7 +56,7 @@ export async function POST(req: NextRequest) {
         const lastUpdated =
           (current.updatedAt instanceof Date
             ? current.updatedAt
-            : current.updated_at) || new Date(0);
+            : current.updatedAt) || new Date(0);
         const retryAt = new Date(
           new Date(lastUpdated).getTime() + SUSPENSION_COOLDOWN_MS
         );
