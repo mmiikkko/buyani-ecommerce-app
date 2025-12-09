@@ -1,15 +1,13 @@
 "use client";
 
 import {
-  LogOutIcon,
-  ShieldIcon,
-  Settings,
-  Store,
   ChevronDown,
+  LogOutIcon,
+  Settings,
+  ShieldIcon,
+  Store,
 } from "lucide-react";
 
-import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -20,13 +18,15 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 import { authClient } from "@/server/auth-client";
-import { toast } from "sonner";
 import { User } from "@/server/auth-types";
-import { UserAvatar } from "./user-avatar";
 import { USER_ROLES } from "@/server/schema/auth-schema";
 import { useEffect, useState } from "react";
+import { toast } from "sonner";
+import { UserAvatar } from "./user-avatar";
 
 interface UserDropdownProps {
   user: User;

@@ -1,24 +1,24 @@
-import { useEffect, useState } from "react";
-import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import Image from "next/image";
-import type { Shop } from "@/types/shops";
-import { AdminShopModal } from "./admin-shops-modal";
-import { toast } from "sonner";
-import { USER_ROLES } from "@/server/schema/auth-schema";
-import { 
-  CheckCircle2, 
-  Clock, 
-  XCircle, 
-  Eye, 
-  Ban, 
-  Check, 
-  Trash2,
-  Store,
-  User
-} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { USER_ROLES } from "@/server/schema/auth-schema";
+import type { Shop } from "@/types/shops";
+import {
+  Ban,
+  Check,
+  CheckCircle2,
+  Clock,
+  Eye,
+  Store,
+  Trash2,
+  User,
+  XCircle
+} from "lucide-react";
+import Image from "next/image";
+import { useEffect, useState } from "react";
+import { toast } from "sonner";
+import { AdminShopModal } from "./admin-shops-modal";
 
 export function AdminShops() {
   const [shops, setShops] = useState<Shop[]>([]);

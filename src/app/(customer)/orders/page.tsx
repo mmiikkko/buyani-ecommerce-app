@@ -104,8 +104,7 @@ export default function CustomerOrdersPage() {
     const counts: Record<string, number> = { all: grouped.length };
     grouped.forEach((o) => {
       const key = o.status || "pending";
-      const acceptedKey = key === "confirmed" ? "accepted" : key;
-      counts[acceptedKey] = (counts[acceptedKey] || 0) + 1;
+      counts[key] = (counts[key] || 0) + 1;
     });
     return counts;
   }, [grouped]);
@@ -150,6 +149,9 @@ export default function CustomerOrdersPage() {
   };
 
   const cancelOrder = async (orderId: string) => {
+    if (!confirm("Are you sure you want to cancel this order? The items will be returned to stock.")) {
+      return;
+    }
     try {
       setActionId(orderId);
       const res = await fetch(`/api/orders?id=${orderId}`, {
@@ -338,7 +340,7 @@ export default function CustomerOrdersPage() {
                           {actionId === (order.id || order.orderId) ? "Cancelling..." : "Cancel Order"}
                         </Button>
                       )}
-                      {(order.status || "") === "shipped" && (
+                      {["accepted", "confirmed", "shipped"].includes(order.status || "") && (
                         <Button
                           size="sm"
                           className="bg-emerald-600 hover:bg-emerald-700"

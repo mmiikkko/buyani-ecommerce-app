@@ -1,9 +1,9 @@
 "use client";
+import { Loader2, Sparkles } from "lucide-react";
 import { useEffect, useState } from "react";
 import { CardActivity } from "./_components/admin-activity";
 import { PendingApprovals } from "./_components/admin-pending-approvals";
 import { RecentActivity } from "./_components/admin-recent-activity";
-import { Sparkles, Loader2 } from "lucide-react";
 
 export default function AdminDashboard() {
   const [stats, setStats] = useState({

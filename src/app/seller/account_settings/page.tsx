@@ -28,6 +28,7 @@ import {
   Clock,
   Info,
   Loader2,
+  Upload,
   X
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -562,7 +563,7 @@ export default function AccountSettingsPage() {
                     <div className="text-center py-6 space-y-3">
                       <Store className="h-12 w-12 mx-auto text-muted-foreground/50" />
                       <p className="text-muted-foreground">
-                        You do not have a shop yet. Create one to start selling!
+                        You dont have a shop yet. Create one to start selling!
                       </p>
                     </div>
                   </CardContent>

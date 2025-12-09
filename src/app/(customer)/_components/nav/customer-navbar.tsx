@@ -1,12 +1,12 @@
 "use client";
 
 import Logo from "@/assets/logo/Logo.png";
+import { Badge } from "@/components/ui/badge";
 import clsx from "clsx";
 import Image from "next/image";
 import Link from "next/link";
-import { useRouter, usePathname, useSearchParams } from "next/navigation";
-import { useState, FormEvent, useEffect, useRef } from "react";
-import { Badge } from "@/components/ui/badge";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { FormEvent, useEffect, useRef, useState } from "react";
 
 import { UserDropdown } from "@/components/user-dropdown";
 import { authClient } from "@/server/auth-client";
@@ -20,12 +20,11 @@ import {
   Grid3x3,
   Handshake,
   Home,
-  MapPin,
   Package,
   Search,
   ShoppingCart,
   Tag,
-  UserIcon,
+  UserIcon
 } from "lucide-react";
 
 interface NavbarProps {

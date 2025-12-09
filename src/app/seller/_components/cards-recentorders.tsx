@@ -147,18 +147,8 @@ export function RecentOrders({ orders }: RecentOrdersProps)  {
 
         {recentOrders.map((order) => {
           const status = order.status?.toLowerCase() || "pending";
-          const isRejected = status === "rejected" || status === "cancelled";
-          const isDelivered = status === "delivered";
-          const isCompleted = status === "completed" || status === "complete";
-          const isShipped =
-            status === "shipped" || status === "out_for_delivery";
-          const isAccepted =
-            status === "confirmed" ||
-            status === "accepted" ||
-            status === "processing" ||
-            isShipped ||
-            isDelivered ||
-            isCompleted;
+          const isAccepted = status === "confirmed" || status === "accepted";
+          const isRejected = status === "rejected";
 
           return (
             <div
@@ -179,36 +169,22 @@ export function RecentOrders({ orders }: RecentOrdersProps)  {
                   <Badge
                     variant="outline"
                     className={`text-xs font-semibold ${
-                      isDelivered || isCompleted
-                        ? "bg-green-100 text-green-700 border-green-300"
-                        : isShipped
-                        ? "bg-blue-100 text-blue-700 border-blue-300"
-                        : isAccepted
+                      isAccepted
                         ? "bg-emerald-100 text-emerald-700 border-emerald-300"
                         : isRejected
                         ? "bg-red-100 text-red-700 border-red-300"
                         : "bg-amber-100 text-amber-700 border-amber-300"
                     }`}
                   >
-                    {isRejected ? (
-                      <>
-                        <XCircle className="h-3 w-3 mr-1" />
-                        Rejected
-                      </>
-                    ) : isDelivered || isCompleted ? (
-                      <>
-                        <CheckCircle2 className="h-3 w-3 mr-1" />
-                        {isDelivered ? "Delivered" : "Completed"}
-                      </>
-                    ) : isShipped ? (
-                      <>
-                        <Clock className="h-3 w-3 mr-1" />
-                        Shipped
-                      </>
-                    ) : isAccepted ? (
+                    {isAccepted ? (
                       <>
                         <CheckCircle2 className="h-3 w-3 mr-1" />
                         Accepted
+                      </>
+                    ) : isRejected ? (
+                      <>
+                        <XCircle className="h-3 w-3 mr-1" />
+                        Rejected
                       </>
                     ) : (
                       <>

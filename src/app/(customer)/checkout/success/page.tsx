@@ -91,7 +91,7 @@ export default function CheckoutSuccessPage() {
           <div className="flex flex-col sm:flex-row gap-3 justify-center pt-4">
             <Button
               variant="outline"
-              onClick={() => router.push("/orders")}
+              onClick={() => router.push("/settings/orders")}
               className="flex items-center gap-2"
             >
               <ShoppingBag className="h-4 w-4" />
