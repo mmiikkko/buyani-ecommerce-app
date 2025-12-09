@@ -92,7 +92,7 @@ export function ChatFab({ className }: { className?: string }) {
           // Deduplicate messages by ID to prevent duplicate keys
           const uniqueMessages = Array.from(
             new Map(data.map((msg: Message) => [msg.id, msg])).values()
-          );
+          ) as Message[];
           setMessages(uniqueMessages);
           
           // Update unread count for this conversation (messages are marked as read when fetched)
