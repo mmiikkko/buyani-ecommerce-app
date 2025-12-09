@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/server/drizzle';
-import { products, productImages, productInventory, shop, cartItems, orderItems } from '@/server/schema/auth-schema';
+import { products, productImages, productInventory, shop, cartItems, orderItems, reviews, orders } from '@/server/schema/auth-schema';
 import { eq, and, inArray, sql } from 'drizzle-orm';
 import { v4 as uuidv4 } from 'uuid';
 import { corsResponse, corsOptions } from '@/lib/api-utils';
@@ -31,7 +31,7 @@ export async function GET(req: NextRequest) {
       whereConditions.push(eq(products.categoryId, categoryId));
     }
 
-    // Get all available products
+    // Get all available products with rating/review aggregates
     const productList = await db
       .select({
         id: products.id,
@@ -41,7 +41,7 @@ export async function GET(req: NextRequest) {
         SKU: products.SKU,
         description: products.description,
         price: products.price,
-        rating: products.rating,
+        baseRating: products.rating,
         isAvailable: products.isAvailable,
         status: products.status,
         createdAt: products.createdAt,
@@ -50,11 +50,34 @@ export async function GET(req: NextRequest) {
         itemsSold: productInventory.itemsSold,
         shopName: shop.shopName,
         shopStatus: shop.status,
+        averageRating: sql<number>`COALESCE(AVG(${reviews.rating}), 0)`,
+        reviewCount: sql<number>`COUNT(${reviews.id})`,
       })
       .from(products)
       .leftJoin(productInventory, eq(productInventory.productId, products.id))
       .leftJoin(shop, eq(products.shopId, shop.id))
-      .where(and(...whereConditions));
+      .leftJoin(orderItems, eq(orderItems.productId, products.id))
+      .leftJoin(orders, eq(orderItems.orderId, orders.id))
+      .leftJoin(reviews, eq(reviews.orderId, orders.id))
+      .where(and(...whereConditions))
+      .groupBy(
+        products.id,
+        products.shopId,
+        products.categoryId,
+        products.productName,
+        products.SKU,
+        products.description,
+        products.price,
+        products.rating,
+        products.isAvailable,
+        products.status,
+        products.createdAt,
+        products.updatedAt,
+        productInventory.quantityInStock,
+        productInventory.itemsSold,
+        shop.shopName,
+        shop.status
+      );
 
     // Get all images for products
     const productIds = productList.map(p => p.id);
@@ -81,6 +104,11 @@ export async function GET(req: NextRequest) {
       const productImagesList = imagesByProduct.get(product.id) || [];
       return {
         ...product,
+        rating:
+          product.reviewCount && Number(product.reviewCount) > 0
+            ? Number(product.averageRating ?? 0).toFixed(1)
+            : product.baseRating ?? 0,
+        reviewCount: Number(product.reviewCount ?? 0),
         images: productImagesList
           .filter(img => img.url && img.url.trim() !== "") // Filter out null/empty URLs
           .map(img => ({

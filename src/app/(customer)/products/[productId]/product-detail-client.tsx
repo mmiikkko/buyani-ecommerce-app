@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -27,12 +27,27 @@ type ProductDetailClientProps = {
   userId?: string;
 };
 
+type Review = {
+  reviewId: string;
+  orderId: string;
+  buyerId: string;
+  buyerName?: string | null;
+  comment?: string | null;
+  rating?: number | null;
+  createdAt?: string | Date | null;
+};
+
 export function ProductDetailClient({ product, userId }: ProductDetailClientProps) {
   const router = useRouter();
   const [modalOpen, setModalOpen] = useState(false);
   const [isBuying, setIsBuying] = useState(false);
   const [quantity, setQuantity] = useState(1);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
+  const [reviews, setReviews] = useState<Review[]>([]);
+  const [reviewText, setReviewText] = useState("");
+  const [reviewRating, setReviewRating] = useState(5);
+  const [isSubmittingReview, setIsSubmittingReview] = useState(false);
+  const [shopRating, setShopRating] = useState(5);
 
   const productPrice = Number(product.price ?? 0);
   const productStock = product.stock ?? 0;
@@ -44,9 +59,39 @@ export function ProductDetailClient({ product, userId }: ProductDetailClientProp
   const primaryImage = productImages[selectedImageIndex] ?? "";
   const isOutOfStock = !product.isAvailable || productStock <= 0;
   
-  // Parse rating (assuming format like "4.8" or "4.8/5")
-  const rating = product.rating ? Number(product.rating) : 0;
-  const reviewCount = product.reviewCount ?? 0;
+  useEffect(() => {
+    async function fetchReviews() {
+      try {
+        const res = await fetch(`/api/reviews?productId=${product.id}`);
+        if (!res.ok) return;
+        const data = await res.json();
+        setReviews(
+          Array.isArray(data)
+            ? data.map((r) => ({
+                reviewId: r.reviewId || r.id || crypto.randomUUID(),
+                orderId: r.orderId,
+                buyerId: r.buyerId,
+                buyerName: r.buyerName || r.buyerEmail || "Customer",
+                comment: r.comment,
+                rating: r.rating,
+                createdAt: r.createdAt,
+              }))
+            : []
+        );
+      } catch (error) {
+        console.error("Failed to load reviews", error);
+      }
+    }
+    fetchReviews();
+  }, [product.id]);
+
+  const rating = useMemo(() => {
+    if (reviews.length === 0) return product.rating ? Number(product.rating) : 0;
+    const total = reviews.reduce((sum, r) => sum + (Number(r.rating) || 0), 0);
+    return reviews.length ? total / reviews.length : 0;
+  }, [reviews, product.rating]);
+
+  const reviewCount = reviews.length || product.reviewCount || 0;
 
   const ensureAuthenticated = (redirectTo: string) => {
     if (!userId) {
@@ -144,6 +189,41 @@ export function ProductDetailClient({ product, userId }: ProductDetailClientProp
   };
 
   const isVerifiedSeller = product.shopStatus === "approved";
+
+  const handleSubmitReview = async () => {
+    if (!ensureAuthenticated(`/products/${product.id}`)) return;
+    if (!reviewText.trim()) {
+      toast.error("Please add a short review.");
+      return;
+    }
+    setIsSubmittingReview(true);
+    try {
+      const res = await fetch("/api/reviews", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          productId: product.id,
+          comment: reviewText.trim(),
+          rating: reviewRating,
+        }),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error || "Failed to submit review");
+      }
+      const data = await res.json();
+      if (data?.review) {
+        setReviews((prev) => [data.review, ...prev]);
+        setReviewText("");
+        setReviewRating(5);
+        toast.success("Review submitted!");
+      }
+    } catch (error: any) {
+      toast.error(error?.message || "Could not submit review");
+    } finally {
+      setIsSubmittingReview(false);
+    }
+  };
 
   return (
     <div className="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
@@ -343,6 +423,110 @@ export function ProductDetailClient({ product, userId }: ProductDetailClientProp
             <div className="flex items-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-2">
               <CheckCircle2 className="h-4 w-4 text-emerald-600" />
               <span className="text-sm font-medium text-emerald-700">Quality Guaranteed</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Reviews Section */}
+      <div className="mt-14 space-y-6">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+          <div>
+            <p className="text-xs uppercase tracking-[0.2em] text-emerald-600 font-semibold">Feedback</p>
+            <h3 className="text-2xl font-bold text-slate-900 mt-1">Customer Reviews</h3>
+            <p className="text-sm text-slate-600">Hear from other buyers before you decide.</p>
+          </div>
+          <div className="flex items-center gap-3 rounded-xl border border-emerald-100 bg-emerald-50 px-4 py-3 shadow-sm">
+            <Star className="h-6 w-6 fill-amber-400 text-amber-400" />
+            <div>
+              <p className="text-2xl font-bold text-slate-900 leading-none">{rating.toFixed(1)}</p>
+              <p className="text-xs text-slate-600">{reviewCount} {reviewCount === 1 ? "review" : "reviews"}</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="grid gap-6 lg:grid-cols-[2fr_1fr]">
+          <div className="space-y-4">
+            {reviews.length === 0 && (
+              <div className="rounded-xl border border-dashed border-slate-200 bg-white p-6 text-sm text-slate-600 text-center shadow-sm">
+                No reviews yet. Be the first to share your thoughts!
+              </div>
+            )}
+
+            {reviews.map((review, idx) => {
+              const key =
+                review.reviewId ||
+                review.orderId ||
+                `${review.buyerId || "buyer"}-${idx}`;
+              return (
+              <div
+                key={key}
+                className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm hover:shadow-md transition-shadow space-y-2"
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Star className="h-4 w-4 fill-amber-400 text-amber-400" />
+                    <span className="font-semibold text-slate-900">
+                      {review.rating ?? 0}/5
+                    </span>
+                  </div>
+                  <span className="text-xs text-slate-500">
+                    {review.createdAt ? new Date(review.createdAt).toLocaleDateString() : ""}
+                  </span>
+                </div>
+                <p className="text-sm text-slate-700 leading-relaxed">{review.comment || "No comment provided."}</p>
+                <p className="text-xs text-slate-500 font-medium">
+                  {review.buyerName || "Customer"}
+                </p>
+              </div>
+            );
+            })}
+          </div>
+
+          {/* Write Review */}
+          <div className="rounded-2xl border border-emerald-100 bg-white p-6 shadow-sm space-y-5">
+            <div className="flex items-center gap-2">
+              <Star className="h-5 w-5 text-amber-400 fill-amber-400" />
+              <h4 className="text-lg font-semibold text-slate-900">Leave a review</h4>
+            </div>
+            <p className="text-sm text-slate-600">
+              Share your experience with this product and the seller. Your feedback helps other buyers.
+            </p>
+
+            <div className="space-y-2">
+              <p className="text-sm text-slate-700 font-medium">Product rating</p>
+              <div className="flex items-center gap-2">
+                {[1, 2, 3, 4, 5].map((value) => (
+                  <button
+                    key={value}
+                    type="button"
+                    onClick={() => setReviewRating(value)}
+                    className="focus:outline-none transition-transform hover:scale-105"
+                  >
+                    <Star
+                      className={`h-6 w-6 ${
+                        reviewRating >= value ? "fill-amber-400 text-amber-400" : "text-slate-300"
+                      }`}
+                    />
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <textarea
+              className="w-full min-h-[120px] rounded-lg border border-slate-200 p-3 text-sm focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 focus:outline-none transition-shadow"
+              placeholder="Share your experience with this product"
+              value={reviewText}
+              onChange={(e) => setReviewText(e.target.value)}
+            />
+            <div className="flex justify-end">
+              <Button
+                onClick={handleSubmitReview}
+                disabled={isSubmittingReview}
+                className="bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm"
+              >
+                {isSubmittingReview ? "Submitting..." : "Submit Review"}
+              </Button>
             </div>
           </div>
         </div>

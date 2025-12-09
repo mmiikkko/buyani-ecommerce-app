@@ -73,25 +73,28 @@ export function ReviewStep({
 
       let result: any = null;
       if (!response.ok) {
+        // Try JSON first for a meaningful error
         try {
           const errorData = await response.json();
           const message = errorData?.error || errorData?.message || "Failed to place order";
           throw new Error(message);
-        } catch (err) {
-          // If response is not JSON, fall back to text if available
-          try {
-            const text = await response.text();
-            throw new Error(text || "Failed to place order");
-          } catch {
-            throw new Error("Failed to place order");
-          }
-        }
-      } else {
-        try {
-          result = await response.json();
         } catch {
-          throw new Error("Failed to place order");
+          // Fallback to text if JSON parse fails
+          const text = await response.text().catch(() => "");
+          throw new Error(text || "Failed to place order");
         }
+      }
+
+      try {
+        result = await response.json();
+      } catch {
+        throw new Error("Failed to place order");
+      }
+
+      if (!result?.orderId) {
+        const fallbackMessage =
+          result?.error || result?.message || "Failed to place order (no order id)";
+        throw new Error(fallbackMessage);
       }
 
       // Handle GCash payment - redirect to PayMongo
@@ -103,7 +106,7 @@ export function ReviewStep({
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             orderId: result.orderId,
-            amount: result.total,
+            amount: Number(result.total ?? 0),
             description: `Buyani Order #${result.orderId}`,
           }),
         });
@@ -122,7 +125,7 @@ export function ReviewStep({
 
       // For COD and other payment methods
       toast.success("Order placed successfully!");
-      router.push("/settings/orders");
+      router.push("/orders");
     } catch (error) {
       console.error("Error placing order:", error);
       const message = error instanceof Error ? error.message : "Failed to place order. Please try again.";
