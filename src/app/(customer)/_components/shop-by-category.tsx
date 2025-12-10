@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Tag, Sparkles } from "lucide-react";
 import Link from "next/link";
 import { AnimatedSection } from "@/components/animated-section";
 import { AnimatedCategoryCard } from "./animated-category-card";
@@ -63,24 +63,40 @@ export function ShopByCategorySection() {
   }
 
   return (
-    <AnimatedSection className="py-10 bg-gradient-to-b from-emerald-50/70 via-emerald-50/40 to-slate-50" direction="fade-up">
-      <div className="mx-auto flex w-full max-w-7xl flex-col gap-6 px-4 sm:px-6 lg:px-8">
-        <header className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-          <div className="space-y-1">
-            <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-emerald-500">
-              Shop by category
-            </p>
-            <h2 className="text-2xl font-semibold tracking-tight text-slate-900 sm:text-3xl">
-              Browse from campus sellers and local makers
-            </h2>
+    <AnimatedSection className="relative py-16 bg-transparent" direction="fade-up">
+      <div className="relative mx-auto flex w-full max-w-7xl flex-col gap-8 px-4 sm:px-6 lg:px-8">
+        <header className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="space-y-3">
+            <div className="flex items-center gap-3">
+              <div className="flex items-center justify-center w-12 h-12 rounded-2xl bg-gradient-to-br from-emerald-500 to-amber-600 shadow-lg shadow-emerald-500/30">
+                <Tag className="w-6 h-6 text-white" />
+              </div>
+              <div className="flex items-center gap-2">
+                <Sparkles className="w-5 h-5 text-emerald-500 animate-pulse" />
+                <p className="text-xs font-bold uppercase tracking-[0.2em] text-emerald-600 bg-emerald-100 px-3 py-1 rounded-full">
+                  Shop by category
+                </p>
+              </div>
+            </div>
+            <div>
+              <h2 className="text-3xl sm:text-4xl font-bold tracking-tight bg-gradient-to-r from-slate-900 via-emerald-800 to-amber-800 bg-clip-text text-transparent">
+                Browse from campus sellers and local makers
+              </h2>
+              <div className="flex items-center gap-3 mt-2">
+                <div className="h-1 w-16 bg-gradient-to-r from-emerald-500 to-amber-500 rounded-full"></div>
+                <p className="text-base text-slate-700 font-medium">
+                  Find exactly what you need, organized by category
+                </p>
+              </div>
+            </div>
           </div>
 
           <Link
             href="/categories"
-            className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-white/80 px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50"
+            className="inline-flex items-center gap-2 rounded-full border-2 border-emerald-200 bg-gradient-to-r from-emerald-500 to-emerald-600 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-emerald-500/30 hover:shadow-xl hover:shadow-emerald-500/40 transition-all duration-200 hover:-translate-y-0.5"
           >
             View all categories
-            <ArrowRight className="size-3" />
+            <ArrowRight className="size-4" />
           </Link>
         </header>
 

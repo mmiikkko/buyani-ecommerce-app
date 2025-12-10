@@ -16,10 +16,10 @@ export function ShopCard({ shop }: ShopCardProps) {
     <Link
       href={`/shops/${shop.id}`}
       prefetch={true}
-      className="group block rounded-xl border border-slate-200 bg-white overflow-hidden shadow-sm hover:shadow-md transition-all duration-200 hover:-translate-y-0.5"
+      className="group flex h-full min-h-[360px] flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md"
     >
       {/* Shop Image */}
-      <div className="relative h-48 w-full overflow-hidden bg-slate-100">
+      <div className="relative h-52 w-full overflow-hidden bg-slate-100">
         {shop.image ? (
           <Image
             src={shop.image}
@@ -37,8 +37,8 @@ export function ShopCard({ shop }: ShopCardProps) {
       </div>
 
       {/* Shop Info */}
-      <div className="p-4 space-y-2">
-        <h3 className="font-semibold text-lg text-slate-900 group-hover:text-emerald-600 transition-colors">
+      <div className="flex flex-1 flex-col gap-2 p-4">
+        <h3 className="text-lg font-semibold text-slate-900 transition-colors group-hover:text-emerald-600">
           {shop.shop_name}
         </h3>
 
@@ -70,7 +70,7 @@ export function ShopCard({ shop }: ShopCardProps) {
 
         {/* Owner */}
         {shop.owner_name && (
-          <p className="text-xs text-slate-500 truncate">
+          <p className="mt-auto truncate text-xs text-slate-500">
             by {shop.owner_name}
           </p>
         )}
