@@ -38,19 +38,21 @@ export async function GET(req: NextRequest) {
       return NextResponse.json([]);
     }
 
-    // Get order items for seller's products
+    // Optimized: Get order IDs first, then fetch recent orders
+    // This avoids GROUP BY issues and is still fast
     const orderItemsList = await db
       .select({ orderId: orderItems.orderId })
       .from(orderItems)
-      .where(inArray(orderItems.productId, productIds));
+      .where(inArray(orderItems.productId, productIds))
+      .limit(100); // Limit to avoid too many order IDs
 
-    const orderIds = [...new Set(orderItemsList.map((item) => item.orderId))];
+    const uniqueOrderIds = [...new Set(orderItemsList.map((item) => item.orderId))];
 
-    if (orderIds.length === 0) {
+    if (uniqueOrderIds.length === 0) {
       return NextResponse.json([]);
     }
 
-    // Get recent orders with buyer info and payments
+    // Get recent orders with buyer info and payments, limited to 5
     const recentOrders = await db
       .select({
         id: orders.id,
@@ -63,12 +65,13 @@ export async function GET(req: NextRequest) {
       .from(orders)
       .leftJoin(user, eq(orders.buyerId, user.id))
       .leftJoin(payments, eq(payments.orderId, orders.id))
-      .where(inArray(orders.id, orderIds))
+      .where(inArray(orders.id, uniqueOrderIds))
       .orderBy(sql`${orders.createdAt} DESC`)
       .limit(5);
 
     const formattedOrders = recentOrders.map((order) => ({
       id: order.id,
+      orderId: order.id, // Add orderId for consistency with Order type
       status: order.paymentStatus?.toLowerCase() || "pending",
       customer: order.buyerName || "Unknown Customer",
       date: new Date(order.createdAt).toLocaleDateString("en-US", {
@@ -77,9 +80,13 @@ export async function GET(req: NextRequest) {
         year: "numeric",
       }),
       amount: order.total ? Number(order.total) : 0,
+      createdAt: order.createdAt, // Add createdAt for sorting
     }));
 
-    return NextResponse.json(formattedOrders);
+    const response = NextResponse.json(formattedOrders);
+    // Add cache headers for faster subsequent loads (30 seconds)
+    response.headers.set('Cache-Control', 'public, s-maxage=30, stale-while-revalidate=60');
+    return response;
   } catch (error) {
     console.error("Error fetching recent orders:", error);
     return NextResponse.json(

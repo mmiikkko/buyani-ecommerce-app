@@ -1,7 +1,7 @@
 // app/seller/page.tsx
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { CardActivity } from "./_components/cards-activity";
 import { RecentOrders } from "./_components/cards-recentorders";
 import { ChartAreaIcons } from "./_components/cards-chart";
@@ -9,29 +9,53 @@ import { FrequentBought } from "./_components/cards-frequentbought";
 import { Order } from "@/types/orders";
 import { Store, Loader2 } from "lucide-react";
 
+type DateRange = "7" | "30" | "90" | "365" | "all";
+
 export default function SellerDashboard() {
   const [stats, setStats] = useState({
     totalSales: 0,
     totalOrders: 0,
     pendingOrders: 0,
     totalProducts: 0,
+    activeProducts: 0,
+    removedProducts: 0,
   });
 
   const [recentOrders, setRecentOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
+  const [statsDateRange, setStatsDateRange] = useState<DateRange>("all");
+
+  const fetchStats = useCallback(async (range: DateRange) => {
+    try {
+      const params = new URLSearchParams();
+      if (range !== "all") {
+        params.append("days", range);
+      }
+      const statsRes = await fetch(`/api/sellers/stats?${params.toString()}`);
+      if (statsRes.ok) {
+        const statsData = await statsRes.json();
+        setStats(statsData);
+      }
+    } catch (error) {
+      console.error("Error fetching stats:", error);
+    }
+  }, []);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // Fetch stats
-        const statsRes = await fetch("/api/sellers/stats");
+        setLoading(true);
+        // Fetch stats and recent orders in parallel for faster loading
+        const [statsRes, ordersRes] = await Promise.all([
+          fetch(`/api/sellers/stats?${statsDateRange !== "all" ? `days=${statsDateRange}` : ""}`),
+          fetch("/api/sellers/recent-orders")
+        ]);
+
         if (statsRes.ok) {
           const statsData = await statsRes.json();
           setStats(statsData);
         }
 
-        // Fetch recent orders
-        const ordersRes = await fetch("/api/sellers/recent-orders");
         if (ordersRes.ok) {
           const ordersData: Order[] = await ordersRes.json();
           setRecentOrders(ordersData);
@@ -44,7 +68,7 @@ export default function SellerDashboard() {
     };
 
     fetchData();
-  }, []);
+  }, [statsDateRange]);
 
   return (
     <div className="relative min-h-screen min-w-full overflow-hidden space-y-6 pt-17 px-6">
@@ -83,6 +107,12 @@ export default function SellerDashboard() {
             totalOrders={stats.totalOrders}
             pendingOrders={stats.pendingOrders}
             totalProducts={stats.totalProducts}
+            removedProducts={stats.removedProducts}
+            dateRange={statsDateRange}
+            onDateRangeChange={(range) => {
+              setStatsDateRange(range);
+              fetchStats(range);
+            }}
           />
         )}
       </section>

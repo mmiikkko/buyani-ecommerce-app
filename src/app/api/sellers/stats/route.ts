@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/server/drizzle";
 import { orders, shop, payments, products, orderItems } from "@/server/schema/auth-schema";
-import { eq, inArray, sql, and } from "drizzle-orm";
+import { eq, inArray, sql, and, gte, lte } from "drizzle-orm";
 import { getServerSession } from "@/server/session";
 
 // GET /api/sellers/stats - Get seller dashboard statistics
@@ -11,6 +11,31 @@ export async function GET(req: NextRequest) {
     if (!session?.user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
+
+    // Get date range from query params
+    const { searchParams } = new URL(req.url);
+    const startDate = searchParams.get("startDate");
+    const endDate = searchParams.get("endDate");
+    const days = searchParams.get("days");
+
+    // Calculate date range
+    let dateFilter: Date | null = null;
+    let endDateFilter: Date | null = null;
+    
+    if (startDate && endDate) {
+      // Custom date range
+      dateFilter = new Date(startDate);
+      endDateFilter = new Date(endDate);
+      endDateFilter.setHours(23, 59, 59, 999); // End of day
+    } else if (days) {
+      // Days filter (e.g., 7, 30, 90, 365)
+      const daysNum = parseInt(days, 10);
+      if (daysNum > 0) {
+        dateFilter = new Date();
+        dateFilter.setDate(dateFilter.getDate() - daysNum);
+      }
+    }
+    // If no date filter, show all time
 
     const sellerId = session.user.id;
 
@@ -26,6 +51,8 @@ export async function GET(req: NextRequest) {
         totalOrders: 0,
         pendingOrders: 0,
         totalProducts: 0,
+        activeProducts: 0,
+        removedProducts: 0,
       });
     }
 
@@ -33,12 +60,27 @@ export async function GET(req: NextRequest) {
 
     // Get seller's products (including deleted ones for stats purposes)
     const sellerProducts = await db
-      .select({ id: products.id })
+      .select({ 
+        id: products.id,
+        status: products.status,
+        isAvailable: products.isAvailable,
+      })
       .from(products)
       .where(inArray(products.shopId, shopIds));
 
-    // Total Products - only count non-deleted products
-    const totalProducts = sellerProducts.length;
+    // Count active products (not removed)
+    const activeProducts = sellerProducts.filter(p => {
+      const status = (p.status || "").toString().trim().toLowerCase();
+      const isRemoved = status === "removed" || status === "deleted" || (!p.isAvailable && !status);
+      return !isRemoved;
+    }).length;
+
+    // Count removed products
+    const removedProducts = sellerProducts.filter(p => {
+      const status = (p.status || "").toString().trim().toLowerCase();
+      const isRemoved = status === "removed" || status === "deleted" || (!p.isAvailable && !status);
+      return isRemoved;
+    }).length;
 
     // Get orders for seller's products by joining orderItems with products
     // This way, even if a product is deleted, we can still find orderItems
@@ -47,8 +89,16 @@ export async function GET(req: NextRequest) {
     let pendingOrders = 0;
     let totalSales = 0;
 
-    // Query orderItems by joining with products to filter by shopId
+    // Query orderItems by joining with products and orders to filter by shopId and date
     // This ensures we get all orderItems for seller's products, even if products are later deleted
+    const orderItemsConditions = [inArray(products.shopId, shopIds)];
+    if (dateFilter) {
+      orderItemsConditions.push(gte(orders.createdAt, dateFilter));
+    }
+    if (endDateFilter) {
+      orderItemsConditions.push(lte(orders.createdAt, endDateFilter));
+    }
+
     const orderItemsList = await db
       .select({ 
         orderId: orderItems.orderId,
@@ -56,13 +106,23 @@ export async function GET(req: NextRequest) {
       })
       .from(orderItems)
       .innerJoin(products, eq(orderItems.productId, products.id))
-      .where(inArray(products.shopId, shopIds));
+      .innerJoin(orders, eq(orderItems.orderId, orders.id))
+      .where(and(...orderItemsConditions));
 
     if (orderItemsList.length > 0) {
       const orderIds = [...new Set(orderItemsList.map((item) => item.orderId))];
 
       // Total Orders
       totalOrders = orderIds.length;
+
+      // Build date filter conditions
+      const dateConditions = [inArray(orders.id, orderIds)];
+      if (dateFilter) {
+        dateConditions.push(gte(orders.createdAt, dateFilter));
+      }
+      if (endDateFilter) {
+        dateConditions.push(lte(orders.createdAt, endDateFilter));
+      }
 
       // Get orders with payments and order totals
       const ordersWithPayments = await db
@@ -71,10 +131,11 @@ export async function GET(req: NextRequest) {
           orderTotal: orders.total,
           paymentReceived: payments.paymentReceived,
           status: payments.status,
+          createdAt: orders.createdAt,
         })
         .from(orders)
         .leftJoin(payments, eq(payments.orderId, orders.id))
-        .where(inArray(orders.id, orderIds));
+        .where(and(...dateConditions));
 
       // Calculate total sales
       // For seller stats, we use order total (which represents the seller's revenue from that order)
@@ -103,7 +164,9 @@ export async function GET(req: NextRequest) {
       totalSales,
       totalOrders,
       pendingOrders,
-      totalProducts,
+      totalProducts: activeProducts, // Total Products now shows only active products
+      activeProducts,
+      removedProducts,
     });
   } catch (error) {
     console.error("Error fetching seller stats:", error);

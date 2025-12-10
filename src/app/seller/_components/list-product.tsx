@@ -315,15 +315,25 @@ export function AddProducts({ onAdd, onUpdate, productToEdit, onEditComplete }: 
           {/* BASIC */}
           <TabsContent value="basic" className="mt-4 space-y-4">
             {error && <p className="text-red-500 text-sm font-medium">{error}</p>}
-            <input type="text" placeholder="Product Name" value={name} onChange={(e) => setName(e.target.value)} className="w-full border rounded-md px-3 py-2" />
-            <textarea placeholder="Product Description" value={description} onChange={(e) => setDescription(e.target.value)} className="w-full border rounded-md px-3 py-2 min-h-[100px]" />
-            <input type="number" placeholder="Stock" value={stock} onChange={(e) => setStock(e.target.value)} className="w-full border rounded-md px-3 py-2" />
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-gray-700">Product Name *</label>
+              <input type="text" placeholder="Enter product name" value={name} onChange={(e) => setName(e.target.value)} className="w-full border rounded-md px-3 py-2" />
+            </div>
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-gray-700">Product Description</label>
+              <textarea placeholder="Enter product description" value={description} onChange={(e) => setDescription(e.target.value)} className="w-full border rounded-md px-3 py-2 min-h-[100px]" />
+            </div>
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-gray-700">Stock Quantity *</label>
+              <input type="number" placeholder="Enter stock quantity" value={stock} onChange={(e) => setStock(e.target.value)} className="w-full border rounded-md px-3 py-2" />
+            </div>
           </TabsContent>
 
           {/* IMAGES */}
           <TabsContent value="images" className="mt-4">
             <div className="border p-4 rounded-md space-y-3">
             <div className="space-y-2">
+              <label className="block text-sm font-medium text-gray-700 mb-2">Product Images</label>
               <input
                 type="file"
                 accept="image/*"
@@ -415,31 +425,55 @@ export function AddProducts({ onAdd, onUpdate, productToEdit, onEditComplete }: 
           </TabsContent>
 
           {/* PRICING */}
-          <TabsContent value="pricing" className="mt-4">
-            <input type="number" placeholder="Price" value={price} onChange={(e) => setPrice(e.target.value)} className="w-full border rounded-md px-3 py-2" />
-            <label className="block text-sm mt-2">Status</label>
-            <select value={status} onChange={(e) => setStatus(e.target.value)} className="w-full border rounded px-3 py-2">
-              <option>Available</option>
-              <option>Draft</option>
-              <option>Out of stock</option>
-              <option>Discontinued</option>
-            </select>
+          <TabsContent value="pricing" className="mt-4 space-y-4">
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-gray-700">Price (₱) *</label>
+              <input type="number" placeholder="Enter product price" value={price} onChange={(e) => setPrice(e.target.value)} className="w-full border rounded-md px-3 py-2" />
+            </div>
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-gray-700">Product Status</label>
+              <select value={status} onChange={(e) => setStatus(e.target.value)} className="w-full border rounded-md px-3 py-2">
+                <option>Available</option>
+                <option>Draft</option>
+                <option>Out of stock</option>
+                <option>Discontinued</option>
+              </select>
+            </div>
           </TabsContent>
 
           {/* SHIPPING */}
-          <TabsContent value="shipping" className="mt-4">
-            <div className="grid grid-cols-3 gap-3">
-              <input type="number" placeholder="Weight" value={weight} onChange={(e) => setWeight(e.target.value)} className="border rounded px-2 py-1" />
-              <select value={weightUnit} onChange={(e) => setWeightUnit(e.target.value)} className="border rounded px-2 py-1">
-                <option value="kg">kg</option>
-                <option value="g">g</option>
-                <option value="lb">lb</option>
-              </select>
-              <input type="number" placeholder="Shipping Fee" value={shippingFee} onChange={(e) => setShippingFee(e.target.value)} className="border rounded px-2 py-1" />
-
-              <input type="number" placeholder="Length (cm)" value={lengthVal} onChange={(e) => setLengthVal(e.target.value)} className="border rounded px-2 py-1" />
-              <input type="number" placeholder="Width (cm)" value={widthVal} onChange={(e) => setWidthVal(e.target.value)} className="border rounded px-2 py-1" />
-              <input type="number" placeholder="Height (cm)" value={heightVal} onChange={(e) => setHeightVal(e.target.value)} className="border rounded px-2 py-1" />
+          <TabsContent value="shipping" className="mt-4 space-y-4">
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-gray-700">Weight</label>
+              <div className="grid grid-cols-2 gap-3">
+                <input type="number" placeholder="Enter weight" value={weight} onChange={(e) => setWeight(e.target.value)} className="border rounded-md px-3 py-2" />
+                <select value={weightUnit} onChange={(e) => setWeightUnit(e.target.value)} className="border rounded-md px-3 py-2">
+                  <option value="kg">kg (Kilograms)</option>
+                  <option value="g">g (Grams)</option>
+                  <option value="lb">lb (Pounds)</option>
+                </select>
+              </div>
+            </div>
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-gray-700">Shipping Fee (₱)</label>
+              <input type="number" placeholder="Enter shipping fee" value={shippingFee} onChange={(e) => setShippingFee(e.target.value)} className="w-full border rounded-md px-3 py-2" />
+            </div>
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-gray-700">Dimensions (cm)</label>
+              <div className="grid grid-cols-3 gap-3">
+                <div className="space-y-1">
+                  <label className="block text-xs text-gray-600">Length</label>
+                  <input type="number" placeholder="Length" value={lengthVal} onChange={(e) => setLengthVal(e.target.value)} className="w-full border rounded-md px-3 py-2" />
+                </div>
+                <div className="space-y-1">
+                  <label className="block text-xs text-gray-600">Width</label>
+                  <input type="number" placeholder="Width" value={widthVal} onChange={(e) => setWidthVal(e.target.value)} className="w-full border rounded-md px-3 py-2" />
+                </div>
+                <div className="space-y-1">
+                  <label className="block text-xs text-gray-600">Height</label>
+                  <input type="number" placeholder="Height" value={heightVal} onChange={(e) => setHeightVal(e.target.value)} className="w-full border rounded-md px-3 py-2" />
+                </div>
+              </div>
             </div>
           </TabsContent>
         </Tabs>

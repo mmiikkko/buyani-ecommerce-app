@@ -4,6 +4,8 @@ import { useState, useEffect, useMemo } from "react";
 import { useSearchParams } from "next/navigation";
 import { ProductCard } from "../_components/product-card";
 import type { Product } from "@/types/products";
+import { AnimatedSection } from "@/components/animated-section";
+import { AnimatedProductCard } from "../_components/animated-product-card";
 
 export default function ProductsPage() {
   const searchParams = useSearchParams();
@@ -62,7 +64,7 @@ export default function ProductsPage() {
 
   return (
     <main className="relative min-h-screen">
-      <section className="py-12 bg-slate-50">
+      <AnimatedSection className="py-12 bg-slate-50" direction="fade-up">
         <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-4 sm:px-6 lg:px-8">
           <header className="flex flex-col gap-2">
             <div className="space-y-1">
@@ -100,13 +102,13 @@ export default function ProductsPage() {
             </div>
           ) : (
             <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
-              {products.map((product) => (
-                <ProductCard key={product.id} product={product} />
+              {products.map((product, index) => (
+                <AnimatedProductCard key={product.id} product={product} delay={index * 50} />
               ))}
             </div>
           )}
         </div>
-      </section>
+      </AnimatedSection>
     </main>
   );
 }

@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 import { ShopCard } from "../_components/shop-card";
 import type { Shop } from "@/types/shops";
+import { AnimatedSection } from "@/components/animated-section";
+import { AnimatedShopCard } from "../_components/animated-shop-card";
 
 export default function ShopsPage() {
   const [shops, setShops] = useState<Shop[]>([]);
@@ -49,7 +51,7 @@ export default function ShopsPage() {
 
   return (
     <main className="relative min-h-screen">
-      <section className="py-12 bg-slate-50">
+      <AnimatedSection className="py-12 bg-slate-50" direction="fade-up">
         <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-4 sm:px-6 lg:px-8">
           <header className="flex flex-col gap-2">
             <div className="space-y-1">
@@ -87,13 +89,13 @@ export default function ShopsPage() {
             </div>
           ) : (
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-              {shops.map((shop) => (
-                <ShopCard key={shop.id} shop={shop} />
+              {shops.map((shop, index) => (
+                <AnimatedShopCard key={shop.id} shop={shop} delay={index * 100} />
               ))}
             </div>
           )}
         </div>
-      </section>
+      </AnimatedSection>
     </main>
   );
 }

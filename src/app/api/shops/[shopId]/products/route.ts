@@ -58,8 +58,8 @@ export async function GET(
       .where(and(
         eq(products.shopId, shopId),
         eq(products.isAvailable, true),
-        // Exclude deleted products
-        sql`${products.status} != 'Deleted'`
+        // Exclude removed and deleted products
+        sql`${products.status} != 'Deleted' AND ${products.status} != 'Removed'`
       ));
 
     // Get all images for products

@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { Area, AreaChart, CartesianGrid, XAxis } from "recharts";
-import { TrendingUp } from "lucide-react";
+import { TrendingUp, Calendar } from "lucide-react";
 import {
   Card,
   CardHeader,
@@ -15,48 +15,95 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from "@/components/ui/chart";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Button } from "@/components/ui/button";
+import { ChevronDown } from "lucide-react";
+
+type DateRange = "7" | "30" | "90" | "365" | "all";
+
+const dateRangeOptions: { value: DateRange; label: string }[] = [
+  { value: "7", label: "Last 7 days" },
+  { value: "30", label: "Last 30 days" },
+  { value: "90", label: "Last 90 days" },
+  { value: "365", label: "Last year" },
+  { value: "all", label: "All time" },
+];
 
 export function ChartAreaIcons() {
   const [data, setData] = useState<
     { day: string; total: number }[]
   >([]);
   const [loading, setLoading] = useState(true);
+  const [dateRange, setDateRange] = useState<DateRange>("30");
+
+  const fetchData = useCallback(async (range: DateRange) => {
+    try {
+      setLoading(true);
+      const params = new URLSearchParams();
+      if (range !== "all") {
+        params.append("days", range);
+      }
+      const res = await fetch(`/api/sellers/analytics?${params.toString()}`);
+      if (res.ok) {
+        const result = await res.json();
+        setData(result.chart ?? []);
+      } else {
+        setData([]);
+      }
+    } catch (error) {
+      console.error("Error fetching chart data:", error);
+      setData([]);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setLoading(true);
-        const res = await fetch("/api/sellers/analytics");
-        if (res.ok) {
-          const result = await res.json();
-          setData(result.chart ?? []);
-        } else {
-          setData([]);
-        }
-      } catch (error) {
-        console.error("Error fetching chart data:", error);
-        setData([]);
-      } finally {
-        setLoading(false);
-      }
-    };
+    fetchData(dateRange);
+  }, [dateRange, fetchData]);
 
-    fetchData();
-  }, []);
+  const selectedRangeLabel = dateRangeOptions.find(opt => opt.value === dateRange)?.label || "Last 30 days";
 
   return (
     <Card className="w-full transition-all duration-300 hover:shadow-lg">
       <CardHeader className="pb-4">
-        <div className="flex items-center gap-3">
-          <div className="p-2 rounded-lg bg-emerald-500/10">
-            <TrendingUp className="h-5 w-5 text-emerald-600" />
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-lg bg-emerald-500/10">
+              <TrendingUp className="h-5 w-5 text-emerald-600" />
+            </div>
+            <div>
+              <CardTitle className="text-xl">Sales Trend</CardTitle>
+              <CardDescription className="mt-1">
+                Items sold {selectedRangeLabel.toLowerCase()}
+              </CardDescription>
+            </div>
           </div>
-          <div>
-            <CardTitle className="text-xl">Sales Trend</CardTitle>
-            <CardDescription className="mt-1">
-              Items sold over the last 30 days
-            </CardDescription>
-          </div>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="sm" className="flex items-center gap-2">
+                <Calendar className="h-4 w-4" />
+                {selectedRangeLabel}
+                <ChevronDown className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              {dateRangeOptions.map((option) => (
+                <DropdownMenuItem
+                  key={option.value}
+                  onClick={() => setDateRange(option.value)}
+                  className={dateRange === option.value ? "bg-emerald-50" : ""}
+                >
+                  {option.label}
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </CardHeader>
 

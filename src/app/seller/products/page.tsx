@@ -53,6 +53,15 @@ export default function Products() {
     fetchProducts(true);
   }, [fetchProducts]);
 
+  // Auto-refresh products every 30 seconds
+  useEffect(() => {
+    const interval = setInterval(() => {
+      fetchProducts(false); // Silent refresh (no loading spinner)
+    }, 30000); // 30 seconds
+
+    return () => clearInterval(interval);
+  }, [fetchProducts]);
+
   const handleAddProduct = async (newProduct: Product): Promise<void> => {
     const maxRetries = 3;
     let lastError: Error | null = null;
@@ -66,17 +75,12 @@ export default function Products() {
           body: JSON.stringify(newProduct),
         });
 
+        const responseData = await res.json().catch(() => ({}));
+        
         if (!res.ok) {
           // Try to get error message from response
-          let errorMessage = "Failed to create product";
-          try {
-            const errorData = await res.json();
-            errorMessage = errorData.error || errorMessage;
-          } catch {
-            // If response is not JSON, use status text
-            errorMessage = res.statusText || errorMessage;
-          }
-
+          let errorMessage = responseData.error || "Failed to create product";
+          
           // If it's a connection error (503), retry
           if (res.status === 503 && attempt < maxRetries - 1) {
             const delay = Math.min(200 * Math.pow(2, attempt), 2000);
@@ -89,6 +93,8 @@ export default function Products() {
         }
 
         // Success - refresh products list
+        // Small delay to ensure database is updated
+        await new Promise(resolve => setTimeout(resolve, 200));
         await fetchProducts(false);
         return; // Success, exit retry loop
       } catch (err) {
@@ -105,24 +111,44 @@ export default function Products() {
     throw lastError || new Error("Failed to create product after retries");
   };
 
-  const handleDeleteProduct = async (productId: string) => {
-    if (!confirm("Are you sure you want to delete this product?")) {
-      return;
-    }
-
+  const handleRemoveProduct = async (productId: string) => {
     try {
       const res = await fetch(`/api/products?id=${productId}`, {
         method: "DELETE",
       });
 
       if (!res.ok) {
-        throw new Error("Failed to delete product");
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData.error || "Failed to remove product");
       }
 
-      toast.success("Product deleted successfully");
+      toast.success("Product removed successfully. You can restock it later.");
+      
+      // Small delay to ensure database update is complete
+      await new Promise(resolve => setTimeout(resolve, 300));
       await fetchProducts(false);
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : "Failed to delete product";
+      const errorMessage = err instanceof Error ? err.message : "Failed to remove product";
+      toast.error(errorMessage);
+    }
+  };
+
+  const handleRestoreProduct = async (productId: string) => {
+    try {
+      const res = await fetch(`/api/products?id=${productId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "restore" }),
+      });
+
+      if (!res.ok) {
+        throw new Error("Failed to restore product");
+      }
+
+      toast.success("Product restored successfully. You can now update stock and make it available.");
+      await fetchProducts(false);
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : "Failed to restore product";
       toast.error(errorMessage);
     }
   };
@@ -271,16 +297,62 @@ export default function Products() {
       )}
 
       {products.length > 0 && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5 pt-8">
-          {products.map((item) => (
-            <ProductCard 
-              key={item.id} 
-              product={item} 
-              onDelete={handleDeleteProduct}
-              onEdit={handleEditProduct}
-            />
-          ))}
-        </div>
+        <>
+          {/* Active Products */}
+          {products.filter(p => {
+            const status = (p.status || "").toString().trim();
+            const isRemoved = status === "Removed" || status === "removed" || (!p.isAvailable && !status);
+            return !isRemoved;
+          }).length > 0 && (
+            <div className="space-y-4">
+              <h2 className="text-lg font-semibold text-[#2E7D32]">Active Products</h2>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+                {products
+                  .filter(p => {
+                    const status = (p.status || "").toString().trim();
+                    const isRemoved = status === "Removed" || status === "removed" || (!p.isAvailable && !status);
+                    return !isRemoved;
+                  })
+                  .map((item) => (
+                    <ProductCard 
+                      key={item.id} 
+                      product={item} 
+                      onDelete={handleRemoveProduct}
+                      onEdit={handleEditProduct}
+                    />
+                  ))}
+              </div>
+            </div>
+          )}
+
+          {/* Removed Products - Only show if there are removed products */}
+          {(() => {
+            const removedProducts = products.filter(p => {
+              const status = (p.status || "").toString().trim();
+              const isRemoved = status === "Removed" || status === "removed" || (!p.isAvailable && !status);
+              return isRemoved;
+            });
+            
+            return removedProducts.length > 0 ? (
+              <div className="space-y-4 pt-8">
+                <h2 className="text-lg font-semibold text-gray-600">Removed Products</h2>
+                <p className="text-sm text-muted-foreground">Restock these products to make them available again</p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+                  {removedProducts.map((item) => (
+                    <ProductCard 
+                      key={item.id} 
+                      product={item} 
+                      onDelete={handleRemoveProduct}
+                      onEdit={handleEditProduct}
+                      onRestore={handleRestoreProduct}
+                      isRemoved={true}
+                    />
+                  ))}
+                </div>
+              </div>
+            ) : null;
+          })()}
+        </>
       )}
     </section>
   );

@@ -1,10 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { MessageCircle, Send, Loader2 } from "lucide-react";
 import { toast } from "sonner";
@@ -40,38 +39,12 @@ export default function SellerInbox() {
   );
   const [messages, setMessages] = useState<Message[]>([]);
   const [messageContent, setMessageContent] = useState("");
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
+  const [initialLoading, setInitialLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [unreadCounts, setUnreadCounts] = useState<Record<string, number>>({});
-
-  useEffect(() => {
-  fetchCurrentUser();
-  }, []);
-
-useEffect(() => {
-  if (currentUserId) {
-    fetchConversations();
-  }
-}, [currentUserId]);
-
-  useEffect(() => {
-    if (selectedConversation && currentUserId) {
-      fetchMessages(selectedConversation);
-      // Poll for new messages every 3 seconds
-      const interval = setInterval(() => {
-        fetchMessages(selectedConversation);
-        fetchConversations(); // Also refresh conversation list
-      }, 3000);
-      return () => clearInterval(interval);
-    }
-  }, [selectedConversation, currentUserId]);
-
-  useEffect(() => {
-    if (conversations.length > 0 && currentUserId) {
-      fetchUnreadCounts();
-    }
-  }, [conversations, currentUserId]);
+  const hasInitialFetched = useRef(false);
 
   const fetchCurrentUser = async () => {
     try {
@@ -85,11 +58,11 @@ useEffect(() => {
     }
   };
 
-  const fetchConversations = async () => {
+  const fetchConversations = useCallback(async (showLoading = false) => {
     if (!currentUserId) return;
     
     try {
-      setLoading(true);
+      if (showLoading) setLoading(true);
       const res = await fetch("/api/conversations");
       if (res.ok) {
         const data = await res.json();
@@ -107,11 +80,52 @@ useEffect(() => {
       }
     } catch (error) {
       console.error("Error fetching conversations:", error);
-      toast.error("Failed to load conversations");
+      if (showLoading) {
+        toast.error("Failed to load conversations");
+      }
     } finally {
-      setLoading(false);
+      if (showLoading) setLoading(false);
+      setInitialLoading(false);
     }
-  };
+  }, [currentUserId, selectedConversation, router]);
+
+  useEffect(() => {
+  fetchCurrentUser();
+  }, []);
+
+useEffect(() => {
+  if (!currentUserId) return;
+  
+  // Only show loading on initial load
+  const isInitial = !hasInitialFetched.current;
+  if (isInitial) {
+    hasInitialFetched.current = true;
+  }
+  fetchConversations(isInitial);
+  // Refresh conversations silently every 5 seconds
+  const interval = setInterval(() => {
+    fetchConversations(false);
+  }, 5000);
+  return () => clearInterval(interval);
+}, [currentUserId, fetchConversations]);
+
+  useEffect(() => {
+    if (selectedConversation && currentUserId) {
+      fetchMessages(selectedConversation);
+      // Poll for new messages silently in the background
+      const interval = setInterval(() => {
+        fetchMessages(selectedConversation);
+        fetchConversations(false); // Also refresh conversation list silently
+      }, 3000);
+      return () => clearInterval(interval);
+    }
+  }, [selectedConversation, currentUserId, fetchConversations]);
+
+  useEffect(() => {
+    if (conversations.length > 0 && currentUserId) {
+      fetchUnreadCounts();
+    }
+  }, [conversations, currentUserId]);
 
   const fetchMessages = async (convId: string) => {
     try {
@@ -169,7 +183,7 @@ useEffect(() => {
         const newMessage = await res.json();
         setMessages([...messages, newMessage]);
         setMessageContent("");
-        fetchConversations(); // Refresh conversations to update lastMessageAt
+        fetchConversations(false); // Refresh conversations silently to update lastMessageAt
       } else {
         const error = await res.json();
         toast.error(error.error || "Failed to send message");
@@ -198,7 +212,7 @@ useEffect(() => {
             <CardTitle className="text-lg">Conversations</CardTitle>
           </CardHeader>
           <CardContent className="p-0">
-            {loading ? (
+            {initialLoading ? (
               <div className="p-4 text-center">
                 <Loader2 className="h-5 w-5 animate-spin mx-auto mb-2 text-[#2E7D32]" />
                 <p className="text-sm text-muted-foreground">Loading...</p>

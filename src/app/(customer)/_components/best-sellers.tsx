@@ -5,6 +5,10 @@ import { ArrowRight } from "lucide-react";
 import Link from "next/link";
 import { ProductCard } from "./product-card";
 import type { Product } from "@/types/products";
+import { AnimatedSection } from "@/components/animated-section";
+import { AnimatedProductCard } from "./animated-product-card";
+
+const MAX_BEST_SELLERS = 10;
 
 export function BestSellersSection() {
   const [products, setProducts] = useState<Product[]>([]);
@@ -30,7 +34,7 @@ export function BestSellersSection() {
           setProducts([]);
           return;
         }
-        // Sort by itemsSold or rating, take top 10
+        // Sort by itemsSold or rating, take top MAX_BEST_SELLERS
         const sorted = data
           .sort((a: Product, b: Product) => {
             const aSold = a.itemsSold ?? 0;
@@ -40,7 +44,7 @@ export function BestSellersSection() {
             const bRating = Number(b.rating ?? 0);
             return bRating - aRating;
           })
-          .slice(0, 10);
+          .slice(0, MAX_BEST_SELLERS);
         setProducts(sorted);
       })
       .catch((err) => {
@@ -51,7 +55,7 @@ export function BestSellersSection() {
   }, []);
 
   return (
-    <section className="pt-6 pb-12 bg-gradient-to-b from-emerald-50/70 via-emerald-50/40 to-slate-50">
+    <AnimatedSection className="pt-6 pb-12 bg-gradient-to-b from-emerald-50/70 via-emerald-50/40 to-slate-50" direction="fade-up">
       <div className="mx-auto flex w-full max-w-7xl flex-col gap-6 px-4 sm:px-6 lg:px-8">
         <header className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <div className="space-y-1">
@@ -85,12 +89,12 @@ export function BestSellersSection() {
           </div>
         ) : (
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
-            {products.map((product) => (
-              <ProductCard key={product.id} product={product} />
+            {products.map((product, index) => (
+              <AnimatedProductCard key={product.id} product={product} delay={index * 50} />
             ))}
           </div>
         )}
       </div>
-    </section>
+    </AnimatedSection>
   );
 }

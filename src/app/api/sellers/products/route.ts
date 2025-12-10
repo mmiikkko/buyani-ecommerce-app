@@ -85,16 +85,11 @@ export async function GET() {
 
     const shopIds = sellerShops.map((s) => s.id);
 
+    // Get all products including removed ones (for restore functionality)
     const productsList = await db
       .select()
       .from(products)
-      .where(
-        and(
-          inArray(products.shopId, shopIds),
-          // Hide soft-deleted items from the seller listing to reflect removals
-          sql`${products.status} != 'Deleted'`
-        )
-      );
+      .where(inArray(products.shopId, shopIds));
 
     const productIds = productsList.map((p) => p.id);
 
@@ -135,7 +130,7 @@ export async function GET() {
         price: Number(product.price),
         rating: product.rating ?? null,
         isAvailable: product.isAvailable,
-        status: product.status || "Available",
+        status: product.status || (product.isAvailable !== false ? "Available" : "Removed"),
         stock: productInventoryData?.quantityInStock || 0,
         itemsSold: productInventoryData?.itemsSold || null,
         images: productImagesMapped,
@@ -144,7 +139,10 @@ export async function GET() {
       };
     });
 
-    return NextResponse.json(transformedProducts);
+    const response = NextResponse.json(transformedProducts);
+    // Add cache headers for faster subsequent loads (30 seconds)
+    response.headers.set('Cache-Control', 'public, s-maxage=30, stale-while-revalidate=60');
+    return response;
   } catch (error) {
     return NextResponse.json({ error: "Failed to fetch products" }, { status: 500 });
   }
@@ -243,10 +241,27 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    return NextResponse.json({ success: true, product: newProduct });
+    // Return success response with serializable data
+    try {
+      return NextResponse.json({ 
+        success: true, 
+        productId: newProduct.id,
+        message: "Product created successfully"
+      });
+    } catch (responseError) {
+      // If response fails, log but don't throw - product is already created
+      console.error("Error sending response (product was created):", responseError);
+      return NextResponse.json({ 
+        success: true, 
+        productId: newProduct.id,
+        message: "Product created successfully"
+      });
+    }
   } catch (error) {
+    console.error("Error creating product:", error);
     const e = error as ExecuteQueryError;
-    return NextResponse.json({ error: e.message || "Failed to create product" }, { status: 500 });
+    const errorMessage = e?.message || (error instanceof Error ? error.message : "Failed to create product");
+    return NextResponse.json({ error: errorMessage }, { status: 500 });
   }
 }
 

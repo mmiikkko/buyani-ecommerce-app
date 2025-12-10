@@ -58,43 +58,43 @@ export async function GET() {
         return NextResponse.json([]);
       }
 
-      // Get orders with buyer information
-      const ordersList = await db
-        .select({
-          id: orders.id,
-          buyerId: orders.buyerId,
-          addressId: orders.addressId,
-          total: orders.total,
-          createdAt: orders.createdAt,
-          updatedAt: orders.updatedAt,
-          buyerName: user.name,
-          buyerFirstName: user.first_name,
-          buyerLastName: user.last_name,
-        })
-        .from(orders)
-        .leftJoin(user, eq(orders.buyerId, user.id))
-        .where(inArray(orders.id, orderIds));
+      // Optimize: Fetch all data in parallel for faster loading
+      const [ordersList, allOrderItems, allPayments, allTransactions] = await Promise.all([
+        db
+          .select({
+            id: orders.id,
+            buyerId: orders.buyerId,
+            addressId: orders.addressId,
+            total: orders.total,
+            createdAt: orders.createdAt,
+            updatedAt: orders.updatedAt,
+            buyerName: user.name,
+            buyerFirstName: user.first_name,
+            buyerLastName: user.last_name,
+          })
+          .from(orders)
+          .leftJoin(user, eq(orders.buyerId, user.id))
+          .where(inArray(orders.id, orderIds)),
+        db
+          .select({
+            orderItem: orderItems,
+            product: products,
+            image: productImages,
+          })
+          .from(orderItems)
+          .leftJoin(products, eq(orderItems.productId, products.id))
+          .leftJoin(productImages, eq(productImages.productId, products.id))
+          .where(inArray(orderItems.orderId, orderIds)),
+        db
+          .select()
+          .from(payments)
+          .where(inArray(payments.orderId, orderIds)),
+        db
+          .select()
+          .from(transactions)
+          .where(inArray(transactions.orderId, orderIds))
+      ]);
 
-      const allOrderItems = await db
-        .select({
-          orderItem: orderItems,
-          product: products,
-          image: productImages,
-        })
-        .from(orderItems)
-        .leftJoin(products, eq(orderItems.productId, products.id))
-        .leftJoin(productImages, eq(productImages.productId, products.id))
-        .where(inArray(orderItems.orderId, orderIds));
-
-      const allPayments = await db
-        .select()
-        .from(payments)
-        .where(inArray(payments.orderId, orderIds));
-
-      const allTransactions = await db
-        .select()
-        .from(transactions)
-        .where(inArray(transactions.orderId, orderIds));
 
       // 🟩 Type-safe product item group
       type GroupedOrderItem = {
@@ -200,7 +200,10 @@ export async function GET() {
       };
       });
 
-      return NextResponse.json(transformedOrders);
+      const response = NextResponse.json(transformedOrders);
+      // Add cache headers for faster subsequent loads (1 minute)
+      response.headers.set('Cache-Control', 'public, s-maxage=60, stale-while-revalidate=120');
+      return response;
     } catch (dbError: any) {
       // Check for database connection errors
       const isConnectionError = 

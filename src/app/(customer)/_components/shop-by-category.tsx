@@ -3,6 +3,8 @@
 import { useState, useEffect } from "react";
 import { ArrowRight } from "lucide-react";
 import Link from "next/link";
+import { AnimatedSection } from "@/components/animated-section";
+import { AnimatedCategoryCard } from "./animated-category-card";
 
 interface Category {
   id: string;
@@ -61,7 +63,7 @@ export function ShopByCategorySection() {
   }
 
   return (
-    <section className="py-10 bg-gradient-to-b from-emerald-50/70 via-emerald-50/40 to-slate-50">
+    <AnimatedSection className="py-10 bg-gradient-to-b from-emerald-50/70 via-emerald-50/40 to-slate-50" direction="fade-up">
       <div className="mx-auto flex w-full max-w-7xl flex-col gap-6 px-4 sm:px-6 lg:px-8">
         <header className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <div className="space-y-1">
@@ -86,36 +88,37 @@ export function ShopByCategorySection() {
           {categories.map((category, index) => {
             const colorScheme = colorSchemes[index % colorSchemes.length];
             return (
-              <Link
-                key={category.id}
-                href={`/categories?categoryId=${category.id}`}
-                className="group block rounded-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/80 focus-visible:ring-offset-2"
-              >
-                <div
-                  className="flex h-full flex-col justify-between gap-3 rounded-2xl border border-slate-100 bg-white/90 p-3 text-xs shadow-[0_8px_26px_rgba(15,23,42,0.03)] transition-all duration-200 group-hover:-translate-y-0.5 group-hover:border-emerald-200 group-hover:shadow-[0_14px_38px_rgba(15,23,42,0.08)]"
+              <AnimatedCategoryCard key={category.id} delay={index * 50}>
+                <Link
+                  href={`/categories?categoryId=${category.id}`}
+                  className="group block rounded-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/80 focus-visible:ring-offset-2"
                 >
-                  <div>
-                    <p
-                      className={`text-sm font-semibold leading-snug ${colorScheme.nameClassName}`}
-                    >
-                      {category.categoryName}
-                    </p>
-                  </div>
+                  <div
+                    className="flex h-full flex-col justify-between gap-3 rounded-2xl border border-slate-100 bg-white/90 p-3 text-xs shadow-[0_8px_26px_rgba(15,23,42,0.03)] transition-all duration-200 group-hover:-translate-y-0.5 group-hover:border-emerald-200 group-hover:shadow-[0_14px_38px_rgba(15,23,42,0.08)]"
+                  >
+                    <div>
+                      <p
+                        className={`text-sm font-semibold leading-snug ${colorScheme.nameClassName}`}
+                      >
+                        {category.categoryName}
+                      </p>
+                    </div>
 
-                  <div className="flex items-center gap-2 pt-1">
-                    <span
-                      className={`h-1.5 w-1.5 rounded-full ${colorScheme.itemCountClassName}`}
-                    />
-                    <p className="text-[11px] font-medium text-slate-600">
-                      {category.productCount || 0} {category.productCount === 1 ? "item" : "items"}
-                    </p>
+                    <div className="flex items-center gap-2 pt-1">
+                      <span
+                        className={`h-1.5 w-1.5 rounded-full ${colorScheme.itemCountClassName}`}
+                      />
+                      <p className="text-[11px] font-medium text-slate-600">
+                        {category.productCount || 0} {category.productCount === 1 ? "item" : "items"}
+                      </p>
+                    </div>
                   </div>
-                </div>
-              </Link>
+                </Link>
+              </AnimatedCategoryCard>
             );
           })}
         </div>
       </div>
-    </section>
+    </AnimatedSection>
   );
 }

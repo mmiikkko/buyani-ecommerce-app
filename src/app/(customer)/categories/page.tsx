@@ -5,6 +5,9 @@ import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { ProductCard } from "../_components/product-card";
 import type { Product } from "@/types/products";
+import { AnimatedSection } from "@/components/animated-section";
+import { AnimatedProductCard } from "../_components/animated-product-card";
+import { AnimatedCategoryButton } from "../_components/animated-category-button";
 
 interface Category {
   id: string;
@@ -83,7 +86,7 @@ export default function CategoriesPage() {
 
   return (
     <main className="relative min-h-screen">
-      <section className="py-10 bg-gradient-to-b from-emerald-50/70 via-emerald-50/40 to-slate-50">
+      <AnimatedSection className="py-10 bg-gradient-to-b from-emerald-50/70 via-emerald-50/40 to-slate-50" direction="fade-up">
         <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-4 sm:px-6 lg:px-8">
           <header className="flex flex-col gap-2">
             <div className="space-y-1">
@@ -111,46 +114,47 @@ export default function CategoriesPage() {
                   const colorScheme = colorSchemes[index % colorSchemes.length];
                   const isSelected = selectedCategory?.id === category.id;
                   return (
-                    <button
-                      key={category.id}
-                      onClick={() => handleCategoryClick(category)}
-                      className={`group block rounded-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/80 focus-visible:ring-offset-2 text-left w-full ${
-                        isSelected ? "ring-2 ring-emerald-500" : ""
-                      }`}
-                    >
-                      <div className="flex h-full w-full flex-row items-center justify-between gap-4 rounded-2xl border border-slate-100 bg-white/90 p-4 text-xs shadow-[0_8px_26px_rgba(15,23,42,0.03)] transition-all duration-200 group-hover:-translate-y-0.5 group-hover:border-emerald-200 group-hover:shadow-[0_14px_38px_rgba(15,23,42,0.08)]">
-                        <div className="flex flex-1 items-center gap-4">
-                          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-50 to-amber-50">
-                            <span
-                              className={`h-3 w-3 rounded-full ${colorScheme.itemCountClassName}`}
-                            />
+                    <AnimatedCategoryButton key={category.id} delay={index * 50}>
+                      <button
+                        onClick={() => handleCategoryClick(category)}
+                        className={`group block rounded-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/80 focus-visible:ring-offset-2 text-left w-full ${
+                          isSelected ? "ring-2 ring-emerald-500" : ""
+                        }`}
+                      >
+                        <div className="flex h-full w-full flex-row items-center justify-between gap-4 rounded-2xl border border-slate-100 bg-white/90 p-4 text-xs shadow-[0_8px_26px_rgba(15,23,42,0.03)] transition-all duration-200 group-hover:-translate-y-0.5 group-hover:border-emerald-200 group-hover:shadow-[0_14px_38px_rgba(15,23,42,0.08)]">
+                          <div className="flex flex-1 items-center gap-4">
+                            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-50 to-amber-50">
+                              <span
+                                className={`h-3 w-3 rounded-full ${colorScheme.itemCountClassName}`}
+                              />
+                            </div>
+                            <div className="flex-1">
+                              <p
+                                className={`text-base font-semibold leading-snug ${colorScheme.nameClassName}`}
+                              >
+                                {category.categoryName}
+                              </p>
+                            </div>
                           </div>
-                          <div className="flex-1">
-                            <p
-                              className={`text-base font-semibold leading-snug ${colorScheme.nameClassName}`}
-                            >
-                              {category.categoryName}
+
+                          <div className="flex items-center gap-2">
+                            <span
+                              className={`h-1.5 w-1.5 rounded-full ${colorScheme.itemCountClassName}`}
+                            />
+                            <p className="text-sm font-medium text-slate-600">
+                              {category.productCount || 0} {category.productCount === 1 ? "item" : "items"}
                             </p>
                           </div>
                         </div>
-
-                        <div className="flex items-center gap-2">
-                          <span
-                            className={`h-1.5 w-1.5 rounded-full ${colorScheme.itemCountClassName}`}
-                          />
-                          <p className="text-sm font-medium text-slate-600">
-                            {category.productCount || 0} {category.productCount === 1 ? "item" : "items"}
-                          </p>
-                        </div>
-                      </div>
-                    </button>
+                      </button>
+                    </AnimatedCategoryButton>
                   );
                 })}
               </div>
 
               {/* Products Section */}
               {selectedCategory && (
-                <div className="mt-8 space-y-6">
+                <AnimatedSection className="mt-8 space-y-6" direction="fade-up" delay={100}>
                   <div>
                     <h2 className="text-2xl font-semibold text-slate-900">
                       {selectedCategory.categoryName}
@@ -170,17 +174,17 @@ export default function CategoriesPage() {
                     </div>
                   ) : (
                     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                      {products.map((product) => (
-                        <ProductCard key={product.id} product={product} />
+                      {products.map((product, index) => (
+                        <AnimatedProductCard key={product.id} product={product} delay={index * 50} />
                       ))}
                     </div>
                   )}
-                </div>
+                </AnimatedSection>
               )}
             </>
           )}
         </div>
-      </section>
+      </AnimatedSection>
     </main>
   );
 }

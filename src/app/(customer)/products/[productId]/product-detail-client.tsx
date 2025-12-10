@@ -7,14 +7,17 @@ import type { Product } from "@/types/products";
 import {
   ArrowLeft, CheckCircle2, Home, Loader2, MessageCircle, Minus,
   Plus, Shield, ShoppingCart,
-  Star
+  Star, Send
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState, useTransition } from "react";
+import { useState, useTransition, useEffect } from "react";
 import { toast } from "sonner";
 import { AddToCartModal } from "../../_components/add-to-cart-modal";
+import { AnimatedSection } from "@/components/animated-section";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
 
 type ProductDetailClientProps = {
   product: Product;
@@ -29,6 +32,17 @@ export function ProductDetailClient({ product, userId }: ProductDetailClientProp
   const [isAddingToCart, setIsAddingToCart] = useState(false);
   const [quantity, setQuantity] = useState(1);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
+  const [reviews, setReviews] = useState<any[]>([]);
+  const [loadingReviews, setLoadingReviews] = useState(false);
+  const [userOrders, setUserOrders] = useState<any[]>([]);
+  const [loadingOrders, setLoadingOrders] = useState(false);
+  const [showReviewForm, setShowReviewForm] = useState(false);
+  const [reviewRating, setReviewRating] = useState(0);
+  const [reviewComment, setReviewComment] = useState("");
+  const [selectedOrderId, setSelectedOrderId] = useState<string>("");
+  const [submittingReview, setSubmittingReview] = useState(false);
+  const [showAllReviews, setShowAllReviews] = useState(false);
+  const [existingReviewForOrder, setExistingReviewForOrder] = useState<any>(null);
 
   const productPrice = Number(product.price ?? 0);
   const productStock = product.stock ?? 0;
@@ -148,29 +162,140 @@ export function ProductDetailClient({ product, userId }: ProductDetailClientProp
 
   const isVerifiedSeller = product.shopStatus === "approved";
 
+  // Fetch reviews for this product
+  useEffect(() => {
+    async function fetchReviews() {
+      setLoadingReviews(true);
+      try {
+        const response = await fetch(`/api/reviews?productId=${product.id}`);
+        if (response.ok) {
+          const data = await response.json();
+          setReviews(Array.isArray(data) ? data : []);
+        }
+      } catch (error) {
+        console.error("Error fetching reviews:", error);
+      } finally {
+        setLoadingReviews(false);
+      }
+    }
+    fetchReviews();
+  }, [product.id]);
+
+  // Fetch user orders that contain this product
+  useEffect(() => {
+    if (!userId) return;
+    
+    async function fetchUserOrders() {
+      setLoadingOrders(true);
+      try {
+        const response = await fetch("/api/orders");
+        if (response.ok) {
+          const orders = await response.json();
+          // Filter orders that contain this product
+          const ordersWithProduct = orders.filter((order: any) => 
+            order.items?.some((item: any) => item.productId === product.id)
+          );
+          setUserOrders(ordersWithProduct);
+          if (ordersWithProduct.length > 0) {
+            setSelectedOrderId(ordersWithProduct[0].id || ordersWithProduct[0].orderId);
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching orders:", error);
+      } finally {
+        setLoadingOrders(false);
+      }
+    }
+    fetchUserOrders();
+  }, [userId, product.id]);
+
+  const handleSubmitReview = async () => {
+    if (!userId) {
+      toast.error("Please sign in to submit a review");
+      return;
+    }
+
+    if (!selectedOrderId) {
+      toast.error("Please select an order");
+      return;
+    }
+
+    if (reviewRating === 0) {
+      toast.error("Please select a rating");
+      return;
+    }
+
+    setSubmittingReview(true);
+    try {
+      const response = await fetch("/api/reviews", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          orderId: selectedOrderId,
+          rating: reviewRating,
+          comment: reviewComment.trim() || null,
+        }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || "Failed to submit review");
+      }
+
+      const result = await response.json();
+      toast.success(existingReviewForOrder ? "Review updated successfully!" : "Review submitted successfully!");
+      setShowReviewForm(false);
+      setReviewRating(0);
+      setReviewComment("");
+      setExistingReviewForOrder(null);
+      
+      // Refresh reviews after a short delay to ensure DB is updated
+      setTimeout(async () => {
+        try {
+          const reviewsResponse = await fetch(`/api/reviews?productId=${product.id}`);
+          if (reviewsResponse.ok) {
+            const data = await reviewsResponse.json();
+            setReviews(Array.isArray(data) ? data : []);
+          } else {
+            console.error("Failed to refresh reviews:", await reviewsResponse.text());
+          }
+        } catch (error) {
+          console.error("Error refreshing reviews:", error);
+        }
+      }, 500);
+    } catch (error: any) {
+      toast.error(error.message || "Failed to submit review");
+    } finally {
+      setSubmittingReview(false);
+    }
+  };
+
   return (
     <div className="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
       {/* Back Button */}
-      <Button
-        variant="ghost"
-        className="mb-6"
-        onClick={() => {
-          startTransition(() => {
-            router.back();
-          });
-        }}
-        disabled={isPending}
-      >
-        {isPending ? (
-          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-        ) : (
-          <ArrowLeft className="h-4 w-4 mr-2" />
-        )}
-        Back
-      </Button>
+      <AnimatedSection direction="fade-in" delay={0}>
+        <Button
+          variant="ghost"
+          className="mb-6"
+          onClick={() => {
+            startTransition(() => {
+              router.back();
+            });
+          }}
+          disabled={isPending}
+        >
+          {isPending ? (
+            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+          ) : (
+            <ArrowLeft className="h-4 w-4 mr-2" />
+          )}
+          Back
+        </Button>
+      </AnimatedSection>
       <div className="grid gap-8 lg:grid-cols-2">
         {/* Left Side - Product Images */}
-        <div className="space-y-4">
+        <AnimatedSection direction="fade-right" delay={100}>
+          <div className="space-y-4">
           {/* Main Image */}
           <div className="relative aspect-square w-full overflow-hidden rounded-2xl bg-slate-100 shadow-lg">
             {primaryImage ? (
@@ -206,10 +331,12 @@ export function ProductDetailClient({ product, userId }: ProductDetailClientProp
               ))}
             </div>
           )}
-        </div>
+          </div>
+        </AnimatedSection>
 
         {/* Right Side - Product Information */}
-        <div className="flex flex-col space-y-6">
+        <AnimatedSection direction="fade-left" delay={200}>
+          <div className="flex flex-col space-y-6">
           {/* Category Badge */}
           {product.categoryName && (
             <div>
@@ -373,8 +500,274 @@ export function ProductDetailClient({ product, userId }: ProductDetailClientProp
               <span className="text-sm font-medium text-emerald-700">Quality Guaranteed</span>
             </div>
           </div>
-        </div>
+          </div>
+        </AnimatedSection>
       </div>
+
+      {/* Reviews Section */}
+      <AnimatedSection direction="fade-up" delay={300}>
+        <div className="mt-12 space-y-6">
+          <div className="border-t border-slate-200 pt-8">
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h2 className="text-2xl font-semibold text-slate-900">Customer Reviews</h2>
+                {reviewCount > 0 && (
+                  <p className="text-sm text-slate-600 mt-1">
+                    {reviewCount} {reviewCount === 1 ? "review" : "reviews"} • Average rating: {rating.toFixed(1)}
+                  </p>
+                )}
+              </div>
+              {userId && userOrders.length > 0 && !showReviewForm && (
+                <Button
+                  onClick={() => setShowReviewForm(true)}
+                  className="bg-emerald-600 hover:bg-emerald-700"
+                >
+                  <Star className="mr-2 h-4 w-4" />
+                  Write a Review
+                </Button>
+              )}
+            </div>
+
+            {/* Review Submission Form */}
+            {showReviewForm && userId && userOrders.length > 0 && (
+              <div className="mb-8 bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-semibold text-slate-900">
+                    {existingReviewForOrder ? "Edit Your Review" : "Write a Review"}
+                  </h3>
+                  {existingReviewForOrder && (
+                    <span className="text-xs bg-amber-100 text-amber-800 px-2 py-1 rounded-full">
+                      Editing existing review
+                    </span>
+                  )}
+                </div>
+                
+                {existingReviewForOrder && (
+                  <div className="mb-4 p-3 bg-slate-50 rounded-lg border border-slate-200">
+                    <p className="text-xs text-slate-600 mb-1">Your current review:</p>
+                    <div className="flex items-center gap-1 mb-1">
+                      {[...Array(5)].map((_, i) => (
+                        <Star
+                          key={i}
+                          className={`h-3 w-3 ${
+                            i < existingReviewForOrder.rating
+                              ? "fill-amber-400 text-amber-400"
+                              : "fill-slate-200 text-slate-200"
+                          }`}
+                        />
+                      ))}
+                      <span className="text-xs text-slate-600 ml-1">
+                        {existingReviewForOrder.rating}/5
+                      </span>
+                    </div>
+                    {existingReviewForOrder.comment && (
+                      <p className="text-xs text-slate-700 italic">"{existingReviewForOrder.comment}"</p>
+                    )}
+                  </div>
+                )}
+                
+                <div className="space-y-4">
+                  {/* Order Selection */}
+                  {userOrders.length > 1 && (
+                    <div className="space-y-2">
+                      <Label htmlFor="order-select">Select Order</Label>
+                      <select
+                        id="order-select"
+                        value={selectedOrderId}
+                        onChange={(e) => {
+                          setSelectedOrderId(e.target.value);
+                          checkExistingReview(e.target.value);
+                        }}
+                        className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                      >
+                        {userOrders.map((order) => {
+                          const orderId = order.id || order.orderId;
+                          const hasReview = reviews.some((r: any) => r.orderId === orderId);
+                          return (
+                            <option key={orderId} value={orderId}>
+                              Order #{orderId} - {new Date(order.createdAt).toLocaleDateString()}
+                              {hasReview ? " (Reviewed)" : ""}
+                            </option>
+                          );
+                        })}
+                      </select>
+                    </div>
+                  )}
+
+                  {/* Rating Selection */}
+                  <div className="space-y-2">
+                    <Label>Rating *</Label>
+                    <div className="flex items-center gap-2">
+                      {[1, 2, 3, 4, 5].map((star) => (
+                        <button
+                          key={star}
+                          type="button"
+                          onClick={() => setReviewRating(star)}
+                          className="focus:outline-none transition-transform hover:scale-110"
+                        >
+                          <Star
+                            className={`h-8 w-8 ${
+                              star <= reviewRating
+                                ? "fill-amber-400 text-amber-400"
+                                : "fill-slate-200 text-slate-200"
+                            }`}
+                          />
+                        </button>
+                      ))}
+                      {reviewRating > 0 && (
+                        <span className="ml-2 text-sm font-medium text-slate-700">
+                          {reviewRating} out of 5
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Comment */}
+                  <div className="space-y-2">
+                    <Label htmlFor="review-comment">Your Review (Optional)</Label>
+                    <Textarea
+                      id="review-comment"
+                      value={reviewComment}
+                      onChange={(e) => setReviewComment(e.target.value)}
+                      placeholder="Share your experience with this product..."
+                      rows={4}
+                      className="resize-none"
+                    />
+                  </div>
+
+                  {/* Submit Buttons */}
+                  <div className="flex items-center gap-3 pt-2">
+                    <Button
+                      onClick={handleSubmitReview}
+                      disabled={submittingReview || reviewRating === 0}
+                      className="bg-emerald-600 hover:bg-emerald-700"
+                    >
+                      {submittingReview ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Submitting...
+                        </>
+                      ) : (
+                        <>
+                          <Send className="mr-2 h-4 w-4" />
+                          Submit Review
+                        </>
+                      )}
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        setShowReviewForm(false);
+                        setReviewRating(0);
+                        setReviewComment("");
+                      }}
+                      disabled={submittingReview}
+                    >
+                      Cancel
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {!userId && (
+              <div className="mb-6 bg-slate-50 rounded-xl border border-slate-200 p-4 text-center">
+                <p className="text-sm text-slate-600">
+                  <Link href={`/sign-in?redirect=${encodeURIComponent(`/products/${product.id}`)}`} className="text-emerald-600 hover:underline">
+                    Sign in
+                  </Link>{" "}
+                  to write a review
+                </p>
+              </div>
+            )}
+
+            {userId && userOrders.length === 0 && !loadingOrders && (
+              <div className="mb-6 bg-slate-50 rounded-xl border border-slate-200 p-4 text-center">
+                <p className="text-sm text-slate-600">
+                  Purchase this product to write a review
+                </p>
+              </div>
+            )}
+
+            {loadingReviews ? (
+              <div className="text-center py-12">
+                <p className="text-slate-500">Loading reviews...</p>
+              </div>
+            ) : reviews.length === 0 ? (
+              <div className="text-center py-12 bg-white rounded-xl border border-slate-200">
+                <Star className="h-12 w-12 text-slate-300 mx-auto mb-4" />
+                <p className="text-slate-500">No reviews yet. Be the first to review this product!</p>
+              </div>
+            ) : (
+              <div className="space-y-6">
+                {(showAllReviews ? reviews : reviews.slice(0, 5)).map((review) => (
+                  <div
+                    key={review.reviewId}
+                    className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm"
+                  >
+                    <div className="flex items-start justify-between mb-3">
+                      <div>
+                        <p className="font-semibold text-slate-900">{review.buyerName || "Anonymous"}</p>
+                        <p className="text-xs text-slate-500 mt-1">
+                          {review.buyerEmail}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        {[...Array(5)].map((_, i) => (
+                          <Star
+                            key={i}
+                            className={`h-4 w-4 ${
+                              i < review.rating
+                                ? "fill-amber-400 text-amber-400"
+                                : "fill-slate-200 text-slate-200"
+                            }`}
+                          />
+                        ))}
+                        <span className="ml-2 text-sm font-medium text-slate-700">
+                          {review.rating}/5
+                        </span>
+                      </div>
+                    </div>
+                    {review.comment && (
+                      <p className="text-slate-700 leading-relaxed mt-3">{review.comment}</p>
+                    )}
+                    {review.createdAt && (
+                      <p className="text-xs text-slate-500 mt-3">
+                        {new Date(review.createdAt).toLocaleDateString("en-US", {
+                          year: "numeric",
+                          month: "long",
+                          day: "numeric",
+                        })}
+                      </p>
+                    )}
+                  </div>
+                ))}
+                
+                {/* View All Reviews Button */}
+                {reviews.length > 5 && (
+                  <div className="flex justify-center pt-4">
+                    <Button
+                      variant="outline"
+                      onClick={() => setShowAllReviews(!showAllReviews)}
+                      className="border-slate-300 hover:bg-slate-50"
+                    >
+                      {showAllReviews ? (
+                        <>
+                          Show Less Reviews
+                        </>
+                      ) : (
+                        <>
+                          View All Reviews ({reviews.length})
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+      </AnimatedSection>
 
       <AddToCartModal
         open={modalOpen}

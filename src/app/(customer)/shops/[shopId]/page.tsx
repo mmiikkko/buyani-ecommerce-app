@@ -9,37 +9,71 @@ type ShopPageProps = {
   params: Promise<{ shopId: string }>;
 };
 
+// Helper function to execute queries with retry logic
+async function executeQueryWithRetry<T>(
+  queryFn: () => Promise<T>,
+  retries = 3
+): Promise<T> {
+  for (let attempt = 0; attempt < retries; attempt++) {
+    try {
+      return await queryFn();
+    } catch (error: any) {
+      const isConnectionError =
+        error?.cause?.code === "ECONNRESET" ||
+        error?.cause?.code === "PROTOCOL_CONNECTION_LOST" ||
+        error?.cause?.code === "ETIMEDOUT" ||
+        error?.cause?.errno === -4077 ||
+        error?.message?.includes("ECONNRESET") ||
+        error?.message?.includes("Connection lost") ||
+        error?.message?.includes("Failed query");
+
+      if (isConnectionError && attempt < retries - 1) {
+        // Exponential backoff: 100ms, 200ms, 400ms
+        const delay = Math.min(100 * Math.pow(2, attempt), 1000);
+        await new Promise((resolve) => setTimeout(resolve, delay));
+        continue;
+      }
+      throw error;
+    }
+  }
+  throw new Error("Query failed after retries");
+}
+
 async function getShopById(shopId: string): Promise<Shop | null> {
   try {
-    const shopItem = await db
-      .select({
-        id: shop.id,
-        sellerId: shop.sellerId,
-        shopName: shop.shopName,
-        shopRating: shop.shopRating,
-        description: shop.description,
-        imageURL: shop.imageURL,
-        status: shop.status,
-        createdAt: shop.createdAt,
-        updatedAt: shop.updatedAt,
-        ownerName: user.name,
-        ownerFirstName: user.first_name,
-        ownerLastName: user.last_name,
-      })
-      .from(shop)
-      .leftJoin(user, eq(shop.sellerId, user.id))
-      .where(eq(shop.id, shopId))
-      .limit(1);
+    const shopItem = await executeQueryWithRetry(async () => {
+      return await db
+        .select({
+          id: shop.id,
+          sellerId: shop.sellerId,
+          shopName: shop.shopName,
+          shopRating: shop.shopRating,
+          description: shop.description,
+          imageURL: shop.imageURL,
+          status: shop.status,
+          createdAt: shop.createdAt,
+          updatedAt: shop.updatedAt,
+          ownerName: user.name,
+          ownerFirstName: user.first_name,
+          ownerLastName: user.last_name,
+        })
+        .from(shop)
+        .leftJoin(user, eq(shop.sellerId, user.id))
+        .where(eq(shop.id, shopId))
+        .limit(1);
+    });
 
     if (!shopItem.length) return null;
 
     const shopData = shopItem[0];
 
-    // Product count
-    const productCount = await db
-      .select({ count: sql<number>`count(*)` })
-      .from(products)
-      .where(and(eq(products.shopId, shopData.id), eq(products.isAvailable, true)));
+    // Product count with retry
+    const productCount = await executeQueryWithRetry(async () => {
+      return await db
+        .select({ count: sql<number>`count(*)` })
+        .from(products)
+        .where(and(eq(products.shopId, shopData.id), eq(products.isAvailable, true)));
+    });
 
     return {
       id: shopData.id,
@@ -57,8 +91,18 @@ async function getShopById(shopId: string): Promise<Shop | null> {
         "Unknown",
       products: Number(productCount[0]?.count || 0),
     };
-  } catch (error) {
-    console.error("Error fetching shop:", error);
+  } catch (error: any) {
+    // Only log non-connection errors to avoid spam
+    const isConnectionError =
+      error?.cause?.code === "ECONNRESET" ||
+      error?.cause?.code === "PROTOCOL_CONNECTION_LOST" ||
+      error?.cause?.code === "ETIMEDOUT" ||
+      error?.message?.includes("ECONNRESET") ||
+      error?.message?.includes("Failed query");
+
+    if (!isConnectionError) {
+      console.error("Error fetching shop:", error?.message || error);
+    }
     return null;
   }
 }

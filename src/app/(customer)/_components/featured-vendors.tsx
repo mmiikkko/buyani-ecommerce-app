@@ -5,6 +5,10 @@ import { ArrowRight } from "lucide-react";
 import Link from "next/link";
 import { ShopCard } from "./shop-card";
 import type { Shop } from "@/types/shops";
+import { AnimatedSection } from "@/components/animated-section";
+import { AnimatedShopCard } from "./animated-shop-card";
+
+const MAX_FEATURED_SHOPS = 6;
 
 export function FeaturedVendorsSection() {
   const [shops, setShops] = useState<Shop[]>([]);
@@ -30,7 +34,7 @@ export function FeaturedVendorsSection() {
           setShops([]);
           return;
         }
-        // Sort by rating or product count, take top 6
+        // Sort by rating or product count, take top MAX_FEATURED_SHOPS
         const sorted = data
           .sort((a: Shop, b: Shop) => {
             const aRating = a.shop_rating ? parseFloat(a.shop_rating) : 0;
@@ -38,7 +42,7 @@ export function FeaturedVendorsSection() {
             if (bRating !== aRating) return bRating - aRating;
             return (b.products || 0) - (a.products || 0);
           })
-          .slice(0, 6);
+          .slice(0, MAX_FEATURED_SHOPS);
         setShops(sorted);
       })
       .catch((err) => {
@@ -49,7 +53,7 @@ export function FeaturedVendorsSection() {
   }, []);
 
   return (
-    <section className="py-12 bg-slate-50">
+    <AnimatedSection className="py-12 bg-slate-50" direction="fade-up">
       <div className="mx-auto flex w-full max-w-7xl flex-col gap-6 px-4 sm:px-6 lg:px-8">
         <header className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <div className="space-y-1">
@@ -84,12 +88,12 @@ export function FeaturedVendorsSection() {
           </div>
         ) : (
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {shops.map((shop) => (
-              <ShopCard key={shop.id} shop={shop} />
+            {shops.map((shop, index) => (
+              <AnimatedShopCard key={shop.id} shop={shop} delay={index * 100} />
             ))}
           </div>
         )}
       </div>
-    </section>
+    </AnimatedSection>
   );
 }

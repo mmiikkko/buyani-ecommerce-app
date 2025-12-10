@@ -1,14 +1,42 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/server/drizzle";
 import { getServerSession } from "@/server/session";
-import { eq, inArray, sql, and, gte } from "drizzle-orm";
+import { eq, inArray, sql, and, gte, lte } from "drizzle-orm";
 import { orders, orderItems, products, shop, payments } from "@/server/schema/auth-schema";
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   try {
     const session = await getServerSession();
     if (!session?.user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    // Get date range from query params
+    const { searchParams } = new URL(req.url);
+    const startDate = searchParams.get("startDate");
+    const endDate = searchParams.get("endDate");
+    const days = searchParams.get("days");
+
+    // Calculate date range
+    let dateFilter: Date | null = null;
+    let endDateFilter: Date | null = null;
+    
+    if (startDate && endDate) {
+      // Custom date range
+      dateFilter = new Date(startDate);
+      endDateFilter = new Date(endDate);
+      endDateFilter.setHours(23, 59, 59, 999); // End of day
+    } else if (days) {
+      // Days filter (e.g., 7, 30, 90, 365)
+      const daysNum = parseInt(days, 10);
+      if (daysNum > 0) {
+        dateFilter = new Date();
+        dateFilter.setDate(dateFilter.getDate() - daysNum);
+      }
+    } else {
+      // Default: last 30 days
+      dateFilter = new Date();
+      dateFilter.setDate(dateFilter.getDate() - 30);
     }
 
     const sellerId = session.user.id;
@@ -43,11 +71,16 @@ export async function GET() {
       });
     }
 
-    // Get orders from the last 30 days
-    const thirtyDaysAgo = new Date();
-    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    // Build date filter conditions
+    const dateConditions = [];
+    if (dateFilter) {
+      dateConditions.push(gte(orders.createdAt, dateFilter));
+    }
+    if (endDateFilter) {
+      dateConditions.push(lte(orders.createdAt, endDateFilter));
+    }
 
-    // Get order items for seller's products from last 30 days
+    // Get order items for seller's products within date range
     const orderItemsList = await db
       .select({
         orderId: orderItems.orderId,
@@ -64,7 +97,7 @@ export async function GET() {
       .where(
         and(
           inArray(orderItems.productId, productIds),
-          gte(orders.createdAt, thirtyDaysAgo)
+          ...dateConditions
         )
       );
 
@@ -73,12 +106,22 @@ export async function GET() {
       (item) => !item.paymentStatus || item.paymentStatus.toLowerCase() !== "rejected"
     );
 
-    // Generate chart data - group by day for last 30 days
+    // Generate chart data - group by day
     const chartDataMap = new Map<string, number>();
     
-    // Initialize all 30 days with 0
-    for (let i = 0; i < 30; i++) {
-      const date = new Date();
+    // Determine number of days to show
+    let daysToShow = 30; // default
+    if (startDate && endDateFilter) {
+      const diffTime = endDateFilter.getTime() - dateFilter!.getTime();
+      daysToShow = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+    } else if (days) {
+      daysToShow = parseInt(days, 10);
+    }
+    
+    // Initialize all days with 0
+    const endDateForInit = endDateFilter || new Date();
+    for (let i = 0; i < daysToShow; i++) {
+      const date = new Date(endDateForInit);
       date.setDate(date.getDate() - i);
       const dateKey = date.toISOString().split('T')[0];
       chartDataMap.set(dateKey, 0);

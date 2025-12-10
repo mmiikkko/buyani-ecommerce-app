@@ -210,7 +210,7 @@ export default function Navbar({ className }: NavbarProps) {
             </div>
 
             <span className="hidden text-base font-semibold tracking-tight text-slate-900 sm:inline">
-              Buyani
+              BuyAni
             </span>
             </Link>
             {/* Mobile Become a Seller link */}

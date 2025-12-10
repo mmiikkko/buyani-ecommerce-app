@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/server/drizzle';
-import { products, productImages, productInventory, shop, cartItems, orderItems } from '@/server/schema/auth-schema';
+import { products, productImages, productInventory, shop, cartItems, orderItems, reviews, orders } from '@/server/schema/auth-schema';
 import { eq, and, inArray, sql } from 'drizzle-orm';
 import { v4 as uuidv4 } from 'uuid';
 import { corsResponse, corsOptions } from '@/lib/api-utils';
@@ -22,8 +22,8 @@ export async function GET(req: NextRequest) {
     const whereConditions = [
       eq(products.isAvailable, true),
       eq(shop.status, "approved"),
-      // Exclude deleted products
-      sql`${products.status} != 'Deleted'`
+      // Exclude removed and deleted products
+      sql`${products.status} != 'Deleted' AND ${products.status} != 'Removed'`
     ];
 
     // Add category filter if provided
@@ -76,9 +76,54 @@ export async function GET(req: NextRequest) {
       imagesByProduct.get(img.productId)!.push(img);
     }
 
-    // Combine products with their images
+    // Get review statistics for all products
+    const productIdsForReviews = productList.map(p => p.id);
+    const reviewStatsMap = new Map<string, { averageRating: number; reviewCount: number }>();
+    
+    if (productIdsForReviews.length > 0) {
+      // For each product, calculate review stats similar to getProductById
+      for (const productId of productIdsForReviews) {
+        // Get all order items for this product
+        const relatedOrderItems = await db
+          .select({ orderId: orderItems.orderId })
+          .from(orderItems)
+          .where(eq(orderItems.productId, productId));
+        
+        const orderIds = relatedOrderItems.map(o => o.orderId);
+        
+        if (orderIds.length > 0) {
+          // Get reviews for orders containing this product
+          const reviewStats = await db
+            .select({
+              averageRating: sql<number>`COALESCE(AVG(${reviews.rating}), 0)`.as('averageRating'),
+              reviewCount: sql<number>`COUNT(${reviews.id})`.as('reviewCount'),
+            })
+            .from(reviews)
+            .where(inArray(reviews.orderId, orderIds));
+          
+          const stats = reviewStats[0];
+          if (stats) {
+            const avgRating = stats.averageRating ? Number(stats.averageRating) : 0;
+            const count = stats.reviewCount ? Number(stats.reviewCount) : 0;
+            if (count > 0) {
+              reviewStatsMap.set(productId, {
+                averageRating: avgRating,
+                reviewCount: count,
+              });
+            }
+          }
+        }
+      }
+    }
+
+    // Combine products with their images and review data
     const productsWithImages = productList.map((product) => {
       const productImagesList = imagesByProduct.get(product.id) || [];
+      const reviewStats = reviewStatsMap.get(product.id);
+      const finalRating = reviewStats && reviewStats.reviewCount > 0 
+        ? reviewStats.averageRating.toFixed(1) 
+        : (product.rating ?? null);
+      
       return {
         ...product,
         images: productImagesList
@@ -91,6 +136,8 @@ export async function GET(req: NextRequest) {
           })),
         price: product.price ? Number(product.price) : undefined,
         stock: product.stock ?? 0,
+        rating: finalRating,
+        reviewCount: reviewStats?.reviewCount ?? 0,
       };
     });
 
@@ -134,12 +181,34 @@ export async function PUT(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const productId = searchParams.get("id");
   if (!productId) return NextResponse.json({ error: "Missing id" }, { status: 400 });
-  const updates = await req.json();
+  
+  const body = await req.json();
+  const action = body.action; // Check if this is a restore action
+  
+  if (action === "restore") {
+    // Restore a removed product
+    await db
+      .update(products)
+      .set({
+        status: "Available",
+        isAvailable: true,
+        updatedAt: new Date(),
+      })
+      .where(eq(products.id, productId));
+    
+    return NextResponse.json({ 
+      success: true,
+      message: "Product restored successfully. You can now update stock and make it available."
+    });
+  }
+  
+  // Regular update
+  const updates = body;
   await db.update(products).set(updates).where(eq(products.id, productId));
   return NextResponse.json({ success: true });
 }
 
-// DELETE /api/products?id=xxx
+// DELETE /api/products?id=xxx - Soft delete (remove product)
 export async function DELETE(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
@@ -148,64 +217,29 @@ export async function DELETE(req: NextRequest) {
       return NextResponse.json({ error: "Missing id" }, { status: 400 });
     }
 
-    // Check if product has any orders - if so, use soft delete instead of hard delete
-    // This preserves order history and sales statistics
-    const orderItemsCount = await db
-      .select()
-      .from(orderItems)
-      .where(eq(orderItems.productId, productId))
-      .limit(1);
+    // Always use soft delete: Mark product as removed but keep it in database
+    // This allows sellers to restock the product later
+    await db
+      .update(products)
+      .set({
+        status: "Removed",
+        isAvailable: false,
+        updatedAt: new Date(),
+      })
+      .where(eq(products.id, productId));
 
-    const hasOrders = orderItemsCount.length > 0;
+    // Delete cart items (users shouldn't be able to add removed products to cart)
+    await db.delete(cartItems).where(eq(cartItems.productId, productId));
 
-    if (hasOrders) {
-      // Soft delete: Mark product as deleted but keep it in database
-      // This preserves orderItems and sales statistics
-      await db
-        .update(products)
-        .set({
-          status: "Deleted",
-          isAvailable: false,
-          updatedAt: new Date(),
-        })
-        .where(eq(products.id, productId));
-
-      // Delete cart items (users shouldn't be able to add deleted products to cart)
-      await db.delete(cartItems).where(eq(cartItems.productId, productId));
-
-      return NextResponse.json({ 
-        success: true,
-        message: "Product marked as deleted. Order history and sales statistics are preserved."
-      });
-    } else {
-      // Hard delete: Product has no orders, safe to delete completely
-      // First, delete all cart_items that reference this product
-      await db.delete(cartItems).where(eq(cartItems.productId, productId));
-
-      // Delete product images (has ON DELETE CASCADE, but being explicit)
-      await db.delete(productImages).where(eq(productImages.productId, productId));
-
-      // Delete product inventory (if it exists)
-      await db.delete(productInventory).where(eq(productInventory.productId, productId));
-
-      // Finally, delete the product itself
-      await db.delete(products).where(eq(products.id, productId));
-
-      return NextResponse.json({ success: true });
-    }
+    return NextResponse.json({ 
+      success: true,
+      message: "Product removed successfully. You can restock it later."
+    });
   } catch (error: any) {
-    console.error("Error deleting product:", error);
-    
-    // If database constraint prevents deletion (restrict), provide helpful message
-    if (error?.message?.includes("foreign key constraint") || error?.code === "ER_ROW_IS_REFERENCED") {
-      return NextResponse.json(
-        { error: "Cannot delete product because it has associated orders. The product has been marked as deleted instead to preserve order history." },
-        { status: 400 }
-      );
-    }
+    console.error("Error removing product:", error);
     
     return NextResponse.json(
-      { error: "Failed to delete product. It may be referenced in orders or other records." },
+      { error: "Failed to remove product." },
       { status: 500 }
     );
   }
