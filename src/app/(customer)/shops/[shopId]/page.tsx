@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { ShopDetailClient } from "./shop-detail-client";
+
 import { db } from "@/server/drizzle";
 import { shop, user, products } from "@/server/schema/auth-schema";
 import { eq, and, sql } from "drizzle-orm";
@@ -115,7 +115,7 @@ export default async function ShopPage({ params }: ShopPageProps) {
 
   return (
     <main className="relative min-h-screen bg-slate-50">
-      <ShopDetailClient shop={shop} shopId={shopId} />
+
     </main>
   );
 }
