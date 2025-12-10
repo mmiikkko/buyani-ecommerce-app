@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { ShopCard } from "../_components/shop-card";
 import type { Shop } from "@/types/shops";
 import { AnimatedSection } from "@/components/animated-section";
 import { AnimatedShopCard } from "../_components/animated-shop-card";
