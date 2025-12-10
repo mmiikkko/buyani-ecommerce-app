@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-
+import { ShopDetailClient } from "./shop-detail-client";
 import { db } from "@/server/drizzle";
 import { shop, user, products } from "@/server/schema/auth-schema";
 import { eq, and, sql } from "drizzle-orm";
@@ -86,9 +86,10 @@ async function getShopById(shopId: string): Promise<Shop | null> {
       created_at: shopData.createdAt,
       updated_at: shopData.updatedAt,
       owner_name:
-        shopData.ownerName ||
-        `${shopData.ownerFirstName || ""} ${shopData.ownerLastName || ""}`.trim() ||
-        "Unknown",
+      shopData.ownerName ||
+      `${shopData.ownerFirstName || ""} ${shopData.ownerLastName || ""}`.trim() ||
+      "Unknown",
+    
       products: Number(productCount[0]?.count || 0),
     };
   } catch (error: any) {
@@ -111,11 +112,14 @@ export default async function ShopPage({ params }: ShopPageProps) {
   const { shopId } = await params;
   const shop = await getShopById(shopId);
 
-  if (!shop) notFound();
+  if (!shop) {
+    notFound();
+    return; // TypeScript guard - notFound() throws but TS doesn't know
+  }
 
   return (
     <main className="relative min-h-screen bg-slate-50">
-
+      <ShopDetailClient shop={shop} shopId={shopId} />
     </main>
   );
 }

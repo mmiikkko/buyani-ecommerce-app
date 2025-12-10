@@ -41,6 +41,7 @@ export function ProductDetailClient({ product, userId }: ProductDetailClientProp
   const [reviewComment, setReviewComment] = useState("");
   const [selectedOrderId, setSelectedOrderId] = useState<string>("");
   const [submittingReview, setSubmittingReview] = useState(false);
+  const [checkExistingReview, checkExistingReview] = useState(false);
   const [showAllReviews, setShowAllReviews] = useState(false);
   const [existingReviewForOrder, setExistingReviewForOrder] = useState<any>(null);
 
@@ -269,6 +270,7 @@ export function ProductDetailClient({ product, userId }: ProductDetailClientProp
       setSubmittingReview(false);
     }
   };
+
 
   return (
     <div className="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
@@ -561,7 +563,7 @@ export function ProductDetailClient({ product, userId }: ProductDetailClientProp
                       </span>
                     </div>
                     {existingReviewForOrder.comment && (
-                      <p className="text-xs text-slate-700 italic">"{existingReviewForOrder.comment}"</p>
+                      <p className="text-xs text-slate-700 italic">{existingReviewForOrder.comment}</p>
                     )}
                   </div>
                 )}
