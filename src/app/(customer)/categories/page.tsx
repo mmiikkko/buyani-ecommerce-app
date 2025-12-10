@@ -8,6 +8,7 @@ import type { Product } from "@/types/products";
 import { AnimatedSection } from "@/components/animated-section";
 import { AnimatedProductCard } from "../_components/animated-product-card";
 import { AnimatedCategoryButton } from "../_components/animated-category-button";
+import { Tag, Sparkles, Grid3x3, ShoppingBag } from "lucide-react";
 
 interface Category {
   id: string;
@@ -86,26 +87,62 @@ export default function CategoriesPage() {
 
   return (
     <main className="relative min-h-screen">
-      <AnimatedSection className="py-10 bg-gradient-to-b from-emerald-50/70 via-emerald-50/40 to-slate-50" direction="fade-up">
-        <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-4 sm:px-6 lg:px-8">
-          <header className="flex flex-col gap-2">
-            <div className="space-y-1">
-              <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-emerald-500">
-                All Categories
-              </p>
-              <h2 className="text-lg font-semibold tracking-tight text-slate-900 sm:text-xl">
-                Browse all available categories
-              </h2>
+      {/* Decorative background elements */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-0 left-1/4 w-96 h-96 bg-emerald-200/20 rounded-full blur-3xl"></div>
+        <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-amber-200/20 rounded-full blur-3xl"></div>
+        <div className="absolute top-1/2 right-1/3 w-80 h-80 bg-orange-200/15 rounded-full blur-3xl"></div>
+      </div>
+
+      <AnimatedSection className="relative py-16 bg-gradient-to-b from-emerald-50/70 via-white to-amber-50/40" direction="fade-up">
+        <div className="mx-auto flex w-full max-w-7xl flex-col gap-8 px-4 sm:px-6 lg:px-8">
+          <header className="flex flex-col gap-4">
+            <div className="relative">
+              {/* Decorative icon badges */}
+              <div className="flex items-center gap-3 mb-4">
+                <div className="flex items-center justify-center w-12 h-12 rounded-2xl bg-gradient-to-br from-emerald-500 to-amber-600 shadow-lg shadow-emerald-500/30">
+                  <Tag className="w-6 h-6 text-white" />
+                </div>
+                <div className="flex items-center gap-2">
+                  <Sparkles className="w-5 h-5 text-emerald-500 animate-pulse" />
+                  <p className="text-xs font-bold uppercase tracking-[0.2em] text-emerald-600 bg-emerald-100 px-3 py-1 rounded-full">
+                    All Categories
+                  </p>
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                <h2 className="text-3xl sm:text-4xl font-bold tracking-tight bg-gradient-to-r from-slate-900 via-emerald-800 to-amber-800 bg-clip-text text-transparent">
+                  <span className="inline-flex items-center gap-2">
+                    <Grid3x3 className="w-7 h-7 text-emerald-600" />
+                    Browse all available categories
+                  </span>
+                </h2>
+                <div className="flex items-center gap-3">
+                  <div className="h-1 w-16 bg-gradient-to-r from-emerald-500 to-amber-500 rounded-full"></div>
+                  <p className="text-base text-slate-700 font-medium">
+                    Explore products organized by category
+                  </p>
+                </div>
+              </div>
             </div>
           </header>
 
           {loading ? (
-            <div className="text-center py-12">
-              <p className="text-slate-500">Loading categories...</p>
+            <div className="text-center py-16">
+              <div className="inline-flex items-center gap-3 px-6 py-4 bg-white rounded-2xl shadow-lg border border-emerald-100">
+                <div className="w-5 h-5 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin"></div>
+                <p className="text-slate-700 font-medium">Loading categories...</p>
+              </div>
             </div>
           ) : categories.length === 0 ? (
-            <div className="text-center py-12">
-              <p className="text-slate-500">No categories available.</p>
+            <div className="text-center py-16">
+              <div className="inline-flex flex-col items-center gap-4 px-8 py-10 bg-white rounded-2xl shadow-lg border-2 border-dashed border-slate-200 max-w-md mx-auto">
+                <div className="w-16 h-16 rounded-full bg-slate-100 flex items-center justify-center">
+                  <Tag className="w-8 h-8 text-slate-400" />
+                </div>
+                <p className="text-slate-600 font-medium">No categories available.</p>
+              </div>
             </div>
           ) : (
             <>
@@ -154,23 +191,39 @@ export default function CategoriesPage() {
 
               {/* Products Section */}
               {selectedCategory && (
-                <AnimatedSection className="mt-8 space-y-6" direction="fade-up" delay={100}>
-                  <div>
-                    <h2 className="text-2xl font-semibold text-slate-900">
-                      {selectedCategory.categoryName}
-                    </h2>
-                    <p className="text-sm text-slate-600 mt-1">
-                      {products.length} {products.length === 1 ? "product" : "products"} available
-                    </p>
+                <AnimatedSection className="mt-10 space-y-6" direction="fade-up" delay={100}>
+                  <div className="relative">
+                    <div className="flex items-center gap-3 mb-2">
+                      <div className="w-1 h-8 bg-gradient-to-b from-emerald-500 to-amber-500 rounded-full"></div>
+                      <div>
+                        <h2 className="text-2xl sm:text-3xl font-bold text-slate-900">
+                          {selectedCategory.categoryName}
+                        </h2>
+                        <div className="flex items-center gap-2 mt-1">
+                          <ShoppingBag className="w-4 h-4 text-emerald-600" />
+                          <p className="text-sm text-slate-600 font-medium">
+                            {products.length} {products.length === 1 ? "product" : "products"} available
+                          </p>
+                        </div>
+                      </div>
+                    </div>
                   </div>
 
                   {loadingProducts ? (
-                    <div className="text-center py-12">
-                      <p className="text-slate-500">Loading products...</p>
+                    <div className="text-center py-16">
+                      <div className="inline-flex items-center gap-3 px-6 py-4 bg-white rounded-2xl shadow-lg border border-emerald-100">
+                        <div className="w-5 h-5 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin"></div>
+                        <p className="text-slate-700 font-medium">Loading products...</p>
+                      </div>
                     </div>
                   ) : products.length === 0 ? (
-                    <div className="text-center py-12 bg-white rounded-xl border border-slate-200">
-                      <p className="text-slate-500">No products available in this category.</p>
+                    <div className="text-center py-16">
+                      <div className="inline-flex flex-col items-center gap-4 px-8 py-10 bg-white rounded-2xl shadow-lg border-2 border-dashed border-slate-200 max-w-md mx-auto">
+                        <div className="w-16 h-16 rounded-full bg-slate-100 flex items-center justify-center">
+                          <ShoppingBag className="w-8 h-8 text-slate-400" />
+                        </div>
+                        <p className="text-slate-600 font-medium">No products available in this category.</p>
+                      </div>
                     </div>
                   ) : (
                     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">

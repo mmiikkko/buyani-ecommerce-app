@@ -9,7 +9,20 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { ShoppingBag, Store, Heart, Sparkles, ChevronLeft, ChevronRight } from "lucide-react";
+import {
+  ShoppingBag,
+  Store,
+  Heart,
+  Sparkles,
+  ChevronLeft,
+  ChevronRight,
+  Gift,
+  Tag,
+  Star,
+} from "lucide-react";
+
+const WELCOME_STORAGE_KEY = "buyani-welcome-seen";
+const PROMO_STORAGE_KEY = "buyani-promo-last-shown";
 
 export function WelcomeModal() {
   const [isOpen, setIsOpen] = useState(false);
@@ -17,21 +30,23 @@ export function WelcomeModal() {
   const totalPages = 3;
 
   useEffect(() => {
-    // Check if user has seen the welcome modal before
-    const hasSeenWelcome = localStorage.getItem("hasSeenWelcome");
-    
-    if (!hasSeenWelcome) {
-      // Small delay to ensure smooth page load
-      setTimeout(() => {
-        setIsOpen(true);
-      }, 500);
-    }
+    // Only show to first-time visitors
+    const hasWindow = typeof window !== "undefined";
+    if (!hasWindow) return;
+
+    const hasSeenWelcome = localStorage.getItem(WELCOME_STORAGE_KEY);
+    if (hasSeenWelcome) return;
+
+    // Small delay to ensure smooth page load
+    const timer = setTimeout(() => setIsOpen(true), 500);
+    return () => clearTimeout(timer);
   }, []);
 
   const handleClose = () => {
+    if (typeof window !== "undefined") {
+      localStorage.setItem(WELCOME_STORAGE_KEY, "true");
+    }
     setIsOpen(false);
-    // Mark that user has seen the welcome modal
-    localStorage.setItem("hasSeenWelcome", "true");
     setCurrentPage(0); // Reset to first page
   };
 
@@ -222,6 +237,89 @@ export function WelcomeModal() {
               <ChevronRight className="h-5 w-5" />
             </Button>
           )}
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+// Promo / advertisement modal for returning visitors
+export function PromoModal() {
+  const [isOpen, setIsOpen] = useState(false);
+
+  useEffect(() => {
+    const hasWindow = typeof window !== "undefined";
+    if (!hasWindow) return;
+
+    const hasSeenWelcome = localStorage.getItem(WELCOME_STORAGE_KEY);
+    if (!hasSeenWelcome) return; // only show to users who already saw onboarding
+
+    const lastShown = localStorage.getItem(PROMO_STORAGE_KEY);
+    const today = new Date().toDateString();
+    if (lastShown === today) return; // show once per day max
+
+    const timer = setTimeout(() => setIsOpen(true), 1000);
+    return () => clearTimeout(timer);
+  }, []);
+
+  const handleClose = () => {
+    if (typeof window !== "undefined") {
+      localStorage.setItem(PROMO_STORAGE_KEY, new Date().toDateString());
+    }
+    setIsOpen(false);
+  };
+
+  return (
+    <Dialog open={isOpen} onOpenChange={handleClose}>
+      <DialogContent className="sm:max-w-xl overflow-hidden border-0 bg-gradient-to-br from-emerald-50 via-white to-amber-50 shadow-[0_25px_90px_rgba(16,38,68,0.18)]">
+        <DialogHeader className="space-y-2">
+          <div className="inline-flex items-center gap-2 self-start rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-700">
+            <Sparkles className="h-4 w-4" />
+            Just for you
+          </div>
+          <DialogTitle className="text-2xl font-bold text-slate-900 flex items-center gap-2">
+            <Gift className="h-6 w-6 text-amber-500" />
+            Fresh deals for loyal shoppers
+          </DialogTitle>
+          <DialogDescription className="text-base text-slate-600">
+            Catch the latest campus picks, limited drops, and free pickup perks.
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="grid gap-3 rounded-2xl border border-emerald-100 bg-white/80 p-4">
+          <div className="flex items-start gap-3 rounded-xl bg-emerald-50 p-3">
+            <Star className="h-5 w-5 text-emerald-600 mt-0.5" />
+            <div>
+              <p className="font-semibold text-slate-900">Top-rated this week</p>
+              <p className="text-sm text-slate-600">See what’s trending with 4.5★+ reviews.</p>
+            </div>
+          </div>
+          <div className="flex items-start gap-3 rounded-xl bg-amber-50 p-3">
+            <Tag className="h-5 w-5 text-amber-600 mt-0.5" />
+            <div>
+              <p className="font-semibold text-slate-900">Limited promos</p>
+              <p className="text-sm text-slate-600">Bundle savings and flash offers from campus sellers.</p>
+            </div>
+          </div>
+          <div className="flex items-start gap-3 rounded-xl bg-blue-50 p-3">
+            <ShoppingBag className="h-5 w-5 text-blue-600 mt-0.5" />
+            <div>
+              <p className="font-semibold text-slate-900">Fast pickup perks</p>
+              <p className="text-sm text-slate-600">Skip the wait with near-campus pickup spots.</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-3 pt-2">
+          <Button
+            className="bg-emerald-600 hover:bg-emerald-700 text-white px-5"
+            onClick={handleClose}
+          >
+            Shop best-sellers
+          </Button>
+          <Button variant="outline" className="border-slate-200 bg-white/90 text-slate-800 px-4" onClick={handleClose}>
+            View new arrivals
+          </Button>
         </div>
       </DialogContent>
     </Dialog>

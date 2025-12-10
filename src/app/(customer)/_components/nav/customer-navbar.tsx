@@ -49,6 +49,16 @@ export default function Navbar({ className }: NavbarProps) {
     user?.role === USER_ROLES.SELLER || user?.role === USER_ROLES.ADMIN;
   const isSeller = !isSuspendedRole && !hasSuspendedShop && isSellerRole;
 
+  const navLinks = [
+    { href: "/", label: "Home", icon: Home },
+    { href: "/products", label: "Products", icon: Grid3x3 },
+    { href: "/shops", label: "Shops", icon: Package },
+    { href: "/categories", label: "Categories", icon: Tag },
+  ];
+
+  const isActive = (href: string) =>
+    pathname === href || (href !== "/" && pathname.startsWith(href));
+
   // Initialize search query from URL if on products page
   useEffect(() => {
     if (pathname === "/products") {
@@ -189,11 +199,11 @@ export default function Navbar({ className }: NavbarProps) {
   return (
     <nav
       className={clsx(
-        "fixed top-0 left-0 right-0 z-50 border-b border-emerald-100/70 bg-gradient-to-br from-emerald-50/90 via-slate-50/90 to-amber-50/90 backdrop-blur-xl shadow-sm",
+        "fixed top-0 left-0 right-0 z-50 border-b border-emerald-100/70 bg-gradient-to-r from-emerald-50/95 via-white/90 to-amber-50/95 backdrop-blur-xl shadow-[0_12px_38px_rgba(16,38,68,0.08)]",
         className
       )}
     >
-      <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:h-18 sm:px-6 lg:px-8">
+      <div className="mx-auto flex h-16 max-w-[1400px] items-center justify-between px-4 sm:h-18 sm:px-6 lg:px-8">
         
         {/* Brand + primary links */}
         <div className="flex items-center gap-4">
@@ -225,53 +235,33 @@ export default function Navbar({ className }: NavbarProps) {
             )}
           </div>
 
-          <ul className="hidden items-center gap-6 text-sm font-medium text-slate-600 md:flex">
-            <li>
-              <Link
-                href="/"
-                className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs text-slate-600 transition-all duration-200 hover:bg-emerald-50 hover:text-emerald-700 hover:shadow-sm"
-              >
-                <Home size={14} />
-                <span>Home</span>
-              </Link>
-            </li>
-
-            <li>
-              <Link
-                href="/products"
-                className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs text-slate-600 transition-all duration-200 hover:bg-emerald-50 hover:text-emerald-700 hover:shadow-sm"
-              >
-                <Grid3x3 size={14} />
-                <span>Products</span>
-              </Link>
-            </li>
-
-            <li>
-              <Link
-                href="/shops"
-                className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs text-slate-600 transition-all duration-200 hover:bg-emerald-50 hover:text-emerald-700 hover:shadow-sm"
-              >
-                <Package size={14} />
-                <span>Shops</span>
-              </Link>
-            </li>
-
-            <li>
-              <Link
-                href="/categories"
-                className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs text-slate-600 transition-all duration-200 hover:bg-emerald-50 hover:text-emerald-700 hover:shadow-sm"
-              >
-                <Tag size={14} />
-                <span>Categories</span>
-              </Link>
-            </li>
+          <ul className="hidden items-center gap-2 text-sm font-medium text-slate-600 md:flex">
+            {navLinks.map((link) => {
+              const Icon = link.icon;
+              const active = isActive(link.href);
+              return (
+                <li key={link.href}>
+                  <Link
+                    href={link.href}
+                    className={clsx(
+                      "inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.75 text-xs transition-all duration-200",
+                      "border border-transparent bg-white/60 text-slate-600 shadow-[0_4px_12px_rgba(15,23,42,0.06)] hover:-translate-y-[1px] hover:border-emerald-100 hover:bg-white",
+                      active && "border-emerald-200 bg-gradient-to-r from-emerald-50 to-emerald-100 text-emerald-700 shadow-[0_6px_16px_rgba(16,185,129,0.18)]"
+                    )}
+                  >
+                    <Icon size={14} />
+                    <span>{link.label}</span>
+                  </Link>
+                </li>
+              );
+            })}
           </ul>
         </div>
 
         {/* Search + actions */}
         <div className="flex flex-1 items-center justify-end gap-3">
 
-          <form onSubmit={handleSearch} className="hidden w-60 items-center gap-2 rounded-full border border-slate-200 bg-white/80 px-3 py-1.5 shadow-xs sm:flex">
+          <form onSubmit={handleSearch} className="hidden w-64 items-center gap-2 rounded-full border border-emerald-100 bg-white/85 px-3.5 py-1.75 shadow-[0_6px_18px_rgba(16,38,68,0.06)] ring-1 ring-emerald-50 sm:flex">
             <Search size={14} className="text-slate-400 flex-shrink-0" />
             <Input
               type="text"

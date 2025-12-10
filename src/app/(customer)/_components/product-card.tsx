@@ -56,7 +56,7 @@ export function ProductCard({ product }: ProductCardProps) {
     <Link
       href={`/products/${product.id}`}
       prefetch={true}
-      className="group block rounded-xl border border-slate-200 bg-white overflow-hidden shadow-sm hover:shadow-md transition-all duration-200 hover:-translate-y-0.5"
+      className="group flex h-full min-h-[360px] flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md"
     >
       {/* Product Image */}
       <div className="relative aspect-square w-full overflow-hidden bg-slate-100">
@@ -83,8 +83,8 @@ export function ProductCard({ product }: ProductCardProps) {
       </div>
 
       {/* Product Info */}
-      <div className="p-4 space-y-2">
-        <h3 className="font-semibold text-slate-900 line-clamp-2 group-hover:text-emerald-600 transition-colors">
+      <div className="flex flex-1 flex-col gap-2 p-4">
+        <h3 className="text-base font-semibold text-slate-900 line-clamp-2 transition-colors group-hover:text-emerald-600">
           {product.productName}
         </h3>
 
@@ -115,15 +115,13 @@ export function ProductCard({ product }: ProductCardProps) {
         )}
 
         {/* Price */}
-        <div className="flex items-baseline gap-1">
+        <div className="flex items-baseline gap-1 text-xl font-bold text-emerald-600">
           <span className="text-xl font-bold text-emerald-600">₱{price.toFixed(2)}</span>
         </div>
 
         {/* Shop Name */}
         {product.shopName && (
-          <p className="text-xs text-slate-500 truncate">
-            {product.shopName}
-          </p>
+          <p className="mt-auto truncate text-xs text-slate-500">{product.shopName}</p>
         )}
       </div>
     </Link>

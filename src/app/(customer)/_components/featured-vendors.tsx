@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Store, Award, Sparkles, Heart } from "lucide-react";
 import Link from "next/link";
 import { ShopCard } from "./shop-card";
 import type { Shop } from "@/types/shops";
@@ -53,28 +53,46 @@ export function FeaturedVendorsSection() {
   }, []);
 
   return (
-    <AnimatedSection className="py-12 bg-slate-50" direction="fade-up">
-      <div className="mx-auto flex w-full max-w-7xl flex-col gap-6 px-4 sm:px-6 lg:px-8">
-        <header className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-          <div className="space-y-1">
-            <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-emerald-500">
-              Trusted campus sellers
-            </p>
-            <h2 className="text-2xl font-semibold tracking-tight text-slate-900 sm:text-3xl">
-              Featured vendors
-            </h2>
-            <p className="text-base text-slate-600">
-              Curated stalls from students and local makers with the best
-              reviews.
-            </p>
+    <AnimatedSection className="relative py-16 bg-transparent" direction="fade-up">
+      <div className="relative mx-auto flex w-full max-w-7xl flex-col gap-8 px-4 sm:px-6 lg:px-8">
+        <header className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="space-y-3">
+            <div className="flex items-center gap-3">
+              <div className="flex items-center justify-center w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-500 to-purple-600 shadow-lg shadow-blue-500/30">
+                <Store className="w-6 h-6 text-white" />
+              </div>
+              <div className="flex items-center gap-2">
+                <Sparkles className="w-5 h-5 text-blue-500 animate-pulse" />
+                <p className="text-xs font-bold uppercase tracking-[0.2em] text-blue-600 bg-blue-100 px-3 py-1 rounded-full">
+                  Trusted campus sellers
+                </p>
+              </div>
+            </div>
+            <div>
+              <h2 className="text-3xl sm:text-4xl font-bold tracking-tight bg-gradient-to-r from-slate-900 via-blue-800 to-purple-800 bg-clip-text text-transparent">
+                <span className="inline-flex items-center gap-2">
+                  <Award className="w-7 h-7 text-amber-500 fill-amber-500" />
+                  Featured vendors
+                </span>
+              </h2>
+              <div className="flex items-center gap-3 mt-2">
+                <div className="h-1 w-16 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full"></div>
+                <div className="flex items-center gap-2">
+                  <Heart className="w-4 h-4 text-rose-500 fill-rose-500" />
+                  <p className="text-base text-slate-700 font-medium">
+                    Curated stalls from students and local makers with the best reviews.
+                  </p>
+                </div>
+              </div>
+            </div>
           </div>
 
           <Link
             href="/shops"
-            className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-white/70 px-3 py-1.5 text-xs font-medium text-slate-700 shadow-xs hover:bg-slate-50"
+            className="inline-flex items-center gap-2 rounded-full border-2 border-blue-200 bg-gradient-to-r from-blue-500 to-purple-600 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-blue-500/30 hover:shadow-xl hover:shadow-blue-500/40 transition-all duration-200 hover:-translate-y-0.5"
           >
             View all shops
-            <ArrowRight className="size-3" />
+            <ArrowRight className="size-4" />
           </Link>
         </header>
 
