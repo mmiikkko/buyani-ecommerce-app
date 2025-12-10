@@ -57,8 +57,7 @@ export function Footer() {
             <ul className="space-y-1.5 text-xs text-slate-300">
               <li>
                 <Link
-                  href="https://cnsc.edu.ph/UCN/cnsc-esd-launches-techno-demo-facility-university-market-hub-and-coffee-table-book/"
-                  target="_blank"
+                  href="/about-us"
                   rel="noopener noreferrer"
                   className="hover:text-emerald-300 hover:underline hover:underline-offset-4 transition-colors"
                 >
