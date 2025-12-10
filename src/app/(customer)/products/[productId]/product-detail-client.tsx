@@ -35,13 +35,14 @@ export function ProductDetailClient({ product, userId }: ProductDetailClientProp
   const [reviews, setReviews] = useState<any[]>([]);
   const [loadingReviews, setLoadingReviews] = useState(false);
   const [userOrders, setUserOrders] = useState<any[]>([]);
+  const [hasExistingReview, setHasExistingReview] = useState(false);
   const [loadingOrders, setLoadingOrders] = useState(false);
   const [showReviewForm, setShowReviewForm] = useState(false);
   const [reviewRating, setReviewRating] = useState(0);
   const [reviewComment, setReviewComment] = useState("");
   const [selectedOrderId, setSelectedOrderId] = useState<string>("");
   const [submittingReview, setSubmittingReview] = useState(false);
-  const [checkExistingReview, checkExistingReview] = useState(false);
+
   const [showAllReviews, setShowAllReviews] = useState(false);
   const [existingReviewForOrder, setExistingReviewForOrder] = useState<any>(null);
 
@@ -66,6 +67,13 @@ export function ProductDetailClient({ product, userId }: ProductDetailClientProp
     }
     return true;
   };
+
+  const checkExistingReview = (orderId: string) => {
+    const existing = reviews.find((r) => r.orderId === orderId);
+    setExistingReviewForOrder(existing ?? null);
+    setHasExistingReview(!!existing);
+  };
+  
 
   const handleAddToCart = () => { 
     if (!ensureAuthenticated(`/products/${product.id}`)) {
