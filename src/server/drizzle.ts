@@ -1,5 +1,6 @@
 import { drizzle } from "drizzle-orm/mysql2";
 import mysql from "mysql2/promise";
+import type { EventEmitter } from "events";
 
 // Parse connection URI and convert to connection options
 function getConnectionConfig(): mysql.PoolOptions {
@@ -102,9 +103,14 @@ try {
 
 // Handle pool-level errors (these are different from connection errors)
 // Note: mysql2/promise Pool extends EventEmitter and supports error events
-pool.on("error", (err: NodeJS.ErrnoException) => {
+(pool as unknown as EventEmitter).on("error", (err: NodeJS.ErrnoException) => {
   console.error("MySQL pool error:", err);
-  if (err.code === "PROTOCOL_CONNECTION_LOST" || err.code === "ECONNRESET" || err.code === "ETIMEDOUT") {
+
+  if (
+    err.code === "PROTOCOL_CONNECTION_LOST" ||
+    err.code === "ECONNRESET" ||
+    err.code === "ETIMEDOUT"
+  ) {
     console.log("Pool connection lost, will reconnect automatically");
   }
 });
