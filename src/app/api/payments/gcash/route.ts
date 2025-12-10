@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "@/server/session";
+import { env } from "@/lib/env";
 
 // POST /api/payments/gcash - Create PayMongo GCash checkout session
 export async function POST(req: NextRequest) {
@@ -19,17 +20,23 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const secretKey = process.env.PAYMONGO_SECRET_KEY;
-    if (!secretKey) {
-      console.error("PAYMONGO_SECRET_KEY not configured");
-      return NextResponse.json(
-        { error: "Payment service not configured" },
-        { status: 500 }
-      );
-    }
+    // Use validated environment variable
+    const secretKey = env.PAYMONGO_SECRET_KEY;
 
     // Get the base URL for redirects
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || req.headers.get("origin") || "http://localhost:3000";
+    // Prefer validated env var, then origin header, then construct from host header
+    let baseUrl = env.NEXT_PUBLIC_APP_URL;
+    
+    if (!baseUrl) {
+      const origin = req.headers.get("origin");
+      if (origin) {
+        baseUrl = origin;
+      } else {
+        const host = req.headers.get("host");
+        // In production (Vercel), use https
+        baseUrl = host ? `https://${host}` : "http://localhost:3000";
+      }
+    }
 
     // Create PayMongo Checkout Session
     const response = await fetch("https://api.paymongo.com/v1/checkout_sessions", {

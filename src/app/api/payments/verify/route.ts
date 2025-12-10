@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/server/drizzle";
 import { payments, orders } from "@/server/schema/auth-schema";
 import { eq } from "drizzle-orm";
+import { env } from "@/lib/env";
 
 // GET /api/payments/verify?session_id=xxx&order_id=xxx
 export async function GET(req: NextRequest) {
@@ -17,7 +18,8 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    const secretKey = process.env.PAYMONGO_SECRET_KEY;
+    // Use validated environment variable
+    const secretKey = env.PAYMONGO_SECRET_KEY;
     
     // If session_id is valid (not a template placeholder), verify with PayMongo
     if (sessionId && !sessionId.includes("{") && !sessionId.includes("}") && secretKey) {
