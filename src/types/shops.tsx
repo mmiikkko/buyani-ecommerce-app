@@ -7,7 +7,7 @@ export type Shop = {
     created_at: Date;         // <-- keep as Date
     updated_at: Date | null;  // <-- keep as Date
     image?: string | null;
-    status: string | "approved" | "pending" | "suspended";
+    status: string | "approved" | "pending" | "suspended" | string;
     owner_name?: string;      // from JOIN
     products?: number;        // product count
 }
