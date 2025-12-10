@@ -178,7 +178,7 @@ export const productImages = mysqlTable("product_images", {
   productId: varchar("product_id", { length: 36 })
   .notNull()
   .references(() => products.id, { onDelete: "cascade" }),
-  url: text("url"),
+  url: longtext("url"),
 });
 
 export const shippingInfo = mysqlTable("shipping_info", {
