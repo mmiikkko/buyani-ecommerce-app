@@ -138,7 +138,7 @@ export const products = mysqlTable("products", {
 
   categoryId: varchar("category_id", { length: 36 })
     .notNull()
-    .references(() => categories.id, { onDelete: "restrict" }),
+    .references(() => categories.id, { onDelete: "cascade" }),
 
   productName: varchar("product_name", { length: 255 }).notNull(),
   SKU: varchar("sku", { length: 255 }).unique(),
