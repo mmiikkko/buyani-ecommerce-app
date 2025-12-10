@@ -27,7 +27,7 @@ export const user = mysqlTable("user", {
   last_name: text("last_name"),
   email: varchar("email", { length: 255 }).notNull().unique(),
   emailVerified: boolean("email_verified").default(false).notNull(),
-  image: text("image"),
+  image: longtext("image"),
   role: varchar("role", { length: 50 }).default(USER_ROLES.CUSTOMER).notNull(),
   createdAt: timestamp("created_at", { fsp: 3 }).defaultNow().notNull(),
   updatedAt: timestamp("updated_at", { fsp: 3 })
@@ -138,7 +138,7 @@ export const products = mysqlTable("products", {
 
   categoryId: varchar("category_id", { length: 36 })
     .notNull()
-    .references(() => categories.id, { onDelete: "restrict" }),
+    .references(() => categories.id, { onDelete: "cascade" }),
 
   productName: varchar("product_name", { length: 255 }).notNull(),
   SKU: varchar("sku", { length: 255 }).unique(),
