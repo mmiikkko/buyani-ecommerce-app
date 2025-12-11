@@ -4,53 +4,97 @@ import { useState } from "react";
 import Image from "next/image";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/components/ui/card";
-import { ImageIcon, Upload, Save, Link2 } from "lucide-react";
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardContent,
+  CardFooter,
+} from "@/components/ui/card";
+import { ImageIcon, Upload, Link2 } from "lucide-react";
 import { toast } from "sonner";
 
 export function LandingCustom() {
-  const [bannerUrl, setBannerUrl] = useState<string>("");
-  const [preview, setPreview] = useState<string>("");
+  const [base64Images, setBase64Images] = useState<string[]>([]);
+  const [urlList, setUrlList] = useState<string[]>([]);
+  const [singleUrl, setSingleUrl] = useState("");
   const [saving, setSaving] = useState(false);
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  const fileToBase64 = (file: File): Promise<string> =>
+    new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = () => reject(null);
+      reader.readAsDataURL(file); // <- BASE64
+    });
 
-    // Validate file type
-    if (!file.type.startsWith("image/")) {
-      toast.error("Please select an image file");
-      return;
-    }
+  const handleMultipleUpload = async (
+    e: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const selectedFiles = Array.from(e.target.files || []);
 
-    // Validate file size (max 5MB)
-    if (file.size > 5 * 1024 * 1024) {
-      toast.error("Image size must be less than 5MB");
-      return;
-    }
+    const validFiles = selectedFiles.filter((file) => {
+      if (!file.type.startsWith("image/")) {
+        toast.error(`${file.name} is not an image`);
+        return false;
+      }
+      if (file.size > 5 * 1024 * 1024) {
+        toast.error(`${file.name} exceeds 5MB`);
+        return false;
+      }
+      return true;
+    });
 
-    const previewUrl = URL.createObjectURL(file);
-    setPreview(previewUrl);
+    // Convert all to Base64
+    const converted = await Promise.all(validFiles.map((f) => fileToBase64(f)));
 
-    // ⬇ Upload to your storage provider here (Supabase, UploadThing, S3, Cloudinary)
-    // After upload, replace preview with hosted URL:
-    // setBannerUrl(uploadedImageUrl)
+    setBase64Images((prev) => [...prev, ...converted]);
+  };
+
+  const addImageUrl = () => {
+    if (!singleUrl.trim()) return;
+    setUrlList((prev) => [...prev, singleUrl.trim()]);
+    setSingleUrl("");
   };
 
   const handleSave = async () => {
-    if (!preview && !bannerUrl) {
-      toast.error("Please upload an image or provide a URL");
+    if (base64Images.length === 0 && urlList.length === 0) {
+      toast.error("Please select images or add URLs.");
       return;
     }
 
+    setSaving(true);
+
     try {
-      setSaving(true);
-      // TODO: Save banner URL to your backend/database
-      // await fetch("/api/site-settings/banner", { method: "PUT", body: JSON.stringify({ bannerUrl: preview || bannerUrl }) });
-      
-      toast.success("Banner saved successfully");
-    } catch (error) {
-      toast.error("Failed to save banner");
+      // Save External URLs
+      for (const url of urlList) {
+        await fetch("/api/carousel", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            imageDescription: "Carousel Banner",
+            imageURL: url, // Using external URL
+          }),
+        });
+      }
+
+      // Save Base64 Images
+      for (const base64 of base64Images) {
+        await fetch("/api/carousel", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            imageDescription: "Uploaded Carousel Banner",
+            imageURL: base64, // <-- BASE64 IMAGE
+          }),
+        });
+      }
+
+      toast.success("All images saved successfully!");
+      setBase64Images([]);
+      setUrlList([]);
+    } catch (err) {
+      toast.error("Saving failed.");
     } finally {
       setSaving(false);
     }
@@ -58,95 +102,97 @@ export function LandingCustom() {
 
   return (
     <Card className="shadow-md border border-gray-200">
-      <CardHeader className="bg-gradient-to-r from-gray-50 to-gray-100 border-b">
-        <CardTitle className="text-xl font-bold text-gray-800 flex items-center gap-2">
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
           <ImageIcon className="h-5 w-5 text-emerald-600" />
-          Landing Page Banner
+          Multiple Carousel Images
         </CardTitle>
-        <p className="text-sm text-gray-600 mt-2">
-          Upload or update the background image for your customer landing page
-        </p>
       </CardHeader>
 
-      <CardContent className="space-y-5 pt-6">
-        {/* Upload Field */}
+      <CardContent className="space-y-5">
+        {/* Multiple upload */}
         <div className="space-y-2">
-          <label className="block font-semibold text-gray-700 flex items-center gap-2">
-            <Upload className="h-4 w-4" />
-            Upload Banner Image
+          <label className="font-semibold flex items-center gap-2">
+            <Upload className="h-4 w-4" /> Upload Multiple Images
           </label>
+
           <Input
             type="file"
             accept="image/*"
-            onChange={handleImageUpload}
-            className="cursor-pointer border-gray-300"
+            multiple
+            onChange={handleMultipleUpload}
+            className="cursor-pointer"
           />
-          <p className="text-xs text-gray-500">Supported formats: JPG, PNG, WebP (Max 5MB)</p>
+
+          <p className="text-xs text-gray-500">
+            Max 5MB each, JPG/PNG/WebP (Base64 supported)
+          </p>
         </div>
 
-        {/* URL Field (Optional) */}
+        {/* URL Input */}
         <div className="space-y-2">
-          <label className="block font-semibold text-gray-700 flex items-center gap-2">
-            <Link2 className="h-4 w-4" />
-            Banner URL (Optional)
+          <label className="font-semibold flex items-center gap-2">
+            <Link2 className="h-4 w-4" /> Add Image URL
           </label>
-          <Input
-            value={bannerUrl}
-            onChange={(e) => setBannerUrl(e.target.value)}
-            placeholder="https://example.com/banner.jpg"
-            className="border-gray-300"
-          />
-          <p className="text-xs text-gray-500">Or provide a direct URL to the banner image</p>
+
+          <div className="flex gap-2">
+            <Input
+              value={singleUrl}
+              onChange={(e) => setSingleUrl(e.target.value)}
+            />
+            <Button onClick={addImageUrl}>Add</Button>
+          </div>
+
+          {urlList.length > 0 && (
+            <ul className="text-xs text-gray-600 list-disc ml-4">
+              {urlList.map((url, i) => (
+                <li key={i}>{url}</li>
+              ))}
+            </ul>
+          )}
         </div>
 
-        {/* Preview */}
-        {preview || bannerUrl ? (
-          <div className="mt-5 w-full rounded-xl overflow-hidden border-2 border-gray-200 shadow-md">
-            <div className="relative w-full h-64 bg-gray-100">
-              <Image
-                src={preview || bannerUrl}
-                alt="Banner Preview"
-                fill
-                className="object-cover"
-                onError={() => {
-                  toast.error("Failed to load image. Please check the URL or try uploading again.");
-                  setPreview("");
-                  setBannerUrl("");
-                }}
-              />
-            </div>
-            <div className="p-3 bg-gray-50 border-t">
-              <p className="text-xs text-gray-600 text-center">Preview</p>
-            </div>
+        {/* Preview Grid */}
+        {base64Images.length > 0 || urlList.length > 0 ? (
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mt-4">
+            {base64Images.map((src, i) => (
+              <div
+                key={i}
+                className="relative h-32 w-full rounded-md overflow-hidden border"
+              >
+                <Image src={src} alt="Preview" fill className="object-cover" />
+              </div>
+            ))}
+
+            {urlList.map((src, i) => (
+              <div
+                key={i}
+                className="relative h-32 w-full rounded-md overflow-hidden border"
+              >
+                <Image
+                  src={src}
+                  alt="URL Preview"
+                  fill
+                  className="object-cover"
+                  onError={() => toast.error(`Invalid URL: ${src}`)}
+                />
+              </div>
+            ))}
           </div>
         ) : (
-          <div className="mt-5 w-full h-48 rounded-xl border-2 border-dashed border-gray-300 bg-gray-50 flex items-center justify-center">
-            <div className="text-center">
-              <ImageIcon className="h-12 w-12 text-gray-400 mx-auto mb-2" />
-              <p className="text-gray-500 text-sm">No banner selected</p>
-              <p className="text-gray-400 text-xs mt-1">Upload an image or provide a URL</p>
-            </div>
+          <div className="h-40 border-2 border-dashed rounded-md flex items-center justify-center text-gray-400">
+            No images added yet
           </div>
         )}
       </CardContent>
 
-      <CardFooter className="bg-gray-50 border-t">
-        <Button 
-          className="cursor-pointer bg-emerald-600 hover:bg-emerald-700 text-white w-full"
+      <CardFooter>
+        <Button
           onClick={handleSave}
-          disabled={saving || (!preview && !bannerUrl)}
+          disabled={saving || (base64Images.length === 0 && urlList.length === 0)}
+          className="w-full bg-emerald-600 hover:bg-emerald-700 text-white"
         >
-          {saving ? (
-            <>
-              <Upload className="h-4 w-4 mr-2 animate-spin" />
-              Saving...
-            </>
-          ) : (
-            <>
-              <Save className="h-4 w-4 mr-2" />
-              Save Banner
-            </>
-          )}
+          {saving ? "Saving..." : "Save All Images"}
         </Button>
       </CardFooter>
     </Card>

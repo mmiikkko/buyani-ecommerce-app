@@ -1,7 +1,5 @@
 "use client";
-import Feature_1 from "@/assets/customer/car1.jpg";
-import Feature_2 from "@/assets/customer/car2.jpg";
-import Feature_3 from "@/assets/customer/car3.jpg";
+
 import { Button } from "@/components/ui/button";
 import {
   Carousel,
@@ -12,43 +10,43 @@ import Autoplay from "embla-carousel-autoplay";
 import Image from "next/image";
 import { useRef, useEffect, useState } from "react";
 
+interface CarouselImage {
+  id: string;
+  imageDescription: string | null;
+  imageURL: string;
+  addedAt: string;
+}
+
 export function BackdropCarousel() {
   const [isMounted, setIsMounted] = useState(false);
+  const [items, setItems] = useState<CarouselImage[]>([]);
   const plugin = useRef<ReturnType<typeof Autoplay> | null>(null);
 
+  // Fetch images dynamically
+  useEffect(() => {
+    const fetchImages = async () => {
+      try {
+        const res = await fetch("/api/carousel");
+        const json = await res.json();
+        setItems(json.data || []);
+      } catch (error) {
+        console.error("Failed to fetch carousel images:", error);
+      }
+    };
+
+    fetchImages();
+  }, []);
+
+  // Initialize autoplay
   useEffect(() => {
     setIsMounted(true);
     plugin.current = Autoplay({ delay: 5000, stopOnInteraction: false });
   }, []);
 
-  // Features array with owners and descriptions
-  const features = [
-    {
-      src: Feature_1,
-      label: "Pastries",
-      owner: "Lola Tina's Cuisine & Merchandise",
-      title: "Delicious treats made fresh daily.",
-      desc: "Pre-order pastries and pick up between classes.",
-    },
-    {
-      src: Feature_2,
-      label: "Agriculture",
-      owner: "Pang Pang Farmers Agriculture Cooperative",
-      title: "Fresh farm produce straight from local farmers.",
-      desc: "Healthy and natural crops ready for your kitchen.",
-    },
-    {
-      src: Feature_3,
-      label: "Agriculture",
-      owner: "Pang Pang Farmers Agriculture Cooperative",
-      title: "Quality fruits and vegetables from local farms.",
-      desc: "Support our campus community by choosing local produce.",
-    },
-  ];
-
   return (
     <section className="relative w-full bg-gradient-to-b from-emerald-50/70 via-white to-amber-50/40">
       <div className="pointer-events-none absolute inset-x-0 top-6 mx-auto h-40 w-[80%] rounded-full bg-emerald-200/20 blur-3xl" />
+
       <div className="relative mx-auto flex min-h-[620px] max-w-[1400px] items-center px-4 pt-14 pb-14 sm:min-h-[660px] sm:px-6 lg:px-10 lg:pt-16">
         <div className="flex w-full flex-col gap-12 rounded-3xl border border-emerald-100/80 bg-white/85 p-6 shadow-[0_25px_80px_rgba(16,38,68,0.08)] backdrop-blur lg:p-10 md:flex-row md:items-center">
 
@@ -89,37 +87,32 @@ export function BackdropCarousel() {
             </div>
           </div>
 
-          {/* Soft carousel preview */}
+          {/* Dynamic carousel */}
           <div className="relative z-10 w-full max-w-3xl md:ml-auto">
             <div className="absolute -inset-8 rounded-[28px] bg-white/60 shadow-[0_28px_90px_rgba(15,23,42,0.14)] backdrop-blur-2xl" />
 
-            {isMounted && (
+            {isMounted && items.length > 0 && (
               <Carousel
                 opts={{ loop: true }}
                 plugins={plugin.current ? [plugin.current] : []}
                 className="relative rounded-2xl"
               >
                 <CarouselContent>
-                  {features.map((feature, i) => (
-                    <CarouselItem key={i} className="basis-full">
+                  {items.map((item) => (
+                    <CarouselItem key={item.id} className="basis-full">
                       <div className="relative h-[26rem] sm:h-[28rem] overflow-hidden rounded-2xl border border-emerald-50">
                         <Image
-                          src={feature.src}
-                          alt={`${feature.label} - ${feature.owner}`}
+                          src={item.imageURL}
+                          alt={item.imageDescription || "Carousel Image"}
                           fill
                           className="object-cover"
                         />
                         <div className="absolute inset-0 bg-gradient-to-t from-slate-950/60 via-slate-900/15 to-transparent" />
+
                         <div className="absolute inset-x-0 bottom-0 flex flex-col gap-2 px-5 pb-5">
                           <span className="inline-flex w-fit items-center gap-1 rounded-full bg-slate-950/70 px-2 py-1 text-[10px] font-medium text-slate-50">
-                            {feature.label} - {feature.owner}
+                            {item.imageDescription || "Featured Item"}
                           </span>
-                          <p className="text-sm font-semibold text-slate-50 drop-shadow-sm">
-                            {feature.title}
-                          </p>
-                          <p className="text-[11px] text-slate-200/90">
-                            {feature.desc}
-                          </p>
                         </div>
                       </div>
                     </CarouselItem>
@@ -127,7 +120,15 @@ export function BackdropCarousel() {
                 </CarouselContent>
               </Carousel>
             )}
+
+            {/* If no images in DB */}
+            {isMounted && items.length === 0 && (
+              <div className="h-[20rem] rounded-2xl border border-gray-200 bg-gray-50 flex items-center justify-center">
+                <p className="text-gray-500 text-sm">No carousel images found.</p>
+              </div>
+            )}
           </div>
+
         </div>
       </div>
     </section>
