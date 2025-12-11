@@ -98,25 +98,34 @@ export function BackdropCarousel() {
                 className="relative rounded-2xl"
               >
                 <CarouselContent>
-                  {items.map((item) => (
-                    <CarouselItem key={item.id} className="basis-full">
-                      <div className="relative h-[26rem] sm:h-[28rem] overflow-hidden rounded-2xl border border-emerald-50">
-                        <Image
-                          src={item.imageURL}
-                          alt={item.imageDescription || "Carousel Image"}
-                          fill
-                          className="object-cover"
-                        />
-                        <div className="absolute inset-0 bg-gradient-to-t from-slate-950/60 via-slate-900/15 to-transparent" />
+                {items.map((item) => (
+                <CarouselItem key={item.id} className="basis-full">
+                  <div className="relative h-[26rem] sm:h-[28rem] overflow-hidden rounded-2xl border border-emerald-50">
+                    {item.imageURL.startsWith("data:") ? (
+                      <Image
+                        src={item.imageURL}
+                        alt={item.imageDescription || "Carousel Image"}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <Image
+                        src={item.imageURL}
+                        alt={item.imageDescription || "Carousel Image"}
+                        fill
+                        className="object-cover"
+                      />
+                    )}
 
-                        <div className="absolute inset-x-0 bottom-0 flex flex-col gap-2 px-5 pb-5">
-                          <span className="inline-flex w-fit items-center gap-1 rounded-full bg-slate-950/70 px-2 py-1 text-[10px] font-medium text-slate-50">
-                            {item.imageDescription || "Featured Item"}
-                          </span>
-                        </div>
-                      </div>
-                    </CarouselItem>
-                  ))}
+                    <div className="absolute inset-0 bg-gradient-to-t from-slate-950/60 via-slate-900/15 to-transparent" />
+                    <div className="absolute inset-x-0 bottom-0 flex flex-col gap-2 px-5 pb-5">
+                      <span className="inline-flex w-fit items-center gap-1 rounded-full bg-slate-950/70 px-2 py-1 text-[10px] font-medium text-slate-50">
+                        {item.imageDescription || "Featured Item"}
+                      </span>
+                    </div>
+                  </div>
+                </CarouselItem>
+              ))}
+
                 </CarouselContent>
               </Carousel>
             )}
