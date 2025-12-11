@@ -1,4 +1,5 @@
 
+import { create } from "domain";
 import {
   mysqlTable,
   varchar,
@@ -10,6 +11,7 @@ import {
   unique,
   longtext,
 } from "drizzle-orm/mysql-core";
+import { id } from "zod/v4/locales";
 
 
 export const USER_ROLES = {
@@ -395,3 +397,10 @@ export const messages = mysqlTable("messages", {
     .$onUpdate(() => new Date())
     .notNull(),
 });
+
+export const carouselImages = mysqlTable("carousel_images", {
+  id: varchar("id", { length: 36 }).primaryKey(),
+  imageDescription: text("image_description"),
+  imageURL: longtext("image_url"),
+  addeadAt: timestamp("added_at", { fsp: 3 }).defaultNow(),
+})

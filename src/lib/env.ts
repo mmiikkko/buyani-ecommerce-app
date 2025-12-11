@@ -8,6 +8,10 @@ const envSchema = z.object({
   GMAIL_APP_KEY: z.string().nonempty("GMAIL_APP_KEY is required"),
   GOOGLE_CLIENT_ID: z.string().nonempty("GOOGLE_CLIENT_ID is required"),
   GOOGLE_CLIENT_SECRET: z.string().nonempty("GOOGLE_CLIENT_SECRET is required"),
+  // Payment configuration
+  PAYMONGO_SECRET_KEY: z.string().nonempty("PAYMONGO_SECRET_KEY is required"),
+  // NEXT_PUBLIC_APP_URL is optional - will fallback to origin header or host header
+  NEXT_PUBLIC_APP_URL: z.string().optional(),
 });
 
 const parsed = envSchema.safeParse(process.env);

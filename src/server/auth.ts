@@ -8,6 +8,8 @@ import { sendMail } from "./mailer";
 import { env } from "@/lib/env";
 
 export const auth = betterAuth({
+  baseURL: env.BETTER_AUTH_URL,
+  basePath: "/api/auth",
   database: drizzleAdapter(db, {
     provider: "mysql",
     schema: { user, account, session, verification },

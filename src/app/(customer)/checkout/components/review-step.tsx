@@ -103,7 +103,7 @@ export function ReviewStep({
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             orderId: result.orderId,
-            amount: result.total,
+            amount: result.subtotal,
             description: `Buyani Order #${result.orderId}`,
           }),
         });

@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { LoadingButton } from "@/components/loading-button";
-import { MapPin, Plus, Edit, Trash2, Check, X, Package } from "lucide-react";
+import { MapPin, Plus, Edit, Trash2, Package } from "lucide-react";
 import { toast } from "sonner";
 import {
   Dialog,
