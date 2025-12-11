@@ -80,10 +80,19 @@ export async function POST(req: NextRequest) {
       }
 
       // Verify role matches (if provided)
+      // Note: USER_ROLES stores values as lowercase: "seller", "customer"
       if (role) {
-        const expectedRole = role === 'seller' ? 'SELLER' : 'CUSTOMER';
-        const userRole = foundUser.role || '';
-        if (!userRole.includes(expectedRole)) {
+        const expectedRole = role === 'seller' ? 'seller' : 'customer';
+        const userRole = (foundUser.role || '').toLowerCase();
+        
+        // Check if user role matches expected role
+        // Also handle cases where role might be "pending_seller" or "suspended"
+        const roleMatches = 
+          userRole === expectedRole ||
+          (expectedRole === 'seller' && (userRole === 'seller' || userRole === 'pending_seller'));
+        
+        if (!roleMatches) {
+          console.log(`📱 Role mismatch: expected ${expectedRole}, got ${userRole}`);
           return corsResponse(
             { error: 'Invalid role for this account' },
             403
