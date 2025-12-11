@@ -210,7 +210,7 @@ export default function Navbar({ className }: NavbarProps) {
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-2">
             <Link href="/" className="flex items-center gap-2">
-            <div className="flex flex-row gap-5 justify-between relative h-9 w-9 overflow-hidden rounded-xl border border-emerald-100 bg-emerald-50/60">
+            <div className="relative h-9 w-9 overflow-hidden rounded-xl border border-emerald-100 bg-emerald-50/60">
               <Image
                   src={LOGO}
                   alt="CNSC"
@@ -218,6 +218,9 @@ export default function Navbar({ className }: NavbarProps) {
                   sizes="36px"
                   className="object-contain p-1.5"
                 />
+            </div>
+
+            <div className="relative h-9 w-9 overflow-hidden rounded-xl border border-emerald-100 bg-emerald-50/60">
               <Image
                 src={Logo}
                 alt="Buyani logo"
