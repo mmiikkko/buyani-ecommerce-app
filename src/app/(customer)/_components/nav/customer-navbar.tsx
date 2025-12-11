@@ -1,6 +1,7 @@
 "use client";
 
 import Logo from "@/assets/logo/Logo.png";
+import LOGO from "@/assets/logo/LOGO.jpg";
 import { Badge } from "@/components/ui/badge";
 import clsx from "clsx";
 import Image from "next/image";
@@ -210,6 +211,13 @@ export default function Navbar({ className }: NavbarProps) {
           <div className="flex items-center gap-2">
             <Link href="/" className="flex items-center gap-2">
             <div className="relative h-9 w-9 overflow-hidden rounded-xl border border-emerald-100 bg-emerald-50/60">
+              <Image
+                  src={LOGO}
+                  alt="CNSC"
+                  fill
+                  sizes="36px"
+                  className="object-contain p-1.5"
+                />
               <Image
                 src={Logo}
                 alt="Buyani logo"
