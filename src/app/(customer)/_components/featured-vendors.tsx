@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 import { ArrowRight, Store, Award, Sparkles, Heart } from "lucide-react";
 import Link from "next/link";
-import { ShopCard } from "./shop-card";
 import type { Shop } from "@/types/shops";
 import { AnimatedSection } from "@/components/animated-section";
 import { AnimatedShopCard } from "./animated-shop-card";
@@ -13,7 +12,7 @@ const MAX_FEATURED_SHOPS = 6;
 export function FeaturedVendorsSection() {
   const [shops, setShops] = useState<Shop[]>([]);
   const [loading, setLoading] = useState(true);
-
+  
   useEffect(() => {
     fetch("/api/shops")
       .then((res) => {

@@ -3,6 +3,7 @@
 import { Button } from "@/components/ui/button";
 import { Carousel, CarouselContent, CarouselItem } from "@/components/ui/carousel";
 import Autoplay from "embla-carousel-autoplay";
+import { Link } from "lucide-react";
 import Image from "next/image";
 import { useRef, useEffect, useState } from "react";
 
@@ -64,15 +65,17 @@ export function BackdropCarousel() {
             </p>
 
             <div className="flex flex-wrap items-center gap-3 pt-2">
-              <Button className="h-10 rounded-full bg-emerald-600 px-5 text-sm font-semibold text-white shadow-sm hover:bg-emerald-700">
-                Shop popular picks
+              <Button className="h-10 rounded-full bg-emerald-600 px-5 text-sm font-semibold text-white shadow-sm cursor-pointer">
+                <Link href="/products">Shop popular picks</Link>
               </Button>
 
               <Button
                 variant="outline"
-                className="h-10 rounded-full border-slate-200 bg-white/90 px-5 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+                className="h-10 rounded-full border-slate-200 bg-white/90 px-5 text-sm font-semibold text-slate-700 cursor-pointer shadow-sm"
               >
+                <Link href="/categories">
                 Explore all categories
+                </Link>
               </Button>
 
               <p className="w-full text-[12px] text-slate-500 sm:w-auto">

@@ -2,6 +2,7 @@
 
 import Logo from "@/assets/logo/Logo.png";
 import LOGO from "@/assets/logo/LOGO.jpg";
+import logo from "@/assets/logo/RAES.jpg";
 import { Badge } from "@/components/ui/badge";
 import clsx from "clsx";
 import Image from "next/image";
@@ -210,6 +211,15 @@ export default function Navbar({ className }: NavbarProps) {
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-2">
             <Link href="/" className="flex items-center gap-2">
+            <div className="relative h-9 w-9 overflow-hidden rounded-xl border border-emerald-100 bg-emerald-50/60">
+              <Image
+                  src={logo}
+                  alt="CNSC"
+                  fill
+                  sizes="36px"
+                  className="object-contain p-1.5"
+                />
+            </div>
             <div className="relative h-9 w-9 overflow-hidden rounded-xl border border-emerald-100 bg-emerald-50/60">
               <Image
                   src={LOGO}

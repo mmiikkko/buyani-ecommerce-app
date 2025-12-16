@@ -75,17 +75,25 @@ export function ProductDetailClient({ product, userId }: ProductDetailClientProp
   };
   
 
-  const handleAddToCart = () => { 
-    if (!ensureAuthenticated(`/products/${product.id}`)) {
-      return;
-    }
-    setIsAddingToCart(true);
-    // Small delay for visual feedback
-    setTimeout(() => {
-      setModalOpen(true);
+  const handleAddToCart = async () => {
+    if (!ensureAuthenticated(`/products/${product.id}`)) return;
+  
+    try {
+      setIsAddingToCart(true);
+      const result = await addToCart(userId!, product.id, quantity);
+      if (result.success) {
+        toast.success("Added to cart!");
+      } else {
+        toast.error(result.error ?? "Failed to add to cart.");
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to add to cart.");
+    } finally {
       setIsAddingToCart(false);
-    }, 50);
+    }
   };
+  
 
   const handleBuyNow = async () => {
     if (!ensureAuthenticated(`/products/${product.id}`)) {
@@ -100,7 +108,7 @@ export function ProductDetailClient({ product, userId }: ProductDetailClientProp
         return;
       }
       startTransition(() => {
-        router.push("/cart?checkout=1");
+        router.push(`/checkout?productId=${product.id}&quantity=${quantity}`);
       });
     } catch (error) {
       console.error(error);
