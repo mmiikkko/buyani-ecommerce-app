@@ -1,4 +1,5 @@
 "use client";
+
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -31,49 +32,28 @@ import {
   ChevronUp,
   User2,
 } from "lucide-react";
+
 import { authClient } from "@/server/auth-client";
 import { toast } from "sonner";
+import { Spinner } from "@/components/ui/spinner";
 
-// Menu items.
+// Menu items
 const items = [
-  {
-    title: "Dashboard",
-    url: "/admin",
-    icon: Home,
-  },
-  {
-    title: "Users",
-    url: "/admin/users",
-    icon: User,
-  },
-  {
-    title: "Shops",
-    url: "/admin/shops",
-    icon: Store,
-  },
-  {
-    title: "Products",
-    url: "/admin/products-monitor",
-    icon: Package,
-  },
-  {
-    title: "Transactions",
-    url: "/admin/transactions",
-    icon: Wallet,
-  },
-  {
-    title: "Site Settings",
-    url: "/admin/site-settings",
-    icon: Layout,
-  },
+  { title: "Dashboard", url: "/admin", icon: Home },
+  { title: "Users", url: "/admin/users", icon: User },
+  { title: "Shops", url: "/admin/shops", icon: Store },
+  { title: "Products", url: "/admin/products-monitor", icon: Package },
+  { title: "Transactions", url: "/admin/transactions", icon: Wallet },
+  { title: "Site Settings", url: "/admin/site-settings", icon: Layout },
 ];
 
 export function AppSidebar() {
   const router = useRouter();
-  const [adminName, setAdminName] = useState<string>("Admin");
+
+  const [adminName, setAdminName] = useState("Admin");
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    // Fetch admin user info
     const fetchAdminInfo = async () => {
       try {
         const res = await fetch("/api/auth/me");
@@ -90,6 +70,7 @@ export function AppSidebar() {
   }, []);
 
   const handleSignOut = async () => {
+    setLoading(true);
     toast.loading("Signing out...");
 
     const { error } = await authClient.signOut();
@@ -98,6 +79,7 @@ export function AppSidebar() {
 
     if (error) {
       toast.error(error.message || "Something went wrong");
+      setLoading(false);
     } else {
       toast.success("Signed out successfully");
       router.push("/sign-in");
@@ -105,8 +87,20 @@ export function AppSidebar() {
   };
 
   return (
-    <Sidebar variant="floating" className="fixed top-0 left-0 h-screen flex flex-col justify-between">
-      <SidebarContent className="flex-1 overflow-y-auto mt-18">
+    <Sidebar
+      variant="floating"
+      className="fixed top-0 left-0 h-screen flex flex-col justify-between relative"
+    >
+      {/* PAGE LOADER */}
+      {loading && (
+        <div className="absolute inset-0 z-50 flex items-center justify-center bg-white/70 backdrop-blur-sm">
+          <Spinner className="size-5" />
+        </div>
+      )}
+
+      <SidebarContent
+        className={`flex-1 overflow-y-auto mt-18 ${loading ? "pointer-events-none" : ""}`}
+      >
         <SidebarGroup>
           <SidebarGroupLabel>BUYANI</SidebarGroupLabel>
           <SidebarGroupContent>
@@ -116,6 +110,7 @@ export function AppSidebar() {
                   <SidebarMenuButton asChild>
                     <Link
                       href={item.url}
+                      onClick={() => setLoading(true)}
                       className="flex items-center gap-2 hover:text-green-500"
                     >
                       <item.icon className="w-4 h-4" />
@@ -129,34 +124,39 @@ export function AppSidebar() {
         </SidebarGroup>
       </SidebarContent>
 
-      <SidebarFooter className="border-t ">
+      <SidebarFooter className="border-t">
         <SidebarMenu>
           <SidebarMenuItem>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <SidebarMenuButton>
-                  <User2 /> {adminName}
+                  <User2 />
+                  {adminName}
                   <ChevronUp className="ml-auto" />
                 </SidebarMenuButton>
               </DropdownMenuTrigger>
+
               <DropdownMenuContent
                 side="top"
                 align="start"
                 sideOffset={8}
-                className="w-[--radix-popper-anchor-width] z-9999"
+                className="w-[--radix-popper-anchor-width] z-50"
               >
                 <DropdownMenuItem asChild>
                   <Link
-                    href={"/admin/account_settings"}
-                    className="flex items-center gap-2 hover:text-green-500">
-                        Account
+                    href="/admin/account_settings"
+                    onClick={() => setLoading(true)}
+                    className="flex items-center gap-2 hover:text-green-500"
+                  >
+                    Account
                   </Link>
                 </DropdownMenuItem>
-                <DropdownMenuItem 
+
+                <DropdownMenuItem
                   className="cursor-pointer"
                   onClick={handleSignOut}
                 >
-                  <span>Sign out</span>
+                  Sign out
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>

@@ -1,4 +1,5 @@
 "use client";
+
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import {
@@ -30,48 +31,44 @@ import {
   User2,
 } from "lucide-react";
 
+import { Spinner } from "@/components/ui/spinner";
+
 // Menu items.
 const items = [
-  {
-    title: "Home",
-    url: "/seller",
-    icon: Home,
-  },
-  {
-    title: "Orders",
-    url: "/seller/orders",
-    icon: ShoppingCart,
-  },
-  {
-    title: "POS",
-    url: "/seller/POS",
-    icon: Store,
-  },
-  {
-    title: "Products",
-    url: "/seller/products",
-    icon: Package,
-  },
-  {
-    title: "Inbox",
-    url: "/seller/inbox",
-    icon: Inbox,
-  },
+  { title: "Home", url: "/seller", icon: Home },
+  { title: "Orders", url: "/seller/orders", icon: ShoppingCart },
+  { title: "POS", url: "/seller/POS", icon: Store },
+  { title: "Products", url: "/seller/products", icon: Package },
+  { title: "Inbox", url: "/seller/inbox", icon: Inbox },
 ];
 
 export function AppSidebar() {
   const [mounted, setMounted] = useState(false);
+  const [loading, setLoading] = useState(false);
 
-  // Avoid SSR/client mismatch from Radix auto-generated IDs by rendering after mount
+  // Avoid SSR/client mismatch
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setMounted(true);
   }, []);
 
   if (!mounted) return null;
 
   return (
-    <Sidebar variant="floating" className="fixed top-0 left-0 h-screen flex flex-col justify-between">
-      <SidebarContent className="flex-1 overflow-y-auto mt-18">
+    <Sidebar
+      variant="floating"
+      className="fixed top-0 left-0 h-screen flex flex-col justify-between relative"
+    >
+      {/* PAGE LOADER OVERLAY */}
+      {loading && (
+        <div className="absolute inset-0 z-50 flex items-center justify-center bg-white/70 backdrop-blur-sm">
+          <Spinner className="size-5" />
+        </div>
+      )}
+
+      <SidebarContent
+        className={`flex-1 overflow-y-auto mt-18 ${loading ? "pointer-events-none" : ""}`}
+      >
         <SidebarGroup>
           <SidebarGroupLabel>BUYANI</SidebarGroupLabel>
           <SidebarGroupContent>
@@ -81,6 +78,7 @@ export function AppSidebar() {
                   <SidebarMenuButton asChild>
                     <Link
                       href={item.url}
+                      onClick={() => setLoading(true)}
                       className="flex items-center gap-2 hover:text-green-500"
                     >
                       <item.icon className="w-4 h-4" />
@@ -94,30 +92,35 @@ export function AppSidebar() {
         </SidebarGroup>
       </SidebarContent>
 
-      <SidebarFooter className="border-t ">
+      <SidebarFooter className="border-t">
         <SidebarMenu>
           <SidebarMenuItem>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <SidebarMenuButton>
-                  <User2 /> Username
+                  <User2 />
+                  Username
                   <ChevronUp className="ml-auto" />
                 </SidebarMenuButton>
               </DropdownMenuTrigger>
+
               <DropdownMenuContent
                 side="top"
                 align="start"
                 sideOffset={8}
-                className="w-[--radix-popper-anchor-width] z-9999"
+                className="w-[--radix-popper-anchor-width] z-50"
               >
                 <DropdownMenuItem asChild>
                   <Link
-                    href={"/seller/account_settings"}
-                    className="flex items-center gap-2 hover:text-green-500">
-                        Account
+                    href="/seller/account_settings"
+                    onClick={() => setLoading(true)}
+                    className="flex items-center gap-2 hover:text-green-500"
+                  >
+                    Account
                   </Link>
                 </DropdownMenuItem>
-                <DropdownMenuItem>
+
+                <DropdownMenuItem onClick={() => setLoading(true)}>
                   <span>Sign out</span>
                 </DropdownMenuItem>
               </DropdownMenuContent>
