@@ -71,7 +71,7 @@ export default function SellerDashboard() {
   }, [statsDateRange]);
 
   return (
-    <div className="relative min-h-screen min-w-full overflow-hidden space-y-6 pt-17 px-6">
+    <div className="relative min-h-screen min-w-full overflow-hidden space-y-6 px-6">
       {/* Enhanced Header */}
       <div className="space-y-2 mb-6">
         <div className="flex items-center gap-3">
