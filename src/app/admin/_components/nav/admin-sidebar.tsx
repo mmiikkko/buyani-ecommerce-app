@@ -1,5 +1,4 @@
 "use client";
-
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -37,7 +36,7 @@ import { authClient } from "@/server/auth-client";
 import { toast } from "sonner";
 import { Spinner } from "@/components/ui/spinner";
 
-// Menu items
+// Menu items.
 const items = [
   { title: "Dashboard", url: "/admin", icon: Home },
   { title: "Users", url: "/admin/users", icon: User },
@@ -49,7 +48,6 @@ const items = [
 
 export function AppSidebar() {
   const router = useRouter();
-
   const [adminName, setAdminName] = useState("Admin");
   const [loading, setLoading] = useState(false);
 
@@ -61,8 +59,8 @@ export function AppSidebar() {
           const data = await res.json();
           setAdminName(data.name || data.firstName || "Admin");
         }
-      } catch (error) {
-        console.error("Error fetching admin info:", error);
+      } catch (err) {
+        console.error("Failed to fetch admin info:", err);
       }
     };
 
@@ -70,16 +68,15 @@ export function AppSidebar() {
   }, []);
 
   const handleSignOut = async () => {
-    setLoading(true);
     toast.loading("Signing out...");
+    setLoading(true);
 
     const { error } = await authClient.signOut();
-
     toast.dismiss();
 
     if (error) {
-      toast.error(error.message || "Something went wrong");
       setLoading(false);
+      toast.error(error.message || "Something went wrong");
     } else {
       toast.success("Signed out successfully");
       router.push("/sign-in");
@@ -87,82 +84,79 @@ export function AppSidebar() {
   };
 
   return (
-    <Sidebar
-      variant="floating"
-      className="fixed top-0 left-0 h-screen flex flex-col justify-between relative"
-    >
-      {/* PAGE LOADER */}
+    <>
+      {/* FULL PAGE OVERLAY SPINNER */}
       {loading && (
-        <div className="absolute inset-0 z-50 flex items-center justify-center bg-white/70 backdrop-blur-sm">
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-white/70 backdrop-blur-sm">
           <Spinner className="size-5" />
         </div>
       )}
 
-      <SidebarContent
-        className={`flex-1 overflow-y-auto mt-18 ${loading ? "pointer-events-none" : ""}`}
+      <Sidebar
+        variant="floating"
+        className="fixed top-0 left-0 h-screen flex flex-col justify-between"
       >
-        <SidebarGroup>
-          <SidebarGroupLabel>BUYANI</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {items.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild>
+        <SidebarContent className="flex-1 overflow-y-auto mt-18">
+          <SidebarGroup>
+            <SidebarGroupLabel>BUYANI</SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                {items.map((item) => (
+                  <SidebarMenuItem key={item.title}>
+                    <SidebarMenuButton asChild>
+                      <Link
+                        href={item.url}
+                        onClick={() => setLoading(true)}
+                        className="flex items-center gap-2 hover:text-green-500"
+                      >
+                        <item.icon className="w-4 h-4" />
+                        <span>{item.title}</span>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                ))}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        </SidebarContent>
+
+        <SidebarFooter className="border-t ">
+          <SidebarMenu>
+            <SidebarMenuItem>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <SidebarMenuButton>
+                    <User2 /> {adminName}
+                    <ChevronUp className="ml-auto" />
+                  </SidebarMenuButton>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent
+                  side="top"
+                  align="start"
+                  sideOffset={8}
+                  className="w-[--radix-popper-anchor-width] z-9999"
+                >
+                  <DropdownMenuItem asChild>
                     <Link
-                      href={item.url}
+                      href="/admin/account_settings"
                       onClick={() => setLoading(true)}
                       className="flex items-center gap-2 hover:text-green-500"
                     >
-                      <item.icon className="w-4 h-4" />
-                      <span>{item.title}</span>
+                      Account
                     </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
-      </SidebarContent>
-
-      <SidebarFooter className="border-t">
-        <SidebarMenu>
-          <SidebarMenuItem>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <SidebarMenuButton>
-                  <User2 />
-                  {adminName}
-                  <ChevronUp className="ml-auto" />
-                </SidebarMenuButton>
-              </DropdownMenuTrigger>
-
-              <DropdownMenuContent
-                side="top"
-                align="start"
-                sideOffset={8}
-                className="w-[--radix-popper-anchor-width] z-50"
-              >
-                <DropdownMenuItem asChild>
-                  <Link
-                    href="/admin/account_settings"
-                    onClick={() => setLoading(true)}
-                    className="flex items-center gap-2 hover:text-green-500"
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    className="cursor-pointer"
+                    onClick={handleSignOut}
                   >
-                    Account
-                  </Link>
-                </DropdownMenuItem>
-
-                <DropdownMenuItem
-                  className="cursor-pointer"
-                  onClick={handleSignOut}
-                >
-                  Sign out
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </SidebarMenuItem>
-        </SidebarMenu>
-      </SidebarFooter>
-    </Sidebar>
+                    <span>Sign out</span>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </SidebarMenuItem>
+          </SidebarMenu>
+        </SidebarFooter>
+      </Sidebar>
+    </>
   );
 }
