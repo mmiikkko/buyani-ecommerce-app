@@ -31,6 +31,7 @@ import {
 } from "lucide-react";
 
 import { Spinner } from "@/components/ui/spinner";
+import { usePathname } from "next/navigation";
 
 // Menu items.
 const items = [
@@ -44,15 +45,20 @@ const items = [
 export function AppSidebar() {
   const [mounted, setMounted] = useState(false);
   const [loading, setLoading] = useState(false);
-
+  const pathname = usePathname();
   // Avoid SSR/client mismatch
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setMounted(true);
   }, []);
 
-  if (!mounted) return null;
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setLoading(false);
+  }, [pathname]);
 
+  if (!mounted) return null;
+  
   return (
     <>
       {/* FULL PAGE OVERLAY SPINNER */}

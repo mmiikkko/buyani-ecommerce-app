@@ -35,6 +35,8 @@ import {
 import { authClient } from "@/server/auth-client";
 import { toast } from "sonner";
 import { Spinner } from "@/components/ui/spinner";
+import { usePathname } from "next/navigation";
+
 
 // Menu items.
 const items = [
@@ -50,6 +52,7 @@ export function AppSidebar() {
   const router = useRouter();
   const [adminName, setAdminName] = useState("Admin");
   const [loading, setLoading] = useState(false);
+  const pathname = usePathname();
 
   useEffect(() => {
     const fetchAdminInfo = async () => {
@@ -66,8 +69,14 @@ export function AppSidebar() {
 
     fetchAdminInfo();
   }, []);
+  
 
-  const handleSignOut = async () => {
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setLoading(false);
+  }, [pathname]);
+
+  async function handleSignOut() {
     toast.loading("Signing out...");
     setLoading(true);
 
@@ -81,7 +90,7 @@ export function AppSidebar() {
       toast.success("Signed out successfully");
       router.push("/sign-in");
     }
-  };
+  }
 
   return (
     <>
