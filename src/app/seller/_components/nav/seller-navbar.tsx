@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import Logo from "@/assets/logo/Logo.png";
 import LOGO from "@/assets/logo/LOGO.jpg";
+import logo from "@/assets/logo/RAES.jpg";
 import { Store } from "lucide-react";
 import { Button } from "../../../../components/ui/button";
 import { ReactNode } from "react";
@@ -13,6 +14,13 @@ export default function ASNavbar( { children }: { children?: ReactNode } ) {
       {/* Left side */}
       <div className="flex items-center px-4 py-2 bg-transparent">
           {children}
+        <Image
+          src={logo}
+          alt="BuyAni Logo"
+          width={38}
+          height={38}
+          className="rounded-md"
+        />
         <Image
           src={LOGO}
           alt="BuyAni Logo"
