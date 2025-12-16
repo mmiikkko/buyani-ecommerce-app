@@ -65,21 +65,6 @@ export function BackdropCarousel() {
             </p>
 
             <div className="flex flex-wrap items-center gap-3 pt-2">
-            <Button
-              asChild
-              className="h-10 rounded-full bg-emerald-600 px-5 text-sm font-semibold text-white shadow-sm cursor-pointer"
-            >
-              <Link href="/products">Shop popular picks</Link>
-            </Button>
-
-            <Button
-              asChild
-              variant="outline"
-              className="h-10 rounded-full border-slate-200 bg-white/90 px-5 text-sm font-semibold text-slate-700 cursor-pointer shadow-sm"
-            >
-              <Link href="/categories">Explore all categories</Link>
-            </Button>
-
               <p className="w-full text-[12px] text-slate-500 sm:w-auto">
                 Bringing campus and community together
               </p>
