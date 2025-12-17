@@ -3,10 +3,11 @@
 import { useEffect, useState } from "react";
 import { ArrowRight, TrendingUp, Star, Sparkles } from "lucide-react";
 import Link from "next/link";
-import { ProductCard } from "./product-card";
 import type { Product } from "@/types/products";
 import { AnimatedSection } from "@/components/animated-section";
 import { AnimatedProductCard } from "./animated-product-card";
+import { PageLoader } from "@/components/loading-overlay";
+
 
 const MAX_BEST_SELLERS = 10;
 

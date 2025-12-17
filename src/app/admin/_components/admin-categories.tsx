@@ -6,9 +6,19 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Trash2, RefreshCw, Tag, Plus } from "lucide-react";
 import { toast } from "sonner";
-import { Badge } from "@/components/ui/badge";
 import type { Category } from "@/types/categories";
 import { Skeleton } from "@/components/ui/skeleton";
+
+import {
+  Dialog,
+  DialogTrigger,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
+
 
 export function AdminCategories() {
   const [categories, setCategories] = useState<Category[]>([]);
@@ -17,6 +27,12 @@ export function AdminCategories() {
   const [adding, setAdding] = useState(false);
   const [deleting, setDeleting] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [targetCategory, setTargetCategory] = useState<Category | null>(null);
+  const [confirmText, setConfirmText] = useState("");
+  const [categoryText, setCategoryText] = useState("");
+
 
   // Fetch categories from API
   const fetchCategories = useCallback(async () => {
@@ -164,7 +180,12 @@ export function AdminCategories() {
                   variant="destructive"
                   size="icon"
                   className="cursor-pointer ml-2 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity"
-                  onClick={() => deleteCategory(cat.id, cat.categoryName)}
+                  onClick={() => {
+                    setTargetCategory(cat);
+                    setConfirmText("");
+                    setCategoryText("");
+                    setConfirmOpen(true);
+                  }}
                   disabled={deleting === cat.id}
                 >
                   {deleting === cat.id ? (
@@ -209,7 +230,92 @@ export function AdminCategories() {
             </>
           )}
         </Button>
+
+        <Dialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+  <DialogContent className="max-w-md">
+    <DialogHeader>
+      <DialogTitle className="text-red-600">
+        Delete Category
+      </DialogTitle>
+      <DialogDescription>
+        This action <strong>cannot be undone</strong>.  
+        Please confirm to permanently delete the category.
+      </DialogDescription>
+    </DialogHeader>
+
+    {/* Step 1: Yes / No confirmation */}
+    <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+      Are you absolutely sure you want to delete{" "}
+      <strong>{targetCategory?.categoryName}</strong>?
+    </div>
+
+    {/* Step 2: Type CONFIRM */}
+    <div className="space-y-1">
+      <label className="text-sm font-medium">
+        Type <span className="font-mono">CONFIRM</span> to continue
+      </label>
+      <Input
+        value={confirmText}
+        onChange={(e) => setConfirmText(e.target.value)}
+        placeholder="CONFIRM"
+      />
+    </div>
+
+    {/* Step 3: Type category name */}
+    <div className="space-y-1">
+      <label className="text-sm font-medium">
+        Type the category name exactly
+      </label>
+      <Input
+        value={categoryText}
+        onChange={(e) => setCategoryText(e.target.value)}
+        placeholder={targetCategory?.categoryName}
+      />
+    </div>
+
+        <DialogFooter className="flex gap-2">
+              <Button
+                variant="outline"
+                onClick={() => setConfirmOpen(false)}
+              >
+                Cancel
+              </Button>
+
+              <Button
+                variant="destructive"
+                disabled={
+                  confirmText !== "CONFIRM" ||
+                  categoryText !== targetCategory?.categoryName ||
+                  deleting === targetCategory?.id
+                }
+                onClick={async () => {
+                  if (!targetCategory) return;
+                  await deleteCategory(
+                    targetCategory.id,
+                    targetCategory.categoryName
+                  );
+                  setConfirmOpen(false);
+                }}
+              >
+                {deleting === targetCategory?.id ? (
+                  <>
+                    <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                    Deleting...
+                  </>
+                ) : (
+                  "Yes, delete category"
+                )}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
       </CardFooter>
     </Card>
+
+
+
   );
+
+  
 }

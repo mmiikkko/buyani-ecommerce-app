@@ -232,7 +232,7 @@ export const orderItems = mysqlTable(
 
     productId: varchar("product_id", { length: 36 })
       .notNull()
-      .references(() => products.id, { onDelete: "restrict" }),
+      .references(() => products.id, { onDelete: "cascade" }),
 
     quantity: int("quantity").notNull(),
     subtotal: decimal("subtotal", { precision: 10, scale: 2 }).notNull(),

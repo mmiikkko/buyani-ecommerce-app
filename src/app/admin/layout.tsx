@@ -25,7 +25,7 @@ export default async function AdminLayout({
         <AppSidebar />
 
           {/* Main Content Area */}
-          <div className="flex-1 flex flex-col gap-5">
+          <div className="flex-1 flex flex-col">
             {/* Navbar */}
             <Navbar>
               <div className="flex items-center mr-3">

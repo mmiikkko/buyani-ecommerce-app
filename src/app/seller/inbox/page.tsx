@@ -199,7 +199,7 @@ useEffect(() => {
   const selectedConv = conversations.find((c) => c.id === selectedConversation);
 
   return (
-    <section className="relative min-h-screen min-w-full overflow-hidden space-y-5 mt-18 mx-3">
+    <section className="relative min-h-screen min-w-full overflow-hidden space-y-5 mx-3">
       <div className="mb-6">
         <h1 className="text-xl mb-1 font-bold text-[#2E7D32]">Inbox</h1>
         <p className="text-muted-foreground">Customer messages and conversations</p>

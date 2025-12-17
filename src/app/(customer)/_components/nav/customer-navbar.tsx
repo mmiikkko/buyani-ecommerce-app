@@ -2,6 +2,7 @@
 
 import Logo from "@/assets/logo/Logo.png";
 import LOGO from "@/assets/logo/LOGO.jpg";
+import logo from "@/assets/logo/RAES.jpg";
 import { Badge } from "@/components/ui/badge";
 import clsx from "clsx";
 import Image from "next/image";
@@ -212,6 +213,15 @@ export default function Navbar({ className }: NavbarProps) {
             <Link href="/" className="flex items-center gap-2">
             <div className="relative h-9 w-9 overflow-hidden rounded-xl border border-emerald-100 bg-emerald-50/60">
               <Image
+                  src={logo}
+                  alt="CNSC"
+                  fill
+                  sizes="36px"
+                  className="object-contain p-1.5"
+                />
+            </div>
+            <div className="relative h-9 w-9 overflow-hidden rounded-xl border border-emerald-100 bg-emerald-50/60">
+              <Image
                   src={LOGO}
                   alt="CNSC"
                   fill
@@ -304,7 +314,7 @@ export default function Navbar({ className }: NavbarProps) {
                   <Button
                     variant="outline"
                     size="sm"
-                    className="h-8 rounded-full border-slate-200 hover:bg-slate-50 px-3 text-xs font-medium"
+                    className="h-8 rounded-full border-slate-200 px-3 text-xs cursor-pointer font-medium"
                   >
                     Orders
                   </Button>
@@ -314,7 +324,7 @@ export default function Navbar({ className }: NavbarProps) {
                   <Button
                     variant="outline"
                     size="icon"
-                    className="h-8 w-8 rounded-full border-slate-200 hover:bg-slate-50 relative"
+                    className="h-8 w-8 rounded-full border-slate-200 cursor-pointer relative"
                   >
                     <ShoppingCart size={16} />
                     {cartCount > 0 && (

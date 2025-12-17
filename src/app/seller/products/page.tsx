@@ -211,7 +211,7 @@ export default function Products() {
 
   if (loading) {
     return (
-      <section className="relative min-h-screen min-w-full overflow-hidden space-y-5 mt-18 px-3">
+      <section className="relative min-h-screen min-w-full overflow-hidden space-y-5 px-3">
         <div className="flex flex-row justify-between items-center">
           <div className="flex flex-col">
             <h1 className="text-xl font-bold text-[#2E7D32]">Products Listing</h1>
