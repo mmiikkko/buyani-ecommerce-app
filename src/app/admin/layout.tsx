@@ -15,7 +15,7 @@ export default async function AdminLayout({
   const user = session?.user;
 
   if (user && !user.role.includes(USER_ROLES.ADMIN)) {
-    //unauthorized();
+    unauthorized();
   }
 
   return (
