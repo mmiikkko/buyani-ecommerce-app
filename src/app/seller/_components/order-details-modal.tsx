@@ -18,6 +18,15 @@ interface Props {
   order: Order | null;
 }
 
+/* ----------------------------------------
+   SIMPLE IMAGE HANDLER (same page)
+---------------------------------------- */
+const getProductImage = (image?: string | null) => {
+  if (!image) return "/assets/placeholder.png";
+  if (image.startsWith("http") || image.startsWith("/")) return image;
+  return "/assets/placeholder.png";
+};
+
 export function OrderDetailsModal({ open, onOpenChange, order }: Props) {
   const { t } = useLanguage();
 
@@ -58,18 +67,12 @@ export function OrderDetailsModal({ open, onOpenChange, order }: Props) {
             >
               {/* Product Image */}
               <div className="relative h-20 w-20 rounded-md overflow-hidden bg-muted shrink-0">
-                {item.productImage ? (
-                  <Image
-                    src={item.productImage}
-                    alt={item.productName}
-                    fill
-                    className="object-cover"
-                  />
-                ) : (
-                  <div className="flex items-center justify-center h-full text-xs text-muted-foreground">
-                    No Image
-                  </div>
-                )}
+                <Image
+                  src={getProductImage(item.productImage)}
+                  alt={item.productName}
+                  fill
+                  className="object-cover"
+                />
               </div>
 
               {/* Product Info */}
