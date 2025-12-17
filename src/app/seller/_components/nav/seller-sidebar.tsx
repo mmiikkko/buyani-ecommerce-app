@@ -28,11 +28,13 @@ import {
   Inbox,
   ChevronUp,
   User2,
+  CalendarSync
 } from "lucide-react";
 
 import { Spinner } from "@/components/ui/spinner";
 import { usePathname } from "next/navigation";
 import { useLanguage } from "@/lib/i18n/context";
+import { ca } from "zod/v4/locales";
 
 export function AppSidebar() {
   const { t } = useLanguage();
@@ -47,6 +49,7 @@ export function AppSidebar() {
     { title: t("pos"), url: "/seller/POS", icon: Store },
     { title: t("products"), url: "/seller/products", icon: Package },
     { title: t("inbox"), url: "/seller/inbox", icon: Inbox },
+    { title: "monthly-dues", url: "/seller/inbox", icon: CalendarSync },
   ];
   
   // Avoid SSR/client mismatch

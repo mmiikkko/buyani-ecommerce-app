@@ -5,7 +5,7 @@ import { ShoppingBag, Store, Users, Star } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useLanguage } from "@/lib/i18n/context";
 
-export function StatsSection() {
+export function   StatsSection() {
   const [counts, setCounts] = useState({ products: 0, shops: 0, rating: 0 });
   const { t } = useLanguage();
   
