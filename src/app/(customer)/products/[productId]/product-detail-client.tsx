@@ -302,6 +302,18 @@ export function ProductDetailClient({ product, userId }: ProductDetailClientProp
     }
   };
 
+  useEffect(() => {
+    if (isBuying) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+  
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [isBuying]);
+  
 
   return (
     <div className="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
@@ -309,7 +321,7 @@ export function ProductDetailClient({ product, userId }: ProductDetailClientProp
       <AnimatedSection direction="fade-in" delay={0}>
         <Button
           variant="ghost"
-          className="mb-6"
+          className="mb-6 cursor-pointer"
           onClick={() => {
             startTransition(() => {
               router.back();
@@ -521,13 +533,13 @@ export function ProductDetailClient({ product, userId }: ProductDetailClientProp
               
               <div className="flex flex-wrap gap-3">
                 <Link href={`/shops/${product.shopId}`}>
-                  <Button variant="outline" className="border-slate-300 hover:bg-white">
+                  <Button variant="outline" className="border-slate-300 cursor-pointer">
                     Visit Store
                   </Button>
                 </Link>
                 <Button 
                   variant="outline" 
-                  className="border-slate-300 hover:bg-white"
+                  className="border-slate-300 cursor-pointer"
                   onClick={handleChatSeller}
                 >
                   <MessageCircle className="mr-2 h-4 w-4" />
@@ -570,7 +582,7 @@ export function ProductDetailClient({ product, userId }: ProductDetailClientProp
               {userId && userOrders.length > 0 && !showReviewForm && (
                 <Button
                   onClick={() => setShowReviewForm(true)}
-                  className="bg-emerald-600 hover:bg-emerald-700"
+                  className="bg-emerald-600 hover:bg-emerald-700 cursor-pointer"
                 >
                   <Star className="mr-2 h-4 w-4" />
                   Write a Review
@@ -813,7 +825,21 @@ export function ProductDetailClient({ product, userId }: ProductDetailClientProp
                     </Button>
                   </div>
                 )}
+
+                {isBuying && (
+                  <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
+                    <div className="flex flex-col items-center gap-4 rounded-xl bg-white px-8 py-6 shadow-xl">
+                      <Loader2 className="h-10 w-10 animate-spin text-emerald-600" />
+                      <p className="text-sm font-medium text-slate-700">
+                        Processing your order...
+                      </p>
+                    </div>
+                  </div>
+                )}
+
               </div>
+
+              
             )}
           </div>
         </div>
@@ -831,5 +857,6 @@ export function ProductDetailClient({ product, userId }: ProductDetailClientProp
         }}
       />
     </div>
+    
   );
 }
