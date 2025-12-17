@@ -1,16 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/server/drizzle";
-import { 
-  shop, 
-  user, 
-  sellerApplications, 
-  applicatioDocuments 
+import {
+  shop,
+  user,
+  sellerApplications,
+  applicatioDocuments,
 } from "@/server/schema/auth-schema";
 import { eq } from "drizzle-orm";
+import type { InferSelectModel } from "drizzle-orm";
 import { getServerSession } from "@/server/session";
 import { USER_ROLES } from "@/server/schema/auth-schema";
 
-// GET /api/admin/seller-applications/[id] - Get seller application details with documents
+// GET /api/admin/seller-applications/[id]
 export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> | { id: string } }
@@ -21,7 +22,6 @@ export async function GET(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // Check if user is admin
     if (!session.user.role.includes(USER_ROLES.ADMIN)) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
@@ -31,7 +31,6 @@ export async function GET(
       return NextResponse.json({ error: "Shop ID is required" }, { status: 400 });
     }
 
-    // Get shop details with seller info
     const shopData = await db
       .select({
         id: shop.id,
@@ -59,7 +58,6 @@ export async function GET(
 
     const shopItem = shopData[0];
 
-    // Get seller application
     const applicationData = await db
       .select()
       .from(sellerApplications)
@@ -67,13 +65,15 @@ export async function GET(
       .orderBy(sellerApplications.submittedAt)
       .limit(1);
 
-    let application = null;
-    let documents = [];
+    type Application = InferSelectModel<typeof sellerApplications>;
+    type ApplicationDocument = InferSelectModel<typeof applicatioDocuments>;
+
+    let application: Application | null = null;
+    let documents: ApplicationDocument[] = [];
 
     if (applicationData.length > 0) {
       application = applicationData[0];
 
-      // Get application documents
       documents = await db
         .select()
         .from(applicatioDocuments)
@@ -94,19 +94,22 @@ export async function GET(
       },
       seller: {
         id: shopItem.sellerId,
-        name: shopItem.ownerName || 
+        name:
+          shopItem.ownerName ||
           `${shopItem.ownerFirstName || ""} ${shopItem.ownerLastName || ""}`.trim() ||
           "Unknown",
         email: shopItem.ownerEmail,
         firstName: shopItem.ownerFirstName,
         lastName: shopItem.ownerLastName,
       },
-      application: application ? {
-        id: application.id,
-        status: application.status,
-        submittedAt: application.submittedAt,
-        reviewedAt: application.reviewedAt,
-      } : null,
+      application: application
+        ? {
+            id: application.id,
+            status: application.status,
+            submittedAt: application.submittedAt,
+            reviewedAt: application.reviewedAt,
+          }
+        : null,
       documents: documents.map((doc) => ({
         id: doc.id,
         documentType: doc.documentType,
@@ -123,4 +126,3 @@ export async function GET(
     );
   }
 }
-
