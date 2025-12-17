@@ -10,6 +10,7 @@ import {
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 
 type PendingShop = {
   id: string;
@@ -22,6 +23,7 @@ type PendingShop = {
 };
 
 export function PendingApprovals(){
+    const router = useRouter();
     const [pendingShops, setPendingShops] = useState<PendingShop[]>([]);
     const [loading, setLoading] = useState(true);
 
@@ -122,7 +124,7 @@ export function PendingApprovals(){
                             size="sm"
                             variant="outline"
                             className="text-xs cursor-pointer"
- 
+                            onClick={() => router.push(`/admin/seller-approvals/${shop.id}`)}
                         >
                             View Details
                         </Button>

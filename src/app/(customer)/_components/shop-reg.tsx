@@ -29,7 +29,7 @@ export function SellerRegisterForm() {
       formData.append("notarizedAgreement", notarizedFile);
       formData.append("validId", validIdFile);
 
-      const res = await fetch("/api/seller/apply", {
+      const res = await fetch("/api/sellers/apply", {
         method: "POST",
         body: formData,
       });
