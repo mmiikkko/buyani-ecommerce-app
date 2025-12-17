@@ -9,11 +9,13 @@ import LOGO from "@/assets/logo/LOGO.jpg";
 import { Store } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
+import { useLanguage } from "@/lib/i18n/context";
 
 export default function ASNavbar({ children }: { children?: ReactNode }) {
   const [loading, setLoading] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
+  const { t } = useLanguage();
 
   // 🔑 Auto-hide loader after navigation
   useEffect(() => {
@@ -49,7 +51,7 @@ export default function ASNavbar({ children }: { children?: ReactNode }) {
 
           <div className="ml-2 text-center">
             <div className="text-[#2E7D32]">BUYANI</div>
-            <div className="text-xs text-[#6A7282]">Seller Center</div>
+            <div className="text-xs text-[#6A7282]">{t("seller-center")}</div>
           </div>
         </div>
 
@@ -61,7 +63,7 @@ export default function ASNavbar({ children }: { children?: ReactNode }) {
                        border border-[#2E7D32] hover:bg-[#2E7D32] hover:text-white"
           >
             <Store size={16} />
-            <span>Back to Marketplace</span>
+            <span>{t("back-to-marketplace")}</span>
           </Button>
         </div>
       </nav>

@@ -7,6 +7,7 @@ import { AnimatedProductCard } from "../_components/animated-product-card";
 import { AnimatedCategoryButton } from "../_components/animated-category-button";
 import type { Product } from "@/types/products";
 import { Tag, Sparkles, Grid3x3 } from "lucide-react";
+import { useLanguage } from "@/lib/i18n/context";
 
 interface Category {
   id: string;
@@ -25,6 +26,7 @@ const colorSchemes = [
 export default function CategoriesPage() {
   const searchParams = useSearchParams();
   const categoryId = searchParams.get("categoryId");
+  const { t } = useLanguage();
 
   const [categories, setCategories] = useState<Category[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
@@ -91,18 +93,18 @@ export default function CategoriesPage() {
               </div>
               <Sparkles className="w-5 h-5 text-emerald-500" />
               <p className="text-xs font-bold uppercase tracking-widest text-emerald-600">
-                All Categories
+                {t("all-categories")}
               </p>
             </div>
 
             <h2 className="text-3xl font-bold flex items-center gap-2">
               <Grid3x3 className="w-6 h-6 text-emerald-600" />
-              Browse all available categories
+              {t("browse-all-categories")}
             </h2>
           </header>
 
           {/* LOADING */}
-          {loading && <p className="py-10 text-center">Loading categories...</p>}
+          {loading && <p className="py-10 text-center">{t("loading-categories-page")}</p>}
 
           {/* CATEGORY LIST */}
           {!loading && (
@@ -125,7 +127,7 @@ export default function CategoriesPage() {
                             {category.categoryName}
                           </p>
                           <span className="text-sm text-slate-600">
-                            {category.productCount || 0} items
+                            {category.productCount || 0} {t("items")}
                           </span>
                         </div>
                       </button>
@@ -135,10 +137,10 @@ export default function CategoriesPage() {
                     {isSelected && (
                       <AnimatedSection direction="fade-up" className="pl-6">
                         {loadingProducts ? (
-                          <p className="py-6 text-slate-600">Loading products...</p>
+                          <p className="py-6 text-slate-600">{t("loading-products")}</p>
                         ) : products.length === 0 ? (
                           <p className="py-6 text-slate-500">
-                            No products in this category.
+                            {t("no-products-category")}
                           </p>
                         ) : (
                           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">

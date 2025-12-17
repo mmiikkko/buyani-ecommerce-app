@@ -8,6 +8,7 @@ import { Trash2, Plus, Minus, ShoppingCart } from "lucide-react";
 import Image from "next/image";
 import { removeFromCart, updateCartItemQuantity } from "@/lib/queries/cart";
 import { useRouter } from "next/navigation";
+import { useLanguage } from "@/lib/i18n/context";
 
 interface CartItem {
   id: string;
@@ -32,6 +33,7 @@ export function CartClient({ initialItems, userId }: CartClientProps) {
     new Set(initialItems.map(item => item.id))
   );
   const router = useRouter();
+  const { t } = useLanguage();
 
   const handleRemove = async (itemId: string) => {
     setLoading((prev) => ({ ...prev, [itemId]: true }));
@@ -81,7 +83,7 @@ export function CartClient({ initialItems, userId }: CartClientProps) {
     if (!acc[shopId]) {
       acc[shopId] = {
         shopId,
-        shopName: item.shopName || 'Unknown Shop',
+        shopName: item.shopName || t("unknown-shop"),
         items: []
       };
     }
@@ -104,13 +106,13 @@ export function CartClient({ initialItems, userId }: CartClientProps) {
         <div className="flex flex-col items-center justify-center py-20">
           <ShoppingCart className="h-16 w-16 text-slate-300 mb-4" />
           <h2 className="text-2xl font-semibold text-slate-900 mb-2">
-            Your cart is empty
+            {t("cart-empty")}
           </h2>
           <p className="text-slate-600 mb-6">
-            Add some items to get started!
+            {t("cart-empty-desc")}
           </p>
           <Button onClick={() => router.push("/")} className="bg-emerald-600 hover:bg-emerald-700">
-            Continue Shopping
+            {t("continue-shopping")}
           </Button>
         </div>
       </div>
@@ -119,7 +121,7 @@ export function CartClient({ initialItems, userId }: CartClientProps) {
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-      <h1 className="text-3xl font-bold text-slate-900 mb-8">Shopping Cart</h1>
+      <h1 className="text-3xl font-bold text-slate-900 mb-8">{t("shopping-cart")}</h1>
 
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
         {/* Cart Items */}
@@ -135,7 +137,7 @@ export function CartClient({ initialItems, userId }: CartClientProps) {
               htmlFor="select-all"
               className="text-sm font-medium text-slate-700 cursor-pointer"
             >
-              Select All ({selectedItems.size} of {items.length})
+              {t("select-all")} ({selectedItems.size} of {items.length})
             </label>
           </div>
 
@@ -169,7 +171,7 @@ export function CartClient({ initialItems, userId }: CartClientProps) {
                   </div>
                   {shopSubtotal > 0 && (
                     <span className="text-sm text-slate-600">
-                      Shop Subtotal: <span className="font-semibold text-emerald-600">₱{shopSubtotal.toFixed(2)}</span>
+                      {t("shop-subtotal")}: <span className="font-semibold text-emerald-600">₱{shopSubtotal.toFixed(2)}</span>
                     </span>
                   )}
                 </div>
@@ -199,7 +201,7 @@ export function CartClient({ initialItems, userId }: CartClientProps) {
                             />
                           ) : (
                             <div className="h-full w-full flex items-center justify-center text-slate-400">
-                              No Image
+                              {t("no-image")}
                             </div>
                           )}
                         </div>
@@ -207,7 +209,7 @@ export function CartClient({ initialItems, userId }: CartClientProps) {
                         {/* Product Info */}
                         <div className="flex-1 min-w-0">
                           <h3 className="font-semibold text-slate-900 mb-1">
-                            {item.productName || "Unnamed Product"}
+                            {item.productName || t("unnamed-product")}
                           </h3>
                           <p className="text-lg font-bold text-emerald-600 mb-3">
                             ₱{((item.price || 0) * item.quantity).toFixed(2)}
@@ -267,16 +269,16 @@ export function CartClient({ initialItems, userId }: CartClientProps) {
         <div className="lg:col-span-1">
           <Card>
             <CardHeader>
-              <CardTitle>Order Summary</CardTitle>
+              <CardTitle>{t("order-summary")}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex justify-between text-slate-600">
-                <span>Subtotal</span>
+                <span>{t("subtotal")}</span>
                 <span className="font-semibold">₱{subtotal.toFixed(2)}</span>
               </div>
               <div className="border-t pt-4">
                 <div className="flex justify-between text-lg font-bold text-slate-900">
-                  <span>Total</span>
+                  <span>{t("total")}</span>
                   <span>₱{subtotal.toFixed(2)}</span>
                 </div>
               </div>
@@ -293,11 +295,11 @@ export function CartClient({ initialItems, userId }: CartClientProps) {
                 }}
                 disabled={selectedItems.size === 0}
               >
-                Proceed to Checkout ({selectedItems.size} {selectedItems.size === 1 ? "item" : "items"})
+                {t("proceed-checkout")} ({selectedItems.size} {selectedItems.size === 1 ? t("item") : t("items")})
               </Button>
               {selectedItems.size === 0 && (
                 <p className="text-xs text-center text-muted-foreground mt-2">
-                  Please select at least one item to checkout
+                  {t("select-item-checkout")}
                 </p>
               )}
             </CardContent>

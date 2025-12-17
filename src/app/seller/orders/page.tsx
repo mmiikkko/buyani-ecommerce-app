@@ -8,8 +8,10 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { RefreshCw } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useLanguage } from "@/lib/i18n/context";
 
 export default function Orders() {
+  const { t } = useLanguage();
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [refreshing, setRefreshing] = useState<boolean>(false);
@@ -31,15 +33,15 @@ export default function Orders() {
       
       if (!res.ok) {
         if (res.status === 401) {
-          throw new Error("Unauthorized. Please log in.");
+          throw new Error(t("unauthorized-login"));
         }
-        throw new Error("Failed to fetch orders");
+        throw new Error(t("failed-fetch-orders"));
       }
       
       const data: Order[] = await res.json();
       setOrders(data);
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : "An unknown error occurred";
+      const errorMessage = err instanceof Error ? err.message : t("unknown-error");
       setError(errorMessage);
       if (showLoading) {
         toast.error(errorMessage);
@@ -65,15 +67,15 @@ export default function Orders() {
       });
 
       if (!res.ok) {
-        throw new Error("Failed to update order status");
+        throw new Error(t("failed-update-order"));
       }
 
-      toast.success(`Order ${newStatus} successfully`);
+      toast.success(t("order-status-success"));
       
       // Refetch orders to get the latest data
       await fetchOrders(false);
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : "Failed to update order";
+      const errorMessage = err instanceof Error ? err.message : t("failed-update-order");
       toast.error(errorMessage);
     }
   };
@@ -83,8 +85,8 @@ export default function Orders() {
       <section className="relative min-h-screen min-w-[80%] max-w-[100%] overflow-hidden space-y-5 mt-18 mx-3">
         <div className="flex flex-row justify-between">
           <div className="flex flex-col">
-            <h1 className="text-xl mb-1 font-bold text-[#2E7D32]">Orders</h1>
-            <p>Manage your online and in-store orders</p>
+            <h1 className="text-xl mb-1 font-bold text-[#2E7D32]">{t("orders")}</h1>
+            <p>{t("manage-orders")}</p>
           </div>
         </div>
         <div className="w-full p-6 bg-green-50 min-h-screen space-y-4">
@@ -110,12 +112,12 @@ export default function Orders() {
         </div>
         <div className="flex items-center justify-center py-12">
           <div className="text-center">
-            <p className="text-red-600 mb-2">Error: {error}</p>
+            <p className="text-red-600 mb-2">{t("error")}: {error}</p>
             <button
               onClick={() => window.location.reload()}
               className="text-sm text-blue-600 hover:underline"
             >
-              Try again
+              {t("try-again")}
             </button>
           </div>
         </div>
@@ -127,8 +129,8 @@ export default function Orders() {
     <section className="relative min-h-screen min-w-[80%] max-w-[100%] overflow-hidden space-y-5 mx-3">
       <div className="flex flex-row justify-between items-start">
         <div className="flex flex-col">
-          <h1 className="text-xl mb-1 font-bold text-[#2E7D32]">Orders</h1>
-          <p>Manage your online and in-store orders</p>
+          <h1 className="text-xl mb-1 font-bold text-[#2E7D32]">{t("orders")}</h1>
+          <p>{t("manage-orders")}</p>
         </div>
         <Button
           variant="outline"
@@ -138,7 +140,7 @@ export default function Orders() {
           className="flex items-center gap-2"
         >
           <RefreshCw className={`h-4 w-4 ${refreshing ? "animate-spin" : ""}`} />
-          Refresh
+          {t("refresh")}
         </Button>
       </div>
       

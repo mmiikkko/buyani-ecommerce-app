@@ -6,11 +6,13 @@ import Image from "next/image";
 import Link from "next/link";
 import { authClient } from "@/server/auth-client";
 import { USER_ROLES } from "@/server/schema/auth-schema";
+import { useLanguage } from "@/lib/i18n/context";
 
 export function Footer() {
   const session = authClient.useSession();
   const user = session.data?.user;
   const isSeller = user?.role?.includes(USER_ROLES.SELLER) ?? false;
+  const { t } = useLanguage();
 
   return (
     <footer className="border-t border-emerald-900/40 bg-gradient-to-b from-slate-950 via-slate-950 to-emerald-950 text-slate-50">
@@ -33,9 +35,7 @@ export function Footer() {
               </span>
             </div>
             <p className="max-w-md text-xs leading-relaxed text-slate-300/90">
-              A calm, campus-first marketplace connecting CNSC students and
-              local makers. Discover snacks, crafts, and essentials without
-              the clutter.
+              {t("footer-description")}
             </p>
             <div className="space-y-1.5 text-xs text-slate-300">
               <div className="flex items-center gap-2">
@@ -52,7 +52,7 @@ export function Footer() {
           {/* Explore */}
           <div className="space-y-3">
             <h3 className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">
-              Explore
+              {t("explore")}
             </h3>
             <ul className="space-y-1.5 text-xs text-slate-300">
               <li>
@@ -61,7 +61,7 @@ export function Footer() {
                   rel="noopener noreferrer"
                   className="hover:text-emerald-300 hover:underline hover:underline-offset-4 transition-colors"
                 >
-                  About Buyani
+                  {t("about-buyani")}
                 </Link>
               </li>
               <li>
@@ -69,7 +69,7 @@ export function Footer() {
                   href="/how-it-works"
                   className="hover:text-emerald-300 hover:underline hover:underline-offset-4 transition-colors"
                 >
-                  How it works
+                  {t("how-it-works")}
                 </Link>
               </li>
               {!isSeller && (
@@ -78,7 +78,7 @@ export function Footer() {
                     href="/become-seller"
                     className="hover:text-emerald-300 hover:underline hover:underline-offset-4 transition-colors"
                   >
-                    Become a seller
+                    {t("become-seller")}
                   </Link>
                 </li>
               )}
@@ -87,7 +87,7 @@ export function Footer() {
                   href="/rate-us"
                   className="hover:text-emerald-300 hover:underline hover:underline-offset-4 transition-colors"
                 >
-                  Rate us
+                  {t("rate-us")}
                 </Link>
               </li>
             </ul>
@@ -96,13 +96,13 @@ export function Footer() {
           {/* Stay connected */}
           <div className="space-y-3">
             <h3 className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">
-              Stay connected
+              {t("stay-connected")}
             </h3>
             <p className="text-xs text-slate-300">
-              Get small updates on new stalls, drops, and campus events.
+              {t("stay-connected-desc")}
             </p>
             <div className="space-y-2">
-              <p className="text-xs font-medium text-slate-200">Follow us</p>
+              <p className="text-xs font-medium text-slate-200">{t("follow-us")}</p>
               <Link
                 href="#"
                 className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-emerald-300/60 bg-emerald-500/30 text-slate-50 transition-colors hover:border-emerald-200 hover:bg-emerald-500/60"
@@ -118,11 +118,11 @@ export function Footer() {
         <div className="mx-auto max-w-7xl px-4 py-4 sm:px-6 lg:px-8">
           <div className="flex flex-col items-center justify-between gap-3 md:flex-row">
             <p className="text-[11px] text-slate-400">
-              © 2025 Buyani · CNSC University Market Hub.
+              {t("copyright")}
             </p>
             <div className="flex items-center gap-2 text-[11px] text-slate-300">
               <ShieldCheck className="h-3.5 w-3.5 text-emerald-300" />
-              <span>Trusted campus marketplace</span>
+              <span>{t("trusted-marketplace")}</span>
             </div>
           </div>
         </div>

@@ -7,10 +7,12 @@ import type { Product } from "@/types/products";
 import { AnimatedSection } from "@/components/animated-section";
 import { AnimatedProductCard } from "../_components/animated-product-card";
 import { Sparkles, ShoppingBag, TrendingUp, Star, SlidersHorizontal } from "lucide-react";
+import { useLanguage } from "@/lib/i18n/context";
 
 export default function ProductsPage() {
   const searchParams = useSearchParams();
   const searchQuery = searchParams.get("search") || "";
+  const { t } = useLanguage();
   
   const [allProducts, setAllProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
@@ -110,7 +112,7 @@ export default function ProductsPage() {
                 <div className="flex items-center gap-2">
                   <Sparkles className="w-5 h-5 text-emerald-500 animate-pulse" />
                   <p className="text-xs font-bold uppercase tracking-[0.2em] text-emerald-600 bg-emerald-100 px-3 py-1 rounded-full">
-                    {searchQuery ? "Search Results" : "All Products"}
+                    {searchQuery ? t("search-results") : t("all-products")}
                   </p>
                 </div>
               </div>
@@ -121,14 +123,14 @@ export default function ProductsPage() {
                     <>
                       <span className="inline-flex items-center gap-2">
                         <TrendingUp className="w-6 h-6 text-emerald-600" />
-                        Search results for &quot;{searchQuery}&quot;
+                        {t("search-results-for")} &quot;{searchQuery}&quot;
                       </span>
                     </>
                   ) : (
                     <>
                       <span className="inline-flex items-center gap-2">
                         <Star className="w-7 h-7 text-amber-500 fill-amber-500" />
-                        Browse all available products
+                        {t("browse-all-products")}
                       </span>
                     </>
                   )}
@@ -137,8 +139,8 @@ export default function ProductsPage() {
                   <div className="h-1 w-16 bg-gradient-to-r from-emerald-500 to-amber-500 rounded-full"></div>
                   <p className="text-base text-slate-700 font-medium">
                     {searchQuery
-                      ? `Found ${products.length} ${products.length === 1 ? "product" : "products"} matching your search`
-                      : "Discover a wide variety of products from local sellers"}
+                      ? `${t("found-products")} ${products.length} ${products.length === 1 ? t("item") : t("items")} ${t("products-matching")}`
+                      : t("discover-variety")}
                   </p>
                 </div>
               </div>
@@ -148,17 +150,17 @@ export default function ProductsPage() {
             <div className="flex flex-wrap items-center gap-3 rounded-xl border border-emerald-100 bg-white/80 p-3 shadow-sm backdrop-blur">
               <div className="flex items-center gap-2 text-emerald-700 text-sm font-semibold">
                 <SlidersHorizontal className="h-4 w-4" />
-                Filters
+                {t("filters")}
               </div>
 
               <div className="flex flex-wrap items-center gap-2">
-                <label className="text-xs font-medium text-slate-600">Category</label>
+                <label className="text-xs font-medium text-slate-600">{t("category")}</label>
                 <select
                   value={selectedCategory}
                   onChange={(e) => setSelectedCategory(e.target.value)}
                   className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 shadow-xs focus:border-emerald-500 focus:outline-none"
                 >
-                  <option value="all">All</option>
+                  <option value="all">{t("all")}</option>
                   {categoryOptions.map((cat) => (
                     <option key={cat} value={cat}>
                       {cat}
@@ -168,7 +170,7 @@ export default function ProductsPage() {
               </div>
 
               <div className="flex flex-wrap items-center gap-2">
-                <label className="text-xs font-medium text-slate-600">Sort</label>
+                <label className="text-xs font-medium text-slate-600">{t("sort")}</label>
                 <select
                   value={sortOption}
                   onChange={(e) =>
@@ -176,10 +178,10 @@ export default function ProductsPage() {
                   }
                   className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 shadow-xs focus:border-emerald-500 focus:outline-none"
                 >
-                  <option value="default">Default</option>
-                  <option value="rating">High ratings</option>
-                  <option value="new">New</option>
-                  <option value="old">Old</option>
+                  <option value="default">{t("default")}</option>
+                  <option value="rating">{t("high-ratings")}</option>
+                  <option value="new">{t("new")}</option>
+                  <option value="old">{t("old")}</option>
                 </select>
               </div>
             </div>
@@ -189,7 +191,7 @@ export default function ProductsPage() {
             <div className="text-center py-16">
               <div className="inline-flex items-center gap-3 px-6 py-4 bg-white rounded-2xl shadow-lg border border-emerald-100">
                 <div className="w-5 h-5 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin"></div>
-                <p className="text-slate-700 font-medium">Loading products...</p>
+                <p className="text-slate-700 font-medium">{t("loading-products")}</p>
               </div>
             </div>
           ) : products.length === 0 ? (
@@ -200,8 +202,8 @@ export default function ProductsPage() {
                 </div>
                 <p className="text-slate-600 font-medium">
                   {searchQuery
-                    ? `No products found matching "${searchQuery}". Try a different search term.`
-                    : "No products available at the moment."}
+                    ? `${t("no-products-found")} "${searchQuery}". ${t("try-different-search")}`
+                    : t("no-products-available")}
                 </p>
               </div>
             </div>

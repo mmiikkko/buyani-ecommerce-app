@@ -14,16 +14,9 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { ChevronDown } from "lucide-react";
+import { useLanguage } from "@/lib/i18n/context";
 
 type DateRange = "7" | "30" | "90" | "365" | "all";
-
-const dateRangeOptions: { value: DateRange; label: string }[] = [
-  { value: "7", label: "Last 7 days" },
-  { value: "30", label: "Last 30 days" },
-  { value: "90", label: "Last 90 days" },
-  { value: "365", label: "Last year" },
-  { value: "all", label: "All time" },
-];
 
 interface CardActivityProps {
   totalSales?: number | string;
@@ -44,7 +37,17 @@ export function CardActivity({
   dateRange = "all",
   onDateRangeChange,
 }: CardActivityProps) {
-  const selectedRangeLabel = dateRangeOptions.find(opt => opt.value === dateRange)?.label || "All time";
+  const { t } = useLanguage();
+  
+  const dateRangeOptions: { value: DateRange; label: string }[] = [
+    { value: "7", label: t("last-7-days") },
+    { value: "30", label: t("last-30-days") },
+    { value: "90", label: t("last-90-days") },
+    { value: "365", label: t("last-year") },
+    { value: "all", label: t("all-time") },
+  ];
+  
+  const selectedRangeLabel = dateRangeOptions.find(opt => opt.value === dateRange)?.label || t("all-time");
 
   return (
     <div className="space-y-4 w-full">
@@ -86,7 +89,7 @@ export function CardActivity({
           </div>
         </CardHeader>
         <CardContent className="space-y-1">
-          <p className="text-sm font-medium text-muted-foreground">Total Sales</p>
+          <p className="text-sm font-medium text-muted-foreground">{t("total-sales")}</p>
           <p className="text-2xl font-bold text-[#2E7D32]">{totalSales ?? "₱0.00"}</p>
         </CardContent>
       </Card>
@@ -102,7 +105,7 @@ export function CardActivity({
           </div>
         </CardHeader>
         <CardContent className="space-y-1">
-          <p className="text-sm font-medium text-muted-foreground">Total Orders</p>
+          <p className="text-sm font-medium text-muted-foreground">{t("total-orders")}</p>
           <p className="text-2xl font-bold text-blue-600">{totalOrders ?? 0}</p>
         </CardContent>
       </Card>
@@ -118,7 +121,7 @@ export function CardActivity({
           </div>
         </CardHeader>
         <CardContent className="space-y-1">
-          <p className="text-sm font-medium text-muted-foreground">Pending Orders</p>
+          <p className="text-sm font-medium text-muted-foreground">{t("pending-orders")}</p>
           <p className="text-2xl font-bold text-amber-600">{pendingOrders ?? 0}</p>
         </CardContent>
       </Card>
@@ -134,7 +137,7 @@ export function CardActivity({
           </div>
         </CardHeader>
         <CardContent className="space-y-1">
-          <p className="text-sm font-medium text-muted-foreground">Active Products</p>
+          <p className="text-sm font-medium text-muted-foreground">{t("active-products")}</p>
           <p className="text-2xl font-bold text-purple-600">{totalProducts ?? 0}</p>
         </CardContent>
       </Card>
@@ -150,7 +153,7 @@ export function CardActivity({
           </div>
         </CardHeader>
         <CardContent className="space-y-1">
-          <p className="text-sm font-medium text-muted-foreground">Removed Products</p>
+          <p className="text-sm font-medium text-muted-foreground">{t("removed-products")}</p>
           <p className="text-2xl font-bold text-gray-600">{removedProducts ?? 0}</p>
         </CardContent>
       </Card>

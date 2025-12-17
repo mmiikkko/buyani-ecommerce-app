@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { MessageCircle, Send, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { useLanguage } from "@/lib/i18n/context";
 
 type Message = {
   id: string;
@@ -29,6 +30,7 @@ type Conversation = {
 };
 
 export default function SellerInbox() {
+  const { t } = useLanguage();
   const router = useRouter();
   const searchParams = useSearchParams();
   const conversationIdParam = searchParams.get("conversationId");
@@ -81,7 +83,7 @@ export default function SellerInbox() {
     } catch (error) {
       console.error("Error fetching conversations:", error);
       if (showLoading) {
-        toast.error("Failed to load conversations");
+        toast.error(t("failed-load-conversations"));
       }
     } finally {
       if (showLoading) setLoading(false);
@@ -186,11 +188,11 @@ useEffect(() => {
         fetchConversations(false); // Refresh conversations silently to update lastMessageAt
       } else {
         const error = await res.json();
-        toast.error(error.error || "Failed to send message");
+        toast.error(error.error || t("failed-send-message"));
       }
     } catch (error) {
       console.error("Error sending message:", error);
-      toast.error("Failed to send message");
+      toast.error(t("failed-send-message"));
     } finally {
       setSending(false);
     }
@@ -201,27 +203,27 @@ useEffect(() => {
   return (
     <section className="relative min-h-screen min-w-full overflow-hidden space-y-5 mx-3">
       <div className="mb-6">
-        <h1 className="text-xl mb-1 font-bold text-[#2E7D32]">Inbox</h1>
-        <p className="text-muted-foreground">Customer messages and conversations</p>
+        <h1 className="text-xl mb-1 font-bold text-[#2E7D32]">{t("inbox")}</h1>
+        <p className="text-muted-foreground">{t("customer-messages")}</p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Conversations List */}
         <Card className="lg:col-span-1">
           <CardHeader>
-            <CardTitle className="text-lg">Conversations</CardTitle>
+            <CardTitle className="text-lg">{t("conversations")}</CardTitle>
           </CardHeader>
           <CardContent className="p-0">
             {initialLoading ? (
               <div className="p-4 text-center">
                 <Loader2 className="h-5 w-5 animate-spin mx-auto mb-2 text-[#2E7D32]" />
-                <p className="text-sm text-muted-foreground">Loading...</p>
+                <p className="text-sm text-muted-foreground">{t("loading")}</p>
               </div>
             ) : conversations.length === 0 ? (
               <div className="p-4 text-center text-muted-foreground">
                 <MessageCircle className="h-12 w-12 text-muted-foreground/30 mx-auto mb-3" />
-                <p className="text-sm">No conversations yet.</p>
-                <p className="text-xs mt-1">Customers will appear here when they message you.</p>
+                <p className="text-sm">{t("no-conversations")}</p>
+                <p className="text-xs mt-1">{t("customers-will-appear")}</p>
               </div>
             ) : (
               <div className="divide-y">
@@ -276,7 +278,7 @@ useEffect(() => {
         <CardTitle className="text-lg">{selectedConv.customerName}</CardTitle>
         {selectedConv.productName && (
           <p className="text-sm text-muted-foreground mt-1">
-            About: {selectedConv.productName}
+            {t("about")}: {selectedConv.productName}
           </p>
         )}
       </CardHeader>
@@ -331,7 +333,7 @@ useEffect(() => {
                   sendMessage();
                 }
               }}
-              placeholder="Type your message..."
+              placeholder={t("type-message")}
               disabled={sending}
               className="flex-1"
             />
@@ -355,7 +357,7 @@ useEffect(() => {
       <div className="text-center">
         <MessageCircle className="h-12 w-12 text-muted-foreground/30 mx-auto mb-3" />
         <p className="text-muted-foreground">
-          Select a conversation to start chatting
+          {t("select-conversation")}
         </p>
       </div>
     </CardContent>

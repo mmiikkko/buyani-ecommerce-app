@@ -10,6 +10,7 @@ import {
 import { ShoppingCart, CheckCircle2, XCircle, Clock, Truck } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import type { Order } from "@/types/orders";
+import { useLanguage } from "@/lib/i18n/context";
 
 /**
  * Adapter: backend Order -> RecentOrder shape
@@ -52,6 +53,7 @@ type RecentOrdersProps = {
 };
 
 export function RecentOrders({ orders }: RecentOrdersProps)  {
+  const { t } = useLanguage();
   const [recentOrders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(false);
   const [initialLoading, setInitialLoading] = useState(true);
@@ -152,17 +154,17 @@ export function RecentOrders({ orders }: RecentOrdersProps)  {
       <CardHeader className="flex flex-row justify-between items-center pb-4">
         <div>
           <h1 className="text-xl font-bold text-[#2E7D32]">
-            Recent Orders
+            {t("recent-orders")}
           </h1>
           <p className="text-sm text-muted-foreground mt-1">
-            Latest orders from your shop
+            {t("latest-orders-shop")}
           </p>
         </div>
         <Link
           href="/seller/orders"
           className="text-sm font-medium text-[#2E7D32] hover:text-[#2E7D32]/80 hover:underline transition-colors"
         >
-          View All →
+          {t("view-all")} →
         </Link>
       </CardHeader>
 
@@ -170,7 +172,7 @@ export function RecentOrders({ orders }: RecentOrdersProps)  {
         {initialLoading && (
           <div className="flex items-center justify-center py-12">
             <p className="text-sm text-muted-foreground">
-              Loading recent orders...
+              {t("loading-recent-orders")}
             </p>
           </div>
         )}
@@ -179,7 +181,7 @@ export function RecentOrders({ orders }: RecentOrdersProps)  {
           <div className="flex flex-col items-center justify-center py-12 text-center">
             <ShoppingCart className="h-12 w-12 text-muted-foreground/30 mb-3" />
             <p className="text-sm text-muted-foreground">
-              No recent orders found.
+              {t("no-recent-orders")}
             </p>
           </div>
         )}
@@ -193,32 +195,32 @@ export function RecentOrders({ orders }: RecentOrdersProps)  {
           const isDelivered = status === "delivered";
 
           // Determine status display
-          let statusLabel = "Pending";
+          let statusLabel = t("order-status-pending");
           let statusIcon = Clock;
           let statusColor = "bg-amber-100 text-amber-700 border-amber-300";
           let bgColor = "bg-gradient-to-r from-amber-50/50 to-transparent border-amber-100 hover:border-amber-200";
           let textColor = "text-amber-600";
 
           if (isRejected) {
-            statusLabel = "Rejected";
+            statusLabel = t("rejected");
             statusIcon = XCircle;
             statusColor = "bg-red-100 text-red-700 border-red-300";
             bgColor = "bg-gradient-to-r from-red-50/50 to-transparent border-red-100 hover:border-red-200";
             textColor = "text-red-600";
           } else if (isDelivered || isCompleted) {
-            statusLabel = isDelivered ? "Delivered" : "Completed";
+            statusLabel = isDelivered ? t("delivered") : t("completed");
             statusIcon = CheckCircle2;
             statusColor = "bg-emerald-100 text-emerald-700 border-emerald-300";
             bgColor = "bg-gradient-to-r from-emerald-50/50 to-transparent border-emerald-100 hover:border-emerald-200";
             textColor = "text-[#2E7D32]";
           } else if (isShipped) {
-            statusLabel = "Shipped";
+            statusLabel = t("shipped");
             statusIcon = Truck;
             statusColor = "bg-blue-100 text-blue-700 border-blue-300";
             bgColor = "bg-gradient-to-r from-blue-50/50 to-transparent border-blue-100 hover:border-blue-200";
             textColor = "text-blue-600";
           } else if (isAccepted) {
-            statusLabel = "Accepted";
+            statusLabel = t("accepted");
             statusIcon = CheckCircle2;
             statusColor = "bg-emerald-100 text-emerald-700 border-emerald-300";
             bgColor = "bg-gradient-to-r from-emerald-50/50 to-transparent border-emerald-100 hover:border-emerald-200";
@@ -237,7 +239,7 @@ export function RecentOrders({ orders }: RecentOrdersProps)  {
               <div className="flex flex-col gap-2 flex-1">
                 <div className="flex items-center gap-2">
                   <span className="font-semibold text-slate-900">
-                    Order #{orderId ? orderId.slice(0, 8) : "N/A"}...
+                    {t("order")} #{orderId ? orderId.slice(0, 8) : "N/A"}...
                   </span>
                   <Badge
                     variant="outline"

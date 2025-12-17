@@ -5,35 +5,37 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { authClient } from "@/server/auth-client";
 import { USER_ROLES } from "@/server/schema/auth-schema";
-
-const steps = [
-  {
-    icon: Search,
-    title: "Browse & Search",
-    description: "Explore our wide selection of products from local sellers. Use the search bar to find specific items or browse through categories and shops.",
-    iconBg: "bg-emerald-100 border-emerald-200",
-    iconColor: "text-emerald-600",
-  },
-  {
-    icon: ShoppingCart,
-    title: "Add to Cart",
-    description: "Found something you like? Click on any product to view details, then add it to your cart. You can add multiple items and adjust quantities.",
-    iconBg: "bg-amber-100 border-amber-200",
-    iconColor: "text-amber-600",
-  },
-  {
-    icon: CheckCircle,
-    title: "Checkout & Order",
-    description: "Review your cart, enter your delivery information, and complete your purchase securely. Track your order status in your account.",
-    iconBg: "bg-emerald-100 border-emerald-200",
-    iconColor: "text-emerald-600",
-  },
-];
+import { useLanguage } from "@/lib/i18n/context";
 
 export default function HowItWorksPage() {
   const session = authClient.useSession();
   const user = session.data?.user;
   const isSeller = user?.role?.includes(USER_ROLES.SELLER) ?? false;
+  const { t } = useLanguage();
+  
+  const steps = [
+    {
+      icon: Search,
+      title: t("browse-search"),
+      description: t("browse-search-desc"),
+      iconBg: "bg-emerald-100 border-emerald-200",
+      iconColor: "text-emerald-600",
+    },
+    {
+      icon: ShoppingCart,
+      title: t("add-to-cart"),
+      description: t("add-to-cart-desc"),
+      iconBg: "bg-amber-100 border-amber-200",
+      iconColor: "text-amber-600",
+    },
+    {
+      icon: CheckCircle,
+      title: t("checkout-order"),
+      description: t("checkout-order-desc"),
+      iconBg: "bg-emerald-100 border-emerald-200",
+      iconColor: "text-emerald-600",
+    },
+  ];
 
   return (
     <main className="relative min-h-screen bg-gradient-to-b from-emerald-50 via-slate-50 to-amber-50">
@@ -42,13 +44,13 @@ export default function HowItWorksPage() {
           <header className="flex flex-col gap-2 text-center">
             <div className="space-y-2">
               <p className="text-[11px] font-medium uppercase tracking-[0.16em] text-emerald-500">
-                Getting Started
+                {t("getting-started-header")}
               </p>
               <h1 className="text-3xl font-semibold tracking-tight text-slate-900 sm:text-4xl">
-                How it works
+                {t("how-it-works-title")}
               </h1>
               <p className="text-base text-slate-600 max-w-2xl mx-auto">
-                Simple steps to start shopping on Buyani. Discover products, add to cart, and checkout securely.
+                {t("how-it-works-desc")}
               </p>
             </div>
           </header>

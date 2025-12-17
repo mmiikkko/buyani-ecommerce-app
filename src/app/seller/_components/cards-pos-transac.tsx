@@ -12,6 +12,7 @@ import {
   DropdownMenuItem,
 } from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
+import { useLanguage } from "@/lib/i18n/context";
 
 type CartItem = {
   id: string;
@@ -27,6 +28,7 @@ interface CardsPosTransacProps {
 }
 
 export function CardsPosTransac({ cartItems, onUpdateCart }: CardsPosTransacProps) {
+  const { t } = useLanguage();
   const [collapsed, setCollapsed] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState("Cash");
   const [paymentReceived, setPaymentReceived] = useState("");
@@ -59,12 +61,12 @@ export function CardsPosTransac({ cartItems, onUpdateCart }: CardsPosTransacProp
 
   const handleCompleteSale = async () => {
     if (cartItems.length === 0) {
-      toast.error("Cart is empty");
+      toast.error(t("cart-empty-pos"));
       return;
     }
 
     if (paymentMethod === "Cash" && (!paymentReceived || Number(paymentReceived) < subtotal)) {
-      toast.error("Payment received must be at least the total amount");
+      toast.error(t("payment-must-be-total"));
       return;
     }
 
@@ -87,17 +89,17 @@ export function CardsPosTransac({ cartItems, onUpdateCart }: CardsPosTransacProp
 
       if (!res.ok) {
         const error = await res.json();
-        throw new Error(error.error || "Failed to complete sale");
+        throw new Error(error.error || t("failed-complete-sale"));
       }
 
-      toast.success("Sale completed successfully!");
+      toast.success(t("sale-completed-success"));
       
       // Clear cart and reset
       onUpdateCart([]);
       setPaymentReceived("");
       setPaymentMethod("Cash");
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : "Failed to complete sale";
+      const errorMessage = error instanceof Error ? error.message : t("failed-complete-sale");
       toast.error(errorMessage);
     } finally {
       setIsProcessing(false);
@@ -111,7 +113,7 @@ export function CardsPosTransac({ cartItems, onUpdateCart }: CardsPosTransacProp
         className="flex flex-row items-center justify-between cursor-pointer"
         onClick={() => setCollapsed(!collapsed)}
       >
-        <h2 className="text-md font-semibold">Current Sale</h2>
+        <h2 className="text-md font-semibold">{t("current-sale")}</h2>
 
         {collapsed ? (
           <ChevronDown className="w-5 h-5" />
@@ -126,7 +128,7 @@ export function CardsPosTransac({ cartItems, onUpdateCart }: CardsPosTransacProp
           {/* SCROLLABLE LIST */}
           <div className="max-h-64 overflow-y-auto pr-2 space-y-4">
             {cartItems.length === 0 && (
-              <p className="text-sm text-muted-foreground">No items yet.</p>
+              <p className="text-sm text-muted-foreground">{t("no-items-yet")}</p>
             )}
 
             {cartItems.map((item) => (
@@ -176,18 +178,18 @@ export function CardsPosTransac({ cartItems, onUpdateCart }: CardsPosTransacProp
 
           {/* TOTAL */}
           <div className="flex justify-between pt-2 border-t">
-            <span className="font-medium">Total:</span>
+            <span className="font-medium">{t("total")}:</span>
             <span className="font-semibold">₱{subtotal.toFixed(2)}</span>
           </div>
 
           {/* PAYMENT METHOD DROPDOWN MENU */}
           <div className="flex flex-col gap-2">
-            <label className="text-sm font-medium">Payment Method</label>
+            <label className="text-sm font-medium">{t("payment-method")}</label>
 
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="outline" className="justify-between cursor-pointer">
-                  {paymentMethod}
+                  {paymentMethod === "Cash" ? t("cash") : paymentMethod === "GCash" ? t("gcash") : t("maya")}
                   <ChevronDown className="ml-2 h-4 w-4 opacity-60" />
                 </Button>
               </DropdownMenuTrigger>
@@ -197,19 +199,19 @@ export function CardsPosTransac({ cartItems, onUpdateCart }: CardsPosTransacProp
                   setPaymentMethod("Cash");
                   setPaymentReceived("");
                 }}>
-                  Cash
+                  {t("cash")}
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => {
                   setPaymentMethod("GCash");
                   setPaymentReceived(subtotal.toFixed(2));
                 }}>
-                  GCash
+                  {t("gcash")}
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => {
                   setPaymentMethod("Maya");
                   setPaymentReceived(subtotal.toFixed(2));
                 }}>
-                  Maya
+                  {t("maya")}
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -218,7 +220,7 @@ export function CardsPosTransac({ cartItems, onUpdateCart }: CardsPosTransacProp
           {/* PAYMENT RECEIVED (for Cash) */}
           {paymentMethod === "Cash" && (
             <div className="flex flex-col gap-2">
-              <label className="text-sm font-medium">Payment Received</label>
+              <label className="text-sm font-medium">{t("payment-received")}</label>
               <Input
                 type="number"
                 placeholder="0.00"
@@ -229,7 +231,7 @@ export function CardsPosTransac({ cartItems, onUpdateCart }: CardsPosTransacProp
               />
               {paymentReceived && Number(paymentReceived) >= subtotal && (
                 <p className="text-sm text-green-600 font-medium">
-                  Change: ₱{change.toFixed(2)}
+                  {t("change")}: ₱{change.toFixed(2)}
                 </p>
               )}
             </div>
@@ -241,7 +243,7 @@ export function CardsPosTransac({ cartItems, onUpdateCart }: CardsPosTransacProp
             onClick={handleCompleteSale}
             disabled={isProcessing || (paymentMethod === "Cash" && (!paymentReceived || Number(paymentReceived) < subtotal))}
           >
-            {isProcessing ? "Processing..." : "Complete Sale"}
+            {isProcessing ? t("processing") : t("complete-sale")}
           </Button>
         </CardContent>
       )}

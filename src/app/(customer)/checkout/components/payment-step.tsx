@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Wallet, ArrowLeft, ArrowRight } from "lucide-react";
 import Image from "next/image";
+import { useLanguage } from "@/lib/i18n/context";
 
 interface PaymentStepProps {
   selectedMethod: "gcash" | "paymaya" | "cod" | null;
@@ -13,25 +14,26 @@ interface PaymentStepProps {
 }
 
 export function PaymentStep({ selectedMethod, onSelect, onBack }: PaymentStepProps) {
+  const { t } = useLanguage();
   const paymentMethods = [
     {
       id: "gcash" as const,
-      name: "GCash",
-      description: "Pay securely with GCash e-wallet",
+      name: t("gcash"),
+      description: t("gcash-desc"),
       icon: "💙",
       recommended: true,
     },
     {
       id: "paymaya" as const,
-      name: "PayMaya",
-      description: "Pay using your PayMaya account",
+      name: t("paymaya"),
+      description: t("paymaya-desc"),
       icon: "💚",
       recommended: false,
     },
     {
       id: "cod" as const,
-      name: "Cash on Delivery",
-      description: "Pay with cash when you receive your order",
+      name: t("cash-delivery"),
+      description: t("cod-desc"),
       icon: "💵",
       recommended: false,
     },
@@ -42,10 +44,10 @@ export function PaymentStep({ selectedMethod, onSelect, onBack }: PaymentStepPro
       <CardHeader>
         <div className="flex items-center gap-2">
           <Wallet className="h-5 w-5 text-emerald-600" />
-          <CardTitle>Payment Method</CardTitle>
+          <CardTitle>{t("payment-method")}</CardTitle>
         </div>
         <p className="text-sm text-slate-600 mt-1">
-          Choose how you want to pay
+          {t("choose-payment")}
         </p>
       </CardHeader>
       <CardContent>
@@ -78,7 +80,7 @@ export function PaymentStep({ selectedMethod, onSelect, onBack }: PaymentStepPro
                       <h3 className="font-semibold text-slate-900">{method.name}</h3>
                       {method.recommended && (
                         <Badge variant="secondary" className="text-xs">
-                          Recommended
+                          {t("recommended")}
                         </Badge>
                       )}
                     </div>
@@ -109,7 +111,7 @@ export function PaymentStep({ selectedMethod, onSelect, onBack }: PaymentStepPro
             className="flex-1"
           >
             <ArrowLeft className="mr-2 h-4 w-4" />
-            Back
+            {t("back")}
           </Button>
           <Button
             type="button"
@@ -121,7 +123,7 @@ export function PaymentStep({ selectedMethod, onSelect, onBack }: PaymentStepPro
             disabled={!selectedMethod}
             className="flex-1 bg-emerald-600 hover:bg-emerald-700"
           >
-            Continue to Review
+            {t("continue-review")}
             <ArrowRight className="ml-2 h-4 w-4" />
           </Button>
         </div>

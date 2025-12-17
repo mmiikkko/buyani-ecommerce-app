@@ -30,6 +30,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
+import { useLanguage } from "@/lib/i18n/context";
 
 const signInSchema = z.object({
   email: z.email({ message: "Please enter a valid email" }),
@@ -44,6 +45,7 @@ export function SignInForm() {
   const [error, setError] = useState<string | null>(null);
 
   const router = useRouter();
+  const { t } = useLanguage();
 
   const searchParams = useSearchParams();
   const redirect = searchParams.get("redirect");
@@ -61,7 +63,7 @@ export function SignInForm() {
     setError(null);
     setLoading(true);
 
-    toast.loading("Signing in...");
+    toast.loading(t("signing-in"));
 
     const { error } = await authClient.signIn.email({
       email,
@@ -74,9 +76,9 @@ export function SignInForm() {
     toast.dismiss();
 
     if (error) {
-      setError(error.message || "Something went wrong");
+      setError(error.message || t("something-wrong"));
     } else {
-      toast.success("Signed in successfully!");
+      toast.success(t("signed-in-success"));
       router.push(redirect ?? "/");
     }
   }
@@ -93,8 +95,8 @@ export function SignInForm() {
       });
 
       if (error) {
-        setError(error.message || "Something went wrong");
-        toast.error(error.message || "Failed to sign in with Google");
+        setError(error.message || t("something-wrong"));
+        toast.error(error.message || t("failed-google-signin"));
         setLoading(false);
       } else if (data?.url) {
         // Redirect to Google OAuth URL - don't set loading to false as we're redirecting
@@ -104,8 +106,8 @@ export function SignInForm() {
       }
     } catch (err) {
       console.error("Google sign-in error:", err);
-      setError("Failed to sign in with Google. Please try again.");
-      toast.error("Failed to sign in with Google");
+      setError(t("failed-google-signin"));
+      toast.error(t("failed-google-signin"));
       setLoading(false);
     }
   }
@@ -113,9 +115,9 @@ export function SignInForm() {
   return (
     <Card className="w-full max-w-md">
       <CardHeader>
-        <CardTitle className="text-lg md:text-xl">Sign In</CardTitle>
+        <CardTitle className="text-lg md:text-xl">{t("sign-in")}</CardTitle>
         <CardDescription className="text-xs md:text-sm">
-          Enter your email below to login to your account
+          {t("sign-in-desc")}
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -126,7 +128,7 @@ export function SignInForm() {
               name="email"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Email</FormLabel>
+                  <FormLabel>{t("email")}</FormLabel>
                   <FormControl>
                     <Input
                       type="email"
@@ -145,12 +147,12 @@ export function SignInForm() {
               render={({ field }) => (
                 <FormItem>
                   <div className="flex items-center">
-                    <FormLabel>Password</FormLabel>
+                    <FormLabel>{t("password")}</FormLabel>
                   </div>
                   <FormControl>
                     <PasswordInput
                       autoComplete="current-password"
-                      placeholder="Password"
+                      placeholder={t("password")}
                       {...field}
                     />
                   </FormControl>
@@ -159,7 +161,7 @@ export function SignInForm() {
                     href="/forgot-password"
                     className="ml-auto inline-block text-sm underline"
                   >
-                    Forgot your password?
+                    {t("forgot-password")}
                   </Link>
                   <FormMessage />
                 </FormItem>
@@ -177,7 +179,7 @@ export function SignInForm() {
                       onCheckedChange={field.onChange}
                     />
                   </FormControl>
-                  <FormLabel>Remember me</FormLabel>
+                  <FormLabel>{t("remember-me")}</FormLabel>
                 </FormItem>
               )}
             />
@@ -189,7 +191,7 @@ export function SignInForm() {
             )}
 
             <LoadingButton type="submit" className="w-full cursor-pointer" loading={loading}>
-              Login
+              {t("login-button")}
             </LoadingButton>
 
             <div className="flex w-full flex-col items-center justify-between gap-2">
@@ -201,7 +203,7 @@ export function SignInForm() {
                 onClick={() => handleSocialSignIn("google")}
               >
                 <GoogleIcon width="0.98em" height="1em" />
-                Sign in with Google
+                {t("sign-in-google")}
               </Button>
             </div>
           </form>
@@ -210,9 +212,9 @@ export function SignInForm() {
       <CardFooter>
         <div className="flex w-full justify-center border-t pt-4">
           <p className="text-muted-foreground text-center text-xs">
-            Don&apos;t have an account?{" "}
+            {t("no-account")}{" "}
             <Link href="/sign-up" className="underline">
-              Sign up
+              {t("sign-up")}
             </Link>
           </p>
         </div>
