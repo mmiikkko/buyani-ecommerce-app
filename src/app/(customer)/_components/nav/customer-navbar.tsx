@@ -63,6 +63,12 @@ export default function Navbar({ className }: NavbarProps) {
   const isActive = (href: string) =>
     pathname === href || (href !== "/" && pathname.startsWith(href));
 
+  const navigateWithLoader = (href: string) => {
+    setIsNavigating(true);
+    router.push(href);
+  };
+  
+
   // Initialize search query from URL if on products page
   useEffect(() => {
     if (pathname === "/products") {
@@ -202,6 +208,7 @@ export default function Navbar({ className }: NavbarProps) {
 
   // Reset navigation state when pathname changes
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setIsNavigating(false);
   }, [pathname]);
 
@@ -328,32 +335,30 @@ export default function Navbar({ className }: NavbarProps) {
 
               ) : isAuthenticated ? (
                 <div className="flex items-center gap-2">
-                  <Link href="/orders">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="h-8 rounded-full border-slate-200 px-3 text-xs cursor-pointer font-medium"
-                    >
-                      Orders
-                    </Button>
-                  </Link>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-8 rounded-full border-slate-200 px-3 text-xs font-medium"
+                    onClick={() => navigateWithLoader("/orders")}
+                  >
+                    Orders
+                  </Button>
 
-                  <Link href="/cart" className="relative">
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      className="h-8 w-8 rounded-full border-slate-200 cursor-pointer relative"
-                    >
-                      <ShoppingCart size={16} />
-                      {cartCount > 0 && (
-                        <Badge
-                          className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 bg-emerald-600 text-white text-[10px] font-bold border-2 border-white rounded-full"
-                        >
-                          {cartCount > 99 ? "99+" : cartCount}
-                        </Badge>
-                      )}
-                    </Button>
-                  </Link>
+
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="h-8 w-8 rounded-full border-slate-200 relative"
+                    onClick={() => navigateWithLoader("/cart")}
+                  >
+                    <ShoppingCart size={16} />
+                    {cartCount > 0 && (
+                      <Badge className="absolute -top-1 -right-1 ...">
+                        {cartCount > 99 ? "99+" : cartCount}
+                      </Badge>
+                    )}
+                  </Button>
+
 
                   <UserDropdown user={user!} />
                 </div>
