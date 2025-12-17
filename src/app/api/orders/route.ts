@@ -15,15 +15,39 @@ import {
 import { eq, inArray } from 'drizzle-orm';
 import { getServerSession } from '@/server/session';
 import { v4 as uuidv4 } from 'uuid';
+import jwt from 'jsonwebtoken';
+import { corsResponse, corsOptions } from '@/lib/api-utils';
+
+async function getUserId(req: NextRequest): Promise<string | null> {
+  const session = await getServerSession();
+  if (session?.user?.id) return session.user.id;
+
+  const authHeader = req.headers.get('authorization');
+  if (authHeader?.startsWith('Bearer ')) {
+    const token = authHeader.substring(7);
+    const jwtSecret = process.env.JWT_SECRET || process.env.BETTER_AUTH_SECRET || 'your-secret-key';
+    try {
+      const decoded = jwt.verify(token, jwtSecret) as { userId?: string };
+      return decoded.userId || null;
+    } catch {
+      return null;
+    }
+  }
+  return null;
+}
+
+export async function OPTIONS() {
+  return corsOptions();
+}
 
 
 // GET /api/orders - Get orders for the current user
 // GET /api/orders - Get orders for the current user
 export async function GET(req: NextRequest) {
   try {
-    const session = await getServerSession();
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    const userId = await getUserId(req);
+    if (!userId) {
+      return corsResponse({ error: "Unauthorized" }, 401);
     }
 
     // Join orders with user table to get the buyer's name
@@ -39,7 +63,7 @@ export async function GET(req: NextRequest) {
       })
       .from(orders)
       .leftJoin(user, eq(orders.buyerId, user.id))
-      .where(eq(orders.buyerId, session.user.id));
+      .where(eq(orders.buyerId, userId));
 
     // fetch items for each order with product images
     const orderIds = userOrders.map((o) => o.id);
@@ -102,12 +126,12 @@ export async function GET(req: NextRequest) {
       payment: paymentsData.find((p) => p.orderId === o.id),
     }));
 
-    return NextResponse.json(withItems);
+    return corsResponse(withItems);
   } catch (error) {
     console.error("Error fetching orders:", error);
-    return NextResponse.json(
+    return corsResponse(
       { error: "Failed to fetch orders" },
-      { status: 500 }
+      500
     );
   }
 }
@@ -120,18 +144,18 @@ type CartItem = {
 // POST /api/orders - Create a new order from cart
 export async function POST(req: NextRequest) {
   try {
-    const session = await getServerSession();
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    const userId = await getUserId(req);
+    if (!userId) {
+      return corsResponse({ error: "Unauthorized" }, 401);
     }
 
     const body = await req.json();
     const { address, paymentMethod, cartItems: items } = body;
 
     if (!address || !paymentMethod || !items || items.length === 0) {
-      return NextResponse.json(
+      return corsResponse(
         { error: "Missing required fields" },
-        { status: 400 }
+        400
       );
     }
 
@@ -148,7 +172,7 @@ export async function POST(req: NextRequest) {
       const existingAddresses = await db
         .select()
         .from(addresses)
-        .where(eq(addresses.userId, session.user.id))
+        .where(eq(addresses.userId, userId))
         .limit(1);
 
       if (existingAddresses.length > 0) {
@@ -177,7 +201,7 @@ export async function POST(req: NextRequest) {
           : address.street;
         await db.insert(addresses).values({
           id: addressId,
-          userId: session.user.id,
+          userId: userId,
           receipientName: address.fullName,
           street: fullStreet,
           city: address.city,
@@ -204,11 +228,11 @@ export async function POST(req: NextRequest) {
           .from(products)
           .where(eq(products.id, item.productId))
           .limit(1);
-        return NextResponse.json(
+        return corsResponse(
           {
             error: `Insufficient stock for ${product[0]?.productName || "product"}. Available: ${inv?.quantityInStock || 0}, Requested: ${item.quantity}`,
           },
-          { status: 400 }
+          400
         );
       }
     }
@@ -217,7 +241,7 @@ export async function POST(req: NextRequest) {
     const orderId = uuidv4();
     await db.insert(orders).values({
       id: orderId,
-      buyerId: session.user.id,
+      buyerId: userId,
       addressId,
       total: String(subtotal),
     });
@@ -270,7 +294,7 @@ export async function POST(req: NextRequest) {
     const cart = await db
       .select()
       .from(carts)
-      .where(eq(carts.buyerId, session.user.id))
+      .where(eq(carts.buyerId, userId))
       .limit(1);
 
     const cartItemIds = Array.isArray(items)
@@ -290,7 +314,7 @@ export async function POST(req: NextRequest) {
         );
     }
 
-    return NextResponse.json({
+    return corsResponse({
       success: true,
       orderId,
       subtotal,
@@ -299,9 +323,9 @@ export async function POST(req: NextRequest) {
     });
   } catch (error) {
     console.error("Error creating order:", error);
-    return NextResponse.json(
+    return corsResponse(
       { error: "Failed to create order" },
-      { status: 500 }
+      500
     );
   }
 }
@@ -311,11 +335,11 @@ export async function PUT(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
     const orderId = searchParams.get("id");
-    if (!orderId) return NextResponse.json({ error: "Missing id" }, { status: 400 });
+    if (!orderId) return corsResponse({ error: "Missing id" }, 400);
     
-    const session = await getServerSession();
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    const userId = await getUserId(req);
+    if (!userId) {
+      return corsResponse({ error: "Unauthorized" }, 401);
     }
 
     const updates = await req.json();
@@ -328,11 +352,11 @@ export async function PUT(req: NextRequest) {
       .limit(1);
 
     if (order.length === 0) {
-      return NextResponse.json({ error: "Order not found" }, { status: 404 });
+      return corsResponse({ error: "Order not found" }, 404);
     }
 
-    if (order[0].buyerId !== session.user.id) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
+    if (order[0].buyerId !== userId) {
+      return corsResponse({ error: "Unauthorized" }, 403);
     }
 
     // If order is being cancelled, restore stock
@@ -402,12 +426,12 @@ export async function PUT(req: NextRequest) {
       await db.update(orders).set(orderUpdates).where(eq(orders.id, orderId));
     }
 
-    return NextResponse.json({ success: true });
+    return corsResponse({ success: true });
   } catch (error) {
     console.error("Error updating order:", error);
-    return NextResponse.json(
+    return corsResponse(
       { error: "Failed to update order" },
-      { status: 500 }
+      500
     );
   }
 }
@@ -416,7 +440,7 @@ export async function PUT(req: NextRequest) {
 export async function DELETE(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const orderId = searchParams.get("id");
-  if (!orderId) return NextResponse.json({ error: "Missing id" }, { status: 400 });
+  if (!orderId) return corsResponse({ error: "Missing id" }, 400);
   await db.delete(orders).where(eq(orders.id, orderId));
-  return NextResponse.json({ success: true });
+  return corsResponse({ success: true });
 }

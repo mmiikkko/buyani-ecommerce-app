@@ -404,3 +404,12 @@ export const carouselImages = mysqlTable("carousel_images", {
   imageURL: longtext("image_url"),
   addeadAt: timestamp("added_at", { fsp: 3 }).defaultNow(),
 })
+
+export const passwordResetCodes = mysqlTable("password_reset_codes", {
+  id: varchar("id", { length: 36 }).primaryKey(),
+  email: varchar("email", { length: 255 }).notNull(),
+  code: varchar("code", { length: 6 }).notNull(),
+  expiresAt: timestamp("expires_at", { fsp: 3 }).notNull(),
+  verified: boolean("verified").default(false).notNull(),
+  createdAt: timestamp("created_at", { fsp: 3 }).defaultNow().notNull(),
+});
