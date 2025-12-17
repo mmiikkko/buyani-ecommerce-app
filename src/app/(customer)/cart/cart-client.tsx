@@ -16,6 +16,8 @@ interface CartItem {
   productName: string | null;
   price: number | null;
   image: string | null;
+  shopId: string | null;
+  shopName: string | null;
 }
 
 interface CartClientProps {
@@ -73,6 +75,22 @@ export function CartClient({ initialItems, userId }: CartClientProps) {
     }
   };
 
+  // Group items by shop
+  const groupedByShop = items.reduce((acc, item) => {
+    const shopId = item.shopId || 'unknown';
+    if (!acc[shopId]) {
+      acc[shopId] = {
+        shopId,
+        shopName: item.shopName || 'Unknown Shop',
+        items: []
+      };
+    }
+    acc[shopId].items.push(item);
+    return acc;
+  }, {} as Record<string, { shopId: string; shopName: string; items: CartItem[] }>);
+
+  const shopGroups = Object.values(groupedByShop);
+
   const subtotal = items
     .filter((item) => selectedItems.has(item.id))
     .reduce(
@@ -121,89 +139,128 @@ export function CartClient({ initialItems, userId }: CartClientProps) {
             </label>
           </div>
 
-          {items.map((item) => (
-            <Card key={item.id}>
-              <CardContent className="p-4">
-                <div className="flex gap-4">
-                  {/* Checkbox */}
-                  <div className="flex items-start pt-1">
-                    <Checkbox
-                      id={`item-${item.id}`}
-                      checked={selectedItems.has(item.id)}
-                      onCheckedChange={() => handleToggleSelect(item.id)}
-                    />
-                  </div>
+          {/* Shop Groups */}
+          {shopGroups.map((shopGroup) => {
+            const shopSubtotal = shopGroup.items
+              .filter((item) => selectedItems.has(item.id))
+              .reduce((sum, item) => sum + (item.price || 0) * item.quantity, 0);
 
-                  {/* Product Image */}
-                  <div className="relative h-24 w-24 flex-shrink-0 rounded-lg overflow-hidden bg-slate-100">
-                    {item.image ? (
-                      <Image
-                        src={item.image}
-                        alt={item.productName || "Product"}
-                        fill
-                        className="object-cover"
+            return (
+              <div key={shopGroup.shopId} className="space-y-3">
+                {/* Shop Header */}
+                <div className="flex items-center gap-2 py-3 px-4 bg-slate-50 rounded-lg border border-slate-200">
+                  <div className="flex items-center gap-2 flex-1">
+                    <svg
+                      className="h-5 w-5 text-slate-600"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"
                       />
-                    ) : (
-                      <div className="h-full w-full flex items-center justify-center text-slate-400">
-                        No Image
-                      </div>
-                    )}
+                    </svg>
+                    <span className="font-semibold text-slate-900">
+                      {shopGroup.shopName}
+                    </span>
                   </div>
-
-                  {/* Product Info */}
-                  <div className="flex-1 min-w-0">
-                    <h3 className="font-semibold text-slate-900 mb-1">
-                      {item.productName || "Unnamed Product"}
-                    </h3>
-                    <p className="text-lg font-bold text-emerald-600 mb-3">
-                      ₱{((item.price || 0) * item.quantity).toFixed(2)}
-                    </p>
-
-                    {/* Quantity Controls */}
-                    <div className="flex items-center gap-3">
-                      <div className="flex items-center gap-2 border rounded-lg">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8"
-                          onClick={() =>
-                            handleUpdateQuantity(item.id, item.quantity - 1)
-                          }
-                          disabled={loading[item.id] || item.quantity <= 1}
-                        >
-                          <Minus className="h-4 w-4" />
-                        </Button>
-                        <span className="w-8 text-center font-medium">
-                          {item.quantity}
-                        </span>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8"
-                          onClick={() =>
-                            handleUpdateQuantity(item.id, item.quantity + 1)
-                          }
-                          disabled={loading[item.id]}
-                        >
-                          <Plus className="h-4 w-4" />
-                        </Button>
-                      </div>
-
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8 text-red-500 hover:text-red-700 hover:bg-red-50"
-                        onClick={() => handleRemove(item.id)}
-                        disabled={loading[item.id]}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
+                  {shopSubtotal > 0 && (
+                    <span className="text-sm text-slate-600">
+                      Shop Subtotal: <span className="font-semibold text-emerald-600">₱{shopSubtotal.toFixed(2)}</span>
+                    </span>
+                  )}
                 </div>
-              </CardContent>
-            </Card>
-          ))}
+
+                {/* Shop Items */}
+                {shopGroup.items.map((item) => (
+                  <Card key={item.id}>
+                    <CardContent className="p-4">
+                      <div className="flex gap-4">
+                        {/* Checkbox */}
+                        <div className="flex items-start pt-1">
+                          <Checkbox
+                            id={`item-${item.id}`}
+                            checked={selectedItems.has(item.id)}
+                            onCheckedChange={() => handleToggleSelect(item.id)}
+                          />
+                        </div>
+
+                        {/* Product Image */}
+                        <div className="relative h-24 w-24 flex-shrink-0 rounded-lg overflow-hidden bg-slate-100">
+                          {item.image ? (
+                            <Image
+                              src={item.image}
+                              alt={item.productName || "Product"}
+                              fill
+                              className="object-cover"
+                            />
+                          ) : (
+                            <div className="h-full w-full flex items-center justify-center text-slate-400">
+                              No Image
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Product Info */}
+                        <div className="flex-1 min-w-0">
+                          <h3 className="font-semibold text-slate-900 mb-1">
+                            {item.productName || "Unnamed Product"}
+                          </h3>
+                          <p className="text-lg font-bold text-emerald-600 mb-3">
+                            ₱{((item.price || 0) * item.quantity).toFixed(2)}
+                          </p>
+
+                          {/* Quantity Controls */}
+                          <div className="flex items-center gap-3">
+                            <div className="flex items-center gap-2 border rounded-lg">
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8"
+                                onClick={() =>
+                                  handleUpdateQuantity(item.id, item.quantity - 1)
+                                }
+                                disabled={loading[item.id] || item.quantity <= 1}
+                              >
+                                <Minus className="h-4 w-4" />
+                              </Button>
+                              <span className="w-8 text-center font-medium">
+                                {item.quantity}
+                              </span>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8"
+                                onClick={() =>
+                                  handleUpdateQuantity(item.id, item.quantity + 1)
+                                }
+                                disabled={loading[item.id]}
+                              >
+                                <Plus className="h-4 w-4" />
+                              </Button>
+                            </div>
+
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 text-red-500 hover:text-red-700 hover:bg-red-50"
+                              onClick={() => handleRemove(item.id)}
+                              disabled={loading[item.id]}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            );
+          })}
         </div>
 
         {/* Order Summary */}

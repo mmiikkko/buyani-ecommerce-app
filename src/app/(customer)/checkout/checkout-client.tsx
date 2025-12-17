@@ -15,6 +15,8 @@ type CartItem = {
   productName: string | null;
   price: number | null;
   image: string | null;
+  shopId: string | null;
+  shopName: string | null;
 };
 
 type User = {

@@ -1,7 +1,7 @@
 "use server";
 
 import { db } from "@/server/drizzle";
-import { carts, cartItems, products, productImages } from "@/server/schema/auth-schema";
+import { carts, cartItems, products, productImages, shop } from "@/server/schema/auth-schema";
 import { eq, and, inArray } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { v4 as uuid } from "uuid";
@@ -43,7 +43,7 @@ export async function getOrCreateCart(buyerId: string) {
 export async function getCartItems(buyerId: string) {
   try {
     const cart = await getOrCreateCart(buyerId);
-    
+
     if (!cart?.id) {
       return [];
     }
@@ -56,9 +56,12 @@ export async function getCartItems(buyerId: string) {
         quantity: cartItems.quantity,
         productName: products.productName,
         price: products.price,
+        shopId: products.shopId,
+        shopName: shop.shopName,
       })
       .from(cartItems)
       .leftJoin(products, eq(cartItems.productId, products.id))
+      .leftJoin(shop, eq(products.shopId, shop.id))
       .where(eq(cartItems.cartId, cart.id));
 
     if (!items || items.length === 0) {
@@ -67,7 +70,7 @@ export async function getCartItems(buyerId: string) {
 
     // Get unique product IDs
     const productIds = [...new Set(items.map(item => item.productId).filter(Boolean))] as string[];
-    
+
     // Fetch all images for these products
     const allImages = productIds.length > 0 ? await db
       .select({
@@ -93,6 +96,8 @@ export async function getCartItems(buyerId: string) {
       productName: item.productName,
       price: item.price ? parseFloat(String(item.price)) : 0,
       image: item.productId ? imageMap.get(item.productId) || null : null,
+      shopId: item.shopId,
+      shopName: item.shopName,
     }));
   } catch (error) {
     console.error("Error fetching cart items:", error);
@@ -109,9 +114,9 @@ export async function addToCart(
   try {
     // Validate product ID is not a placeholder
     if (productId.startsWith("PlaceHolder") || productId.includes("PlaceHolder")) {
-      return { 
-        success: false, 
-        error: "Cannot add placeholder product to cart. Please select a real product." 
+      return {
+        success: false,
+        error: "Cannot add placeholder product to cart. Please select a real product."
       };
     }
 
@@ -149,18 +154,18 @@ export async function addToCart(
     return { success: true };
   } catch (error: any) {
     console.error("Error adding to cart:", error);
-    
+
     // Check for foreign key constraint error
     if (error?.code === 'ER_NO_REFERENCED_ROW_2' || error?.errno === 1452) {
-      return { 
-        success: false, 
-        error: "The product does not exist in the database. Please select a valid product." 
+      return {
+        success: false,
+        error: "The product does not exist in the database. Please select a valid product."
       };
     }
-    
-    return { 
-      success: false, 
-      error: error?.message || "Failed to add item to cart. Please try again." 
+
+    return {
+      success: false,
+      error: error?.message || "Failed to add item to cart. Please try again."
     };
   }
 }
