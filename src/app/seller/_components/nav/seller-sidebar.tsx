@@ -32,20 +32,23 @@ import {
 
 import { Spinner } from "@/components/ui/spinner";
 import { usePathname } from "next/navigation";
-
-// Menu items.
-const items = [
-  { title: "Home", url: "/seller", icon: Home },
-  { title: "Orders", url: "/seller/orders", icon: ShoppingCart },
-  { title: "POS", url: "/seller/POS", icon: Store },
-  { title: "Products", url: "/seller/products", icon: Package },
-  { title: "Inbox", url: "/seller/inbox", icon: Inbox },
-];
+import { useLanguage } from "@/lib/i18n/context";
 
 export function AppSidebar() {
+  const { t } = useLanguage();
   const [mounted, setMounted] = useState(false);
   const [loading, setLoading] = useState(false);
   const pathname = usePathname();
+  
+  // Menu items.
+  const items = [
+    { title: t("home"), url: "/seller", icon: Home },
+    { title: t("orders"), url: "/seller/orders", icon: ShoppingCart },
+    { title: t("pos"), url: "/seller/POS", icon: Store },
+    { title: t("products"), url: "/seller/products", icon: Package },
+    { title: t("inbox"), url: "/seller/inbox", icon: Inbox },
+  ];
+  
   // Avoid SSR/client mismatch
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -99,7 +102,7 @@ export function AppSidebar() {
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <SidebarMenuButton>
-                    <User2 /> Username
+                    <User2 /> {t("username")}
                     <ChevronUp className="ml-auto" />
                   </SidebarMenuButton>
                 </DropdownMenuTrigger>
@@ -115,11 +118,11 @@ export function AppSidebar() {
                       onClick={() => setLoading(true)}
                       className="flex items-center gap-2 hover:text-green-500"
                     >
-                      Account
+                      {t("account")}
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem>
-                    <span>Sign out</span>
+                    <span>{t("sign-out")}</span>
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>

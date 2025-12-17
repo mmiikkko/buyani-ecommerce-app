@@ -1,16 +1,18 @@
 "use client";
 
 import { Check } from "lucide-react";
+import { useLanguage } from "@/lib/i18n/context";
 
 interface CheckoutProgressProps {
   currentStep: 1 | 2 | 3;
 }
 
 export function CheckoutProgress({ currentStep }: CheckoutProgressProps) {
+  const { t } = useLanguage();
   const steps = [
-    { number: 1, label: "Delivery" },
-    { number: 2, label: "Payment" },
-    { number: 3, label: "Review" },
+    { number: 1, label: t("delivery") },
+    { number: 2, label: t("payment") },
+    { number: 3, label: t("review") },
   ];
 
   return (

@@ -3,6 +3,7 @@
 import Image from "next/image";
 import { Star, PenLine, Trash2, RotateCcw } from "lucide-react";
 import type { Product } from "@/types/products";
+import { useLanguage } from "@/lib/i18n/context";
 
 export function ProductCard({
   product,
@@ -17,6 +18,7 @@ export function ProductCard({
   onRestore?: (productId: string) => void;
   isRemoved?: boolean;
 }) {
+  const { t } = useLanguage();
   // Handle both string and array image_url formats
   const getImageUrl = (): string => {
     if (!product.images || product.images.length === 0) {
@@ -78,7 +80,7 @@ export function ProductCard({
                 target.style.display = "none";
                 const parent = target.parentElement;
                 if (parent) {
-                  parent.innerHTML = '<span class="text-gray-400 text-sm flex items-center justify-center h-full">No Image</span>';
+                  parent.innerHTML = `<span class="text-gray-400 text-sm flex items-center justify-center h-full">${t("no-image")}</span>`;
                 }
               }}
             />
@@ -96,14 +98,14 @@ export function ProductCard({
                 target.style.display = "none";
                 const parent = target.parentElement;
                 if (parent) {
-                  parent.innerHTML = '<span class="text-gray-400 text-sm flex items-center justify-center h-full">No Image</span>';
+                  parent.innerHTML = `<span class="text-gray-400 text-sm flex items-center justify-center h-full">${t("no-image")}</span>`;
                 }
               }}
             />
           )
         ) : (
           <span className="text-gray-400 text-sm flex items-center justify-center h-full">
-            No Image
+            {t("no-image")}
           </span>
         )}
       </div>
@@ -113,11 +115,11 @@ export function ProductCard({
         <div className="flex items-center justify-between">
           <h1 className="font-semibold text-lg">{product.productName}</h1>
           {isRemoved && (
-            <span className="text-xs bg-gray-200 text-gray-700 px-2 py-1 rounded-full">Removed</span>
+            <span className="text-xs bg-gray-200 text-gray-700 px-2 py-1 rounded-full">{t("removed")}</span>
           )}
         </div>
         <p className="text-green-700 font-bold">₱{product.price}</p>
-        <p className="text-gray-600 text-sm">Stock: {product.stock}</p>
+        <p className="text-gray-600 text-sm">{t("stock")}: {product.stock}</p>
       </div>
 
       {/* ACTION BUTTONS */}
@@ -129,7 +131,7 @@ export function ProductCard({
               className="flex items-center gap-1 text-blue-600 hover:text-blue-700 text-sm font-medium border rounded-md px-3 py-2 cursor-pointer"
             >
               <PenLine size={18} />
-              Edit
+              {t("edit")}
             </button>
 
             <button
@@ -137,7 +139,7 @@ export function ProductCard({
               className="flex items-center gap-1 text-[#2E7D32] hover:text-[#2E7D32]/80 text-sm font-medium border border-[#2E7D32] rounded-md px-3 py-2 cursor-pointer bg-emerald-50 hover:bg-emerald-100"
             >
               <RotateCcw size={18} />
-              Restock
+              {t("restock")}
             </button>
           </>
         ) : (
@@ -147,7 +149,7 @@ export function ProductCard({
               className="flex items-center gap-1 text-blue-600 hover:text-blue-700 text-sm font-medium border rounded-md px-3 py-2 cursor-pointer"
             >
               <PenLine size={18} />
-              Edit
+              {t("edit")}
             </button>
 
             <button
@@ -155,7 +157,7 @@ export function ProductCard({
               className="flex items-center gap-1 text-red-600 hover:text-red-700 text-sm font-medium border rounded-md px-3 py-2 cursor-pointer"
             >
               <Trash2 size={18} />
-              Remove Product
+              {t("remove-product")}
             </button>
           </>
         )}

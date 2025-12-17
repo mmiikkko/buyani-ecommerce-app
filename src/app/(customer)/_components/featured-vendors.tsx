@@ -6,12 +6,14 @@ import Link from "next/link";
 import type { Shop } from "@/types/shops";
 import { AnimatedSection } from "@/components/animated-section";
 import { AnimatedShopCard } from "./animated-shop-card";
+import { useLanguage } from "@/lib/i18n/context";
 
 const MAX_FEATURED_SHOPS = 6;
 
 export function FeaturedVendorsSection() {
   const [shops, setShops] = useState<Shop[]>([]);
   const [loading, setLoading] = useState(true);
+  const { t } = useLanguage();
   
   useEffect(() => {
     fetch("/api/shops")
@@ -63,7 +65,7 @@ export function FeaturedVendorsSection() {
               <div className="flex items-center gap-2">
                 <Sparkles className="w-5 h-5 text-blue-500 animate-pulse" />
                 <p className="text-xs font-bold uppercase tracking-[0.2em] text-blue-600 bg-blue-100 px-3 py-1 rounded-full">
-                  Trusted campus sellers
+                  {t("trusted-campus-sellers")}
                 </p>
               </div>
             </div>
@@ -71,7 +73,7 @@ export function FeaturedVendorsSection() {
               <h2 className="text-3xl sm:text-4xl font-bold tracking-tight bg-gradient-to-r from-slate-900 via-blue-800 to-purple-800 bg-clip-text text-transparent">
                 <span className="inline-flex items-center gap-2">
                   <Award className="w-7 h-7 text-amber-500 fill-amber-500" />
-                  Featured vendors
+                  {t("featured-vendors")}
                 </span>
               </h2>
               <div className="flex items-center gap-3 mt-2">
@@ -79,7 +81,7 @@ export function FeaturedVendorsSection() {
                 <div className="flex items-center gap-2">
                   <Heart className="w-4 h-4 text-rose-500 fill-rose-500" />
                   <p className="text-base text-slate-700 font-medium">
-                    Curated stalls from students and local makers with the best reviews.
+                    {t("curated-stalls-desc")}
                   </p>
                 </div>
               </div>
@@ -90,18 +92,18 @@ export function FeaturedVendorsSection() {
             href="/shops"
             className="inline-flex items-center gap-2 rounded-full border-2 border-blue-200 bg-gradient-to-r from-blue-500 to-purple-600 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-blue-500/30 hover:shadow-xl hover:shadow-blue-500/40 transition-all duration-200 hover:-translate-y-0.5"
           >
-            View all shops
+            {t("view-all-shops")}
             <ArrowRight className="size-4" />
           </Link>
         </header>
 
         {loading ? (
           <div className="text-center py-12">
-            <p className="text-slate-500">Loading shops...</p>
+            <p className="text-slate-500">{t("loading-shops")}</p>
           </div>
         ) : shops.length === 0 ? (
           <div className="text-center py-12">
-            <p className="text-slate-500">No shops available at the moment.</p>
+            <p className="text-slate-500">{t("no-shops-available")}</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">

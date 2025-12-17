@@ -8,10 +8,12 @@ import { ChartAreaIcons } from "./_components/cards-chart";
 import { FrequentBought } from "./_components/cards-frequentbought";
 import { Order } from "@/types/orders";
 import { Store, Loader2 } from "lucide-react";
+import { useLanguage } from "@/lib/i18n/context";
 
 type DateRange = "7" | "30" | "90" | "365" | "all";
 
 export default function SellerDashboard() {
+  const { t } = useLanguage();
   const [stats, setStats] = useState({
     totalSales: 0,
     totalOrders: 0,
@@ -80,10 +82,10 @@ export default function SellerDashboard() {
           </div>
           <div>
             <h1 className="text-3xl font-bold text-[#2E7D32]">
-              Welcome back
+              {t("welcome-back")}
             </h1>
             <p className="text-muted-foreground mt-1">
-              Here&apos;s what&apos;s happening with your store today
+              {t("store-today")}
             </p>
           </div>
         </div>
@@ -95,7 +97,7 @@ export default function SellerDashboard() {
           <div className="flex items-center justify-center py-12">
             <div className="inline-flex items-center gap-2 text-muted-foreground">
               <Loader2 className="h-5 w-5 animate-spin" />
-              <p>Loading dashboard stats...</p>
+              <p>{t("loading-dashboard-stats")}</p>
             </div>
           </div>
         ) : (

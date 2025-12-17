@@ -1,6 +1,7 @@
 "use client";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useLanguage } from "@/lib/i18n/context";
 
 type CartItem = {
   id: string;
@@ -24,13 +25,14 @@ export function OrderSummary({
   subtotal,
   total,
 }: OrderSummaryProps) {
+  const { t } = useLanguage();
   // Group items by shop
   const groupedByShop = cartItems.reduce((acc, item) => {
     const shopId = item.shopId || 'unknown';
     if (!acc[shopId]) {
       acc[shopId] = {
         shopId,
-        shopName: item.shopName || 'Unknown Shop',
+        shopName: item.shopName || t("unknown-shop"),
         items: []
       };
     }
@@ -43,7 +45,7 @@ export function OrderSummary({
   return (
     <Card className="sticky top-4">
       <CardHeader>
-        <CardTitle>Order Summary</CardTitle>
+        <CardTitle>{t("order-summary")}</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
         {/* Shop breakdown */}
@@ -60,7 +62,7 @@ export function OrderSummary({
                     {shopGroup.shopName}
                   </p>
                   <div className="flex justify-between text-sm text-slate-600">
-                    <span>{shopGroup.items.length} {shopGroup.items.length === 1 ? "item" : "items"}</span>
+                    <span>{shopGroup.items.length} {shopGroup.items.length === 1 ? t("item") : t("items")}</span>
                     <span className="font-semibold text-emerald-600">₱{shopSubtotal.toFixed(2)}</span>
                   </div>
                 </div>
@@ -72,14 +74,14 @@ export function OrderSummary({
         {/* Total summary */}
         <div className="space-y-2">
           <div className="flex justify-between text-slate-600">
-            <span>Subtotal ({cartItems.length} {cartItems.length === 1 ? "item" : "items"})</span>
+            <span>{t("subtotal")} ({cartItems.length} {cartItems.length === 1 ? t("item") : t("items")})</span>
             <span className="font-semibold">₱{subtotal.toFixed(2)}</span>
           </div>
         </div>
 
         <div className="border-t pt-4">
           <div className="flex justify-between text-lg font-bold text-slate-900">
-            <span>Total</span>
+            <span>{t("total")}</span>
             <span className="text-emerald-600">₱{total.toFixed(2)}</span>
           </div>
         </div>

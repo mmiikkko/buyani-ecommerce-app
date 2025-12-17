@@ -7,8 +7,10 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { RefreshCw } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useLanguage } from "@/lib/i18n/context";
 
 export default function Products() {
+  const { t } = useLanguage();
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -30,15 +32,15 @@ export default function Products() {
       
       if (!res.ok) {
         if (res.status === 401) {
-          throw new Error("Unauthorized. Please log in.");
+          throw new Error(t("unauthorized-login"));
         }
-        throw new Error("Failed to fetch products");
+        throw new Error(t("failed-fetch-products"));
       }
       
       const data: Product[] = await res.json();
       setProducts(data);
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : "An unknown error occurred";
+      const errorMessage = err instanceof Error ? err.message : t("unknown-error");
       setError(errorMessage);
       if (showLoading) {
         toast.error(errorMessage);
@@ -79,7 +81,7 @@ export default function Products() {
         
         if (!res.ok) {
           // Try to get error message from response
-          let errorMessage = responseData.error || "Failed to create product";
+          let errorMessage = responseData.error || t("failed-create-product");
           
           // If it's a connection error (503), retry
           if (res.status === 503 && attempt < maxRetries - 1) {
@@ -98,7 +100,7 @@ export default function Products() {
         await fetchProducts(false);
         return; // Success, exit retry loop
       } catch (err) {
-        lastError = err instanceof Error ? err : new Error("Failed to create product");
+        lastError = err instanceof Error ? err : new Error(t("failed-create-product"));
         
         // If it's not a connection error or we've exhausted retries, throw
         if (attempt === maxRetries - 1 || !lastError.message.includes("connection")) {
@@ -108,7 +110,7 @@ export default function Products() {
     }
 
     // Should never reach here, but just in case
-    throw lastError || new Error("Failed to create product after retries");
+    throw lastError || new Error(t("failed-create-product"));
   };
 
   const handleRemoveProduct = async (productId: string) => {
@@ -119,16 +121,16 @@ export default function Products() {
 
       if (!res.ok) {
         const errorData = await res.json().catch(() => ({}));
-        throw new Error(errorData.error || "Failed to remove product");
+        throw new Error(errorData.error || t("failed-remove-product"));
       }
 
-      toast.success("Product removed successfully. You can restock it later.");
+      toast.success(t("product-removed-success"));
       
       // Small delay to ensure database update is complete
       await new Promise(resolve => setTimeout(resolve, 300));
       await fetchProducts(false);
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : "Failed to remove product";
+      const errorMessage = err instanceof Error ? err.message : t("failed-remove-product");
       toast.error(errorMessage);
     }
   };
@@ -142,13 +144,13 @@ export default function Products() {
       });
 
       if (!res.ok) {
-        throw new Error("Failed to restore product");
+        throw new Error(t("failed-restore-product"));
       }
 
-      toast.success("Product restored successfully. You can now update stock and make it available.");
+      toast.success(t("product-restored-success"));
       await fetchProducts(false);
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : "Failed to restore product";
+      const errorMessage = err instanceof Error ? err.message : t("failed-restore-product");
       toast.error(errorMessage);
     }
   };
@@ -173,7 +175,7 @@ export default function Products() {
         });
 
         if (!res.ok) {
-          let errorMessage = "Failed to update product";
+          let errorMessage = t("failed-update-product");
           try {
             const errorData = await res.json();
             errorMessage = errorData.error || errorMessage;
@@ -194,7 +196,7 @@ export default function Products() {
         setEditingProduct(null);
         return;
       } catch (err) {
-        lastError = err instanceof Error ? err : new Error("Failed to update product");
+        lastError = err instanceof Error ? err : new Error(t("failed-update-product"));
         
         if (attempt === maxRetries - 1 || !lastError.message.includes("connection")) {
           throw lastError;
@@ -202,7 +204,7 @@ export default function Products() {
       }
     }
 
-    throw lastError || new Error("Failed to update product after retries");
+    throw lastError || new Error(t("failed-update-product"));
   };
 
   const handleEditComplete = () => {
@@ -247,7 +249,7 @@ export default function Products() {
               onClick={() => fetchProducts(true)}
               className="text-sm text-blue-600 hover:underline"
             >
-              Try again
+              {t("try-again")}
             </button>
           </div>
         </div>
@@ -271,7 +273,7 @@ export default function Products() {
             className="flex items-center gap-2"
           >
             <RefreshCw className={`h-4 w-4 ${refreshing ? "animate-spin" : ""}`} />
-            Refresh
+            {t("refresh")}
           </Button>
           <AddProducts 
             onAdd={handleAddProduct}
@@ -285,7 +287,7 @@ export default function Products() {
       {products.length === 0 && (
         <div className="flex justify-center items-center h-64 w-full">
           <div className="text-center">
-            <p className="text-lg text-gray-500 mb-4">You have no listed products yet</p>
+            <p className="text-lg text-gray-500 mb-4">{t("you-have-no-products")}</p>
             <AddProducts 
               onAdd={handleAddProduct}
               onUpdate={handleUpdateProduct}
@@ -305,7 +307,7 @@ export default function Products() {
             return !isRemoved;
           }).length > 0 && (
             <div className="space-y-4">
-              <h2 className="text-lg font-semibold text-[#2E7D32]">Active Products</h2>
+              <h2 className="text-lg font-semibold text-[#2E7D32]">{t("active-products")}</h2>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
                 {products
                   .filter(p => {
@@ -335,8 +337,8 @@ export default function Products() {
             
             return removedProducts.length > 0 ? (
               <div className="space-y-4 pt-8">
-                <h2 className="text-lg font-semibold text-gray-600">Removed Products</h2>
-                <p className="text-sm text-muted-foreground">Restock these products to make them available again</p>
+                <h2 className="text-lg font-semibold text-gray-600">{t("removed-products")}</h2>
+                <p className="text-sm text-muted-foreground">{t("restock-description")}</p>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
                   {removedProducts.map((item) => (
                     <ProductCard 

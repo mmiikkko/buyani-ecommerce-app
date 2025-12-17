@@ -3,40 +3,42 @@
 import { AnimatedSection } from "@/components/animated-section";
 import { ShoppingBag, Store, Users, Star } from "lucide-react";
 import { useEffect, useState } from "react";
-
-const stats = [
-  {
-    icon: ShoppingBag,
-    value: "500+",
-    label: "Products Available",
-    color: "from-emerald-500 to-emerald-600",
-    bgColor: "bg-emerald-50",
-  },
-  {
-    icon: Store,
-    value: "50+",
-    label: "Active Shops",
-    color: "from-blue-500 to-blue-600",
-    bgColor: "bg-blue-50",
-  },
-  {
-    icon: Users,
-    value: "1000+",
-    label: "Happy Customers",
-    color: "from-purple-500 to-purple-600",
-    bgColor: "bg-purple-50",
-  },
-  {
-    icon: Star,
-    value: "4.8",
-    label: "Average Rating",
-    color: "from-amber-500 to-amber-600",
-    bgColor: "bg-amber-50",
-  },
-];
+import { useLanguage } from "@/lib/i18n/context";
 
 export function StatsSection() {
   const [counts, setCounts] = useState({ products: 0, shops: 0, rating: 0 });
+  const { t } = useLanguage();
+  
+  const stats = [
+    {
+      icon: ShoppingBag,
+      value: "500+",
+      label: t("products-available"),
+      color: "from-emerald-500 to-emerald-600",
+      bgColor: "bg-emerald-50",
+    },
+    {
+      icon: Store,
+      value: "50+",
+      label: t("active-shops"),
+      color: "from-blue-500 to-blue-600",
+      bgColor: "bg-blue-50",
+    },
+    {
+      icon: Users,
+      value: "1000+",
+      label: t("happy-customers"),
+      color: "from-purple-500 to-purple-600",
+      bgColor: "bg-purple-50",
+    },
+    {
+      icon: Star,
+      value: "4.8",
+      label: t("average-rating"),
+      color: "from-amber-500 to-amber-600",
+      bgColor: "bg-amber-50",
+    },
+  ];
 
   useEffect(() => {
     // Fetch real counts and average rating
@@ -70,13 +72,13 @@ export function StatsSection() {
       <div className="relative mx-auto flex w-full max-w-7xl flex-col gap-6 px-4 sm:px-6 lg:px-8">
         <div className="flex flex-col gap-2">
           <p className="inline-flex w-fit items-center gap-2 rounded-full bg-emerald-100 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-emerald-700">
-            Marketplace at a glance
+            {t("marketplace-glance")}
           </p>
           <h2 className="text-2xl sm:text-3xl font-bold text-slate-900">
-            Quick stats
+            {t("quick-stats")}
           </h2>
           <p className="text-sm text-slate-600">
-            Products available, active shops, happy customers, and our average rating.
+            {t("stats-description")}
           </p>
         </div>
 
@@ -105,7 +107,7 @@ export function StatsSection() {
         </div>
 
         <div className="mt-4 rounded-2xl border border-emerald-100 bg-emerald-50/60 px-4 py-3 text-sm text-emerald-800 shadow-inner">
-          Want to connect and be one of BuyAni? Contact us — we’d love to partner with you.
+          {t("connect-partner")}
         </div>
       </div>
     </AnimatedSection>

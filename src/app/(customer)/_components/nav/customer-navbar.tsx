@@ -13,6 +13,8 @@ import { FormEvent, useEffect, useRef, useState } from "react";
 import { UserDropdown } from "@/components/user-dropdown";
 import { authClient } from "@/server/auth-client";
 import { USER_ROLES } from "@/server/schema/auth-schema";
+import { LanguageSelector } from "@/components/language-selector";
+import { useLanguage } from "@/lib/i18n/context";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -43,6 +45,7 @@ export default function Navbar({ className }: NavbarProps) {
   const [cartCount, setCartCount] = useState(0);
   const [isNavigating, setIsNavigating] = useState(false);
   const debounceTimer = useRef<NodeJS.Timeout | null>(null);
+  const { t } = useLanguage();
 
   const user = session.data?.user;
   const isLoading = session.isPending || session.isRefetching;
@@ -54,10 +57,10 @@ export default function Navbar({ className }: NavbarProps) {
   const isSeller = !isSuspendedRole && !hasSuspendedShop && isSellerRole;
 
   const navLinks = [
-    { href: "/", label: "Home", icon: Home },
-    { href: "/products", label: "Products", icon: Grid3x3 },
-    { href: "/shops", label: "Shops", icon: Package },
-    { href: "/categories", label: "Categories", icon: Tag },
+    { href: "/", label: t("home"), icon: Home },
+    { href: "/products", label: t("products"), icon: Grid3x3 },
+    { href: "/shops", label: t("shops"), icon: Package },
+    { href: "/categories", label: t("categories"), icon: Tag },
   ];
 
   const isActive = (href: string) =>
@@ -219,7 +222,7 @@ export default function Navbar({ className }: NavbarProps) {
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/20 backdrop-blur-sm">
           <div className="flex flex-col items-center gap-3 rounded-2xl bg-white p-8 shadow-2xl">
             <Loader2 className="h-10 w-10 animate-spin text-emerald-600" />
-            <p className="text-sm font-medium text-slate-700">Loading...</p>
+            <p className="text-sm font-medium text-slate-700">{t("loading")}</p>
           </div>
         </div>
       )}
@@ -276,7 +279,7 @@ export default function Navbar({ className }: NavbarProps) {
                   className="inline-flex items-center gap-1.5 rounded-full bg-emerald-600 px-3 py-1.5 text-xs font-medium text-white shadow-sm hover:bg-emerald-700 transition-colors sm:hidden"
                 >
                   <Handshake size={14} />
-                  <span>Become a seller</span>
+                  <span>{t("become-seller")}</span>
                 </Link>
               )}
             </div>
@@ -311,7 +314,7 @@ export default function Navbar({ className }: NavbarProps) {
               <Search size={14} className="text-slate-400 flex-shrink-0" />
               <Input
                 type="text"
-                placeholder="Search local treats and shops…"
+                placeholder={t("search-placeholder")}
                 value={searchQuery}
                 onChange={(e) => handleSearchChange(e.target.value)}
                 className="h-7 border-0 bg-transparent px-0 text-xs placeholder:text-slate-400 focus-visible:ring-0 focus-visible:ring-offset-0"
@@ -324,10 +327,11 @@ export default function Navbar({ className }: NavbarProps) {
                 className="hidden items-center gap-1.5 rounded-full bg-emerald-600 px-3 py-1.5 text-xs font-medium text-white shadow-sm hover:bg-emerald-700 transition-colors sm:inline-flex"
               >
                 <Handshake size={14} />
-                <span>Become a seller</span>
+                <span>{t("become-seller")}</span>
               </Link>
             )}
 
+            <LanguageSelector />
 
             <div className="flex items-center gap-2 text-slate-800">
               {isLoading ? (
@@ -341,7 +345,7 @@ export default function Navbar({ className }: NavbarProps) {
                     className="h-8 rounded-full border-slate-200 px-3 text-xs font-medium"
                     onClick={() => navigateWithLoader("/orders")}
                   >
-                    Orders
+                    {t("orders")}
                   </Button>
 
 
@@ -367,7 +371,7 @@ export default function Navbar({ className }: NavbarProps) {
                 <Link href="/sign-in">
                   <Button className="inline-flex h-8 items-center gap-1.5 rounded-full bg-slate-900 px-3 text-xs font-medium text-white hover:bg-slate-800">
                     <UserIcon size={14} />
-                    <span>Log in</span>
+                    <span>{t("login")}</span>
                   </Button>
                 </Link>
               )}

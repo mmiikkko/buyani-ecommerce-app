@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Shield, ArrowRight, MapPin, Check, Plus } from "lucide-react";
+import { useLanguage } from "@/lib/i18n/context";
 
 type AddressData = {
   fullName: string;
@@ -50,6 +51,7 @@ interface DeliveryStepProps {
 }
 
 export function DeliveryStep({ initialData, user, onSubmit, loading }: DeliveryStepProps) {
+  const { t } = useLanguage();
   const [savedAddresses, setSavedAddresses] = useState<SavedAddress[]>([]);
   const [selectedAddressId, setSelectedAddressId] = useState<string | "new">("new");
   const [formData, setFormData] = useState<AddressData>({
@@ -163,17 +165,17 @@ export function DeliveryStep({ initialData, user, onSubmit, loading }: DeliveryS
       <CardHeader>
         <div className="flex items-center gap-2">
           <Shield className="h-5 w-5 text-emerald-600" />
-          <CardTitle>Delivery Address</CardTitle>
+          <CardTitle>{t("delivery-address")}</CardTitle>
         </div>
         <p className="text-sm text-slate-600 mt-1">
-          Where should we deliver your order?
+          {t("where-deliver")}
         </p>
       </CardHeader>
       <CardContent>
         {savedAddresses.length > 0 && (
           <div className="mb-6">
             <Label className="text-base font-semibold mb-3 block">
-              Select or Add Address
+              {t("select-add-address")}
             </Label>
             <div className="space-y-3">
               {savedAddresses.map((address) => (
@@ -230,7 +232,7 @@ export function DeliveryStep({ initialData, user, onSubmit, loading }: DeliveryS
                 </div>
                 <div className="flex-1 flex items-center gap-2">
                   <Plus className="h-4 w-4 text-emerald-600" />
-                  <span className="font-semibold">Add New Address</span>
+                  <span className="font-semibold">{t("add-new-address")}</span>
                 </div>
               </div>
             </div>
@@ -242,9 +244,9 @@ export function DeliveryStep({ initialData, user, onSubmit, loading }: DeliveryS
                 className="w-full bg-emerald-600 hover:bg-emerald-700 h-12 text-base font-semibold mt-4"
                 disabled={loading}
               >
-                {loading ? "Saving..." : (
+                {loading ? t("saving") : (
                   <>
-                    Continue to Payment
+                    {t("continue-payment")}
                     <ArrowRight className="ml-2 h-5 w-5" />
                   </>
                 )}
@@ -258,7 +260,7 @@ export function DeliveryStep({ initialData, user, onSubmit, loading }: DeliveryS
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <Label htmlFor="fullName">
-                Recipient Name <span className="text-red-500">*</span>
+                {t("recipient-name")} <span className="text-red-500">*</span>
               </Label>
               <Input
                 id="fullName"
@@ -273,7 +275,7 @@ export function DeliveryStep({ initialData, user, onSubmit, loading }: DeliveryS
 
             <div>
               <Label htmlFor="street">
-                Street Address <span className="text-red-500">*</span>
+                {t("street-address")} <span className="text-red-500">*</span>
               </Label>
               <Input
                 id="street"
@@ -288,7 +290,7 @@ export function DeliveryStep({ initialData, user, onSubmit, loading }: DeliveryS
 
             <div>
               <Label htmlFor="apartment">
-                Apartment, Suite, Unit, etc. (Optional)
+                {t("apartment-optional")}
               </Label>
               <Input
                 id="apartment"
@@ -296,7 +298,7 @@ export function DeliveryStep({ initialData, user, onSubmit, loading }: DeliveryS
                 onChange={(e) =>
                   setFormData((prev) => ({ ...prev, apartment: e.target.value }))
                 }
-                placeholder="Apartment, suite, unit, building, floor, etc."
+                placeholder={t("apartment-placeholder")}
                 className="mt-1"
               />
             </div>
@@ -304,7 +306,7 @@ export function DeliveryStep({ initialData, user, onSubmit, loading }: DeliveryS
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div>
                 <Label htmlFor="city">
-                  City <span className="text-red-500">*</span>
+                  {t("city")} <span className="text-red-500">*</span>
                 </Label>
                 <Input
                   id="city"
@@ -319,7 +321,7 @@ export function DeliveryStep({ initialData, user, onSubmit, loading }: DeliveryS
 
               <div>
                 <Label htmlFor="province">
-                  State / Province <span className="text-red-500">*</span>
+                  {t("state-province")} <span className="text-red-500">*</span>
                 </Label>
                 <Input
                   id="province"
@@ -336,7 +338,7 @@ export function DeliveryStep({ initialData, user, onSubmit, loading }: DeliveryS
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div>
                 <Label htmlFor="zipcode">
-                  Postal / ZIP Code <span className="text-red-500">*</span>
+                  {t("postal-zip")} <span className="text-red-500">*</span>
                 </Label>
                 <Input
                   id="zipcode"
@@ -351,7 +353,7 @@ export function DeliveryStep({ initialData, user, onSubmit, loading }: DeliveryS
 
               <div>
                 <Label htmlFor="country">
-                  Country <span className="text-red-500">*</span>
+                  {t("country")} <span className="text-red-500">*</span>
                 </Label>
                 <Input
                   id="country"
@@ -367,7 +369,7 @@ export function DeliveryStep({ initialData, user, onSubmit, loading }: DeliveryS
 
             <div>
               <Label htmlFor="contactNumber">
-                Contact Number <span className="text-red-500">*</span>
+                {t("contact-number")} <span className="text-red-500">*</span>
               </Label>
               <Input
                 id="contactNumber"
@@ -382,14 +384,14 @@ export function DeliveryStep({ initialData, user, onSubmit, loading }: DeliveryS
             </div>
 
             <div>
-              <Label htmlFor="deliveryNotes">Delivery Notes (Optional)</Label>
+              <Label htmlFor="deliveryNotes">{t("delivery-notes")}</Label>
               <Textarea
                 id="deliveryNotes"
                 value={formData.deliveryNotes}
                 onChange={(e) =>
                   setFormData((prev) => ({ ...prev, deliveryNotes: e.target.value }))
                 }
-                placeholder="e.g. Leave at the front desk, Call upon arrival"
+                placeholder={t("delivery-notes-placeholder")}
                 className="mt-1"
                 rows={3}
               />
@@ -400,9 +402,9 @@ export function DeliveryStep({ initialData, user, onSubmit, loading }: DeliveryS
               className="w-full bg-emerald-600 hover:bg-emerald-700 h-12 text-base font-semibold"
               disabled={loading}
             >
-              {loading ? "Saving..." : (
+              {loading ? t("saving") : (
                 <>
-                  Continue to Payment
+                  {t("continue-payment")}
                   <ArrowRight className="ml-2 h-5 w-5" />
                 </>
               )}

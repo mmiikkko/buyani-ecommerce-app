@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Roboto } from "next/font/google";
 import "@/app/globals.css";
 import icon from "@/assets/logo/favicon.ico";
+import { LanguageProvider } from "@/lib/i18n/context";
 
 export const metadata: Metadata = {
   title: "BuyAni",
@@ -21,9 +22,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="fil">
       <body className={`${roboto.className} antialiased scroll-smooth`}>
-        <main>{children}</main>
+        <LanguageProvider>
+          <main>{children}</main>
+        </LanguageProvider>
       </body>
     </html>
   );
