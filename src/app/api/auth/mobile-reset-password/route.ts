@@ -3,7 +3,7 @@ import { corsOptions, corsResponse } from "@/lib/api-utils";
 import { db } from "@/server/drizzle";
 import { user, account, passwordResetCodes } from "@/server/schema/auth-schema";
 import { eq, and } from "drizzle-orm";
-import bcrypt from "bcryptjs";
+import { hashPassword } from "better-auth/crypto";
 
 // OPTIONS /api/auth/mobile-reset-password - Handle CORS preflight
 export async function OPTIONS() {
@@ -64,19 +64,57 @@ export async function POST(req: NextRequest) {
       return corsResponse({ error: "User not found" }, 404);
     }
 
-    // Hash the new password
-    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    console.log("🔍 Found user:", foundUser.id, foundUser.email);
+
+    // Check what accounts exist for this user
+    const userAccounts = await db
+      .select()
+      .from(account)
+      .where(eq(account.userId, foundUser.id));
+
+    console.log("🔍 User accounts:", userAccounts.map(a => ({
+      id: a.id,
+      providerId: a.providerId,
+      hasPassword: !!a.password
+    })));
+
+    // Hash the password using Better Auth's built-in password hasher (scrypt)
+    // so that it is 100% compatible with Better Auth sign-in verification.
+    const hashedPassword = await hashPassword(newPassword);
+
+    console.log("🔐 Password hashed successfully");
 
     // Update the password in the account table
-    await db
-      .update(account)
-      .set({ password: hashedPassword })
-      .where(
-        and(
-          eq(account.userId, foundUser.id),
-          eq(account.providerId, "credential")
-        )
-      );
+    // Try to find account with providerId "credential" first
+    const credentialAccount = userAccounts.find(a => a.providerId === "credential");
+    
+    if (!credentialAccount) {
+      console.log("⚠️ No credential account found, checking for email-password account");
+      // Better Auth might use "email-password" as providerId
+      const emailPasswordAccount = userAccounts.find(a => a.providerId === "email-password");
+      
+      if (emailPasswordAccount) {
+        console.log("✅ Found email-password account, updating...");
+        const result = await db
+          .update(account)
+          .set({ password: hashedPassword })
+          .where(eq(account.id, emailPasswordAccount.id));
+        console.log("✅ Update result:", result);
+      } else {
+        console.error("❌ No password-based account found for user");
+        return corsResponse(
+          { error: "No password account found for this user" },
+          400
+        );
+      }
+    } else {
+      console.log("✅ Found credential account, updating...");
+      const result = await db
+        .update(account)
+        .set({ password: hashedPassword })
+        .where(eq(account.id, credentialAccount.id));
+      console.log("✅ Update result:", result);
+    }
 
     // Delete the used reset code
     await db

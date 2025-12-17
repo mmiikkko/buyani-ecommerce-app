@@ -87,7 +87,8 @@ export function BackdropCarousel() {
                       <div className="relative h-[26rem] sm:h-[28rem] overflow-hidden rounded-2xl border border-emerald-50 gap-3">
                         {/* Conditional render for base64 or normal URL */}
                         {item.imageURL.startsWith("data:") ? (
-                          <Image
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img
                             src={item.imageURL}
                             alt={item.imageDescription || "Carousel Image"}
                             className="w-full h-full object-cover"

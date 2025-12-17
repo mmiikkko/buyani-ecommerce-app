@@ -11,11 +11,12 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { authClient } from "@/server/auth-client";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
+import { useRouter } from "next/navigation";
 import { z } from "zod";
+import { Button } from "@/components/ui/button";
 
 const forgotPasswordSchema = z.object({
   email: z.email({ message: "Please enter a valid email" }),
@@ -24,8 +25,8 @@ const forgotPasswordSchema = z.object({
 type ForgotPasswordValues = z.infer<typeof forgotPasswordSchema>;
 
 export function ForgotPasswordForm() {
-  const [success, setSuccess] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const router = useRouter();
 
   const form = useForm<ForgotPasswordValues>({
     resolver: zodResolver(forgotPasswordSchema),
@@ -33,29 +34,44 @@ export function ForgotPasswordForm() {
   });
 
   async function onSubmit({ email }: ForgotPasswordValues) {
-    setSuccess(null);
     setError(null);
-    const { error } = await authClient.requestPasswordReset({
-      email,
-      redirectTo: "/reset-password",
-    });
+    
+    try {
+      const response = await fetch("/api/auth/mobile-forgot-password", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email }),
+      });
 
-    if (error) {
-      setError(error.message || "Something went wrong");
-    } else {
-      setSuccess("If that email is registered, a reset link has been sent.");
+      const data = await response.json();
+
+      if (!response.ok) {
+        setError(data.error || "Something went wrong");
+        return;
+      }
+
+      // Navigate to verify code page with email
+      router.push(`/verify-reset-code?email=${encodeURIComponent(email)}`);
+    } catch (error) {
+      setError("Failed to send verification code. Please try again.");
     }
-
-    form.reset();
   }
 
   const loading = form.formState.isSubmitting;
 
   return (
-    <Card className="mx-auto w-full max-w-md">
-      <CardContent>
+    <Card className="mx-auto w-full max-w-md shadow-lg border border-border/60 bg-gradient-to-b from-background to-muted/40">
+      <CardContent className="pt-6 space-y-6">
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
+            <div className="space-y-1.5">
+              <p className="text-xs text-muted-foreground">
+                We&apos;ll send a one-time 6-digit code to this email.
+              </p>
+            </div>
+
             <FormField
               control={form.control}
               name="email"
@@ -74,20 +90,29 @@ export function ForgotPasswordForm() {
               )}
             />
 
-            {success && (
-              <div role="status" className="text-sm text-green-600">
-                {success}
-              </div>
-            )}
             {error && (
               <div role="alert" className="text-sm text-red-600">
                 {error}
               </div>
             )}
 
-            <LoadingButton type="submit" className="w-full cursor-pointer" loading={loading}>
-              Send reset link
-            </LoadingButton>
+            <div className="flex gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                className="w-1/3 cursor-pointer"
+                onClick={() => router.back()}
+              >
+                Back
+              </Button>
+              <LoadingButton
+                type="submit"
+                className="w-2/3 cursor-pointer"
+                loading={loading}
+              >
+                Send verification code
+              </LoadingButton>
+            </div>
           </form>
         </Form>
       </CardContent>

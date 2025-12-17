@@ -1,11 +1,13 @@
-import { drizzleAdapter } from "better-auth/adapters/drizzle";
-import { betterAuth } from "better-auth";
-import { createAuthMiddleware, APIError } from "better-auth/api";
-import { db } from "./drizzle";
-import { account, user, session, verification } from "./schema/auth-schema";
-import { passwordSchema } from "@/lib/validation";
-import { sendMail } from "./mailer";
 import { env } from "@/lib/env";
+import { passwordSchema } from "@/lib/validation";
+import bcrypt from "bcryptjs";
+import { betterAuth } from "better-auth";
+import { drizzleAdapter } from "better-auth/adapters/drizzle";
+import { APIError, createAuthMiddleware } from "better-auth/api";
+import { hashPassword, verifyPassword } from "better-auth/crypto";
+import { db } from "./drizzle";
+import { sendMail } from "./mailer";
+import { account, session, user, verification } from "./schema/auth-schema";
 
 export const auth = betterAuth({
   baseURL: env.BETTER_AUTH_URL,
@@ -17,6 +19,31 @@ export const auth = betterAuth({
 
   emailAndPassword: {
     enabled: true,
+    password: {
+      // Always hash new passwords using Better Auth's own hasher (scrypt)
+      async hash(password) {
+        return hashPassword(password);
+      },
+      // Support both Better Auth hashes and old bcrypt hashes to avoid
+      // "Invalid password hash" errors for existing users.
+      async verify({ hash, password }) {
+        // New / proper Better Auth hashes: "salt:hexkey"
+        if (hash?.includes(":")) {
+          try {
+            return await verifyPassword({ hash, password });
+          } catch {
+            return false;
+          }
+        }
+
+        // Legacy bcrypt hashes (no colon)
+        try {
+          return await bcrypt.compare(password, hash);
+        } catch {
+          return false;
+        }
+      },
+    },
     async sendResetPassword({ user, url }) {
       await sendMail({
         to: user.email,
