@@ -26,6 +26,7 @@ import {
   User,
   Store,
   Package,
+  CalendarSync,
   Wallet,
   Layout,
   ChevronUp,
@@ -44,6 +45,7 @@ const items = [
   { title: "Users", url: "/admin/users", icon: User },
   { title: "Shops", url: "/admin/shops", icon: Store },
   { title: "Products", url: "/admin/products-monitor", icon: Package },
+  { title: "Tenants", url: "/admin/tenant-payments", icon: CalendarSync },
   { title: "Transactions", url: "/admin/transactions", icon: Wallet },
   { title: "Site Settings", url: "/admin/site-settings", icon: Layout },
 ];
