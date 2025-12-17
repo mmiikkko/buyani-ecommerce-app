@@ -15,6 +15,8 @@ type CartItem = {
   productName: string | null;
   price: number | null;
   image: string | null;
+  shopId?: string | null;
+  shopName?: string | null;
 };
 
 type AddressData = {
@@ -97,7 +99,7 @@ export function ReviewStep({
       // Handle GCash payment - redirect to PayMongo
       if (paymentMethod === "gcash") {
         toast.info("Redirecting to GCash payment...");
-        
+
         const gcashResponse = await fetch("/api/payments/gcash", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -114,7 +116,7 @@ export function ReviewStep({
         }
 
         const gcashResult = await gcashResponse.json();
-        
+
         // Redirect to PayMongo checkout
         window.location.href = gcashResult.checkoutUrl;
         return;
@@ -205,8 +207,8 @@ export function ReviewStep({
               {paymentMethod === "gcash"
                 ? "💙"
                 : paymentMethod === "paymaya"
-                ? "💚"
-                : "💵"}
+                  ? "💚"
+                  : "💵"}
             </div>
             <p className="font-semibold text-slate-900">
               {getPaymentMethodName(paymentMethod)}
@@ -277,17 +279,16 @@ export function ReviewStep({
           type="button"
           onClick={handlePlaceOrder}
           disabled={isProcessing || !address || !paymentMethod}
-          className={`flex-1 ${
-            paymentMethod === "cod"
+          className={`flex-1 ${paymentMethod === "cod"
               ? "bg-emerald-600 hover:bg-emerald-700"
               : "bg-orange-500 hover:bg-orange-600"
-          }`}
+            }`}
         >
           {isProcessing
             ? "Processing..."
             : paymentMethod === "cod"
-            ? "Place Order (Cash on Delivery)"
-            : "Proceed to Payment"}
+              ? "Place Order (Cash on Delivery)"
+              : "Proceed to Payment"}
         </Button>
       </div>
     </div>
