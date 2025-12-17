@@ -63,7 +63,7 @@ export function ReviewStep({
 
     setIsProcessing(true);
     try {
-      // Create order
+      // Create order(s) - one per shop
       const response = await fetch("/api/orders", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -99,16 +99,24 @@ export function ReviewStep({
       }
 
       // Handle GCash payment - redirect to PayMongo
+      // For multiple orders, we use the first order for the combined payment
       if (paymentMethod === "gcash") {
         toast.info(t("redirecting-gcash"));
+
+        // For multiple shop orders, combine them into one payment description
+        const orderCount = result.orders?.length || 1;
+        const description = orderCount > 1
+          ? `Buyani Orders (${orderCount} shops) - Total: ₱${result.subtotal}`
+          : `Buyani Order #${result.orderId}`;
 
         const gcashResponse = await fetch("/api/payments/gcash", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             orderId: result.orderId,
+            orderIds: result.orders?.map((o: any) => o.orderId) || [result.orderId],
             amount: result.subtotal,
-            description: `Buyani Order #${result.orderId}`,
+            description,
           }),
         });
 
@@ -125,7 +133,12 @@ export function ReviewStep({
       }
 
       // For COD and other payment methods
-      toast.success(t("order-placed-success"));
+      const orderCount = result.orders?.length || 1;
+      if (orderCount > 1) {
+        toast.success(`${orderCount} ${t("order-placed-success")}`);
+      } else {
+        toast.success(t("order-placed-success"));
+      }
       router.push("/settings/orders");
     } catch (error) {
       console.error("Error placing order:", error);

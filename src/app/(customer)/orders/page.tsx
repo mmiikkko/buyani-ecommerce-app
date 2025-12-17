@@ -20,18 +20,20 @@ import {
 import Image from "next/image";
 import type { Order } from "@/types/orders";
 import { toast } from "sonner";
-
-const STATUS_MAP: Record<string, { label: string; tone: string; icon: React.ElementType }> = {
-  pending: { label: "Pending", tone: "bg-amber-100 text-amber-800", icon: Clock },
-  accepted: { label: "Accepted", tone: "bg-emerald-100 text-emerald-800", icon: CheckCircle2 },
-  confirmed: { label: "Accepted", tone: "bg-emerald-100 text-emerald-800", icon: CheckCircle2 },
-  rejected: { label: "Rejected", tone: "bg-red-100 text-red-800", icon: XCircle },
-  cancelled: { label: "Cancelled", tone: "bg-slate-100 text-slate-800", icon: XCircle },
-  shipped: { label: "Shipped", tone: "bg-blue-100 text-blue-800", icon: Truck },
-  delivered: { label: "Delivered", tone: "bg-emerald-100 text-emerald-800", icon: Package },
-};
+import { useLanguage } from "@/lib/i18n/context";
 
 function StatusBadge({ status }: { status?: string }) {
+  const { t } = useLanguage();
+  const STATUS_MAP: Record<string, { label: string; tone: string; icon: React.ElementType }> = {
+    pending: { label: t("order-status-pending"), tone: "bg-amber-100 text-amber-800", icon: Clock },
+    accepted: { label: t("accepted"), tone: "bg-emerald-100 text-emerald-800", icon: CheckCircle2 },
+    confirmed: { label: t("accepted"), tone: "bg-emerald-100 text-emerald-800", icon: CheckCircle2 },
+    rejected: { label: t("rejected"), tone: "bg-red-100 text-red-800", icon: XCircle },
+    cancelled: { label: t("cancelled"), tone: "bg-slate-100 text-slate-800", icon: XCircle },
+    shipped: { label: t("shipped"), tone: "bg-blue-100 text-blue-800", icon: Truck },
+    delivered: { label: t("delivered"), tone: "bg-emerald-100 text-emerald-800", icon: Package },
+  };
+  
   const key = (status || "pending").toLowerCase();
   const config = STATUS_MAP[key] ?? STATUS_MAP.pending;
   const Icon = config.icon;
@@ -44,6 +46,7 @@ function StatusBadge({ status }: { status?: string }) {
 }
 
 export default function CustomerOrdersPage() {
+  const { t } = useLanguage();
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -51,13 +54,13 @@ export default function CustomerOrdersPage() {
   const [statusFilter, setStatusFilter] = useState("all");
 
   const STATUS_TABS = [
-    { value: "all", label: "All" },
-    { value: "pending", label: "Pending" },
-    { value: "accepted", label: "Accepted" },
-    { value: "shipped", label: "Shipped" },
-    { value: "delivered", label: "Delivered" },
-    { value: "rejected", label: "Rejected" },
-    { value: "cancelled", label: "Cancelled" },
+    { value: "all", label: t("all") },
+    { value: "pending", label: t("order-status-pending") },
+    { value: "accepted", label: t("accepted") },
+    { value: "shipped", label: t("shipped") },
+    { value: "delivered", label: t("delivered") },
+    { value: "rejected", label: t("rejected") },
+    { value: "cancelled", label: t("cancelled") },
   ];
 
   const fetchOrders = async (showLoading = true) => {
@@ -68,18 +71,18 @@ export default function CustomerOrdersPage() {
       const res = await fetch("/api/orders");
       if (!res.ok) {
         if (res.status === 401) {
-          toast.error("Please sign in to view orders");
+          toast.error(t("please-sign-in-orders"));
           return;
         }
-        throw new Error("Failed to fetch orders");
+        throw new Error(t("failed-fetch-orders"));
       }
       const data = await res.json();
       setOrders(data);
     } catch (error: unknown) {
       if (error instanceof Error) {
-        toast.error(error.message || "Unable to load orders");
+        toast.error(error.message || t("unable-load-orders"));
       } else {
-        toast.error("Unable to load orders");
+        toast.error(t("unable-load-orders"));
       }
     } finally {
       setLoading(false);
@@ -129,19 +132,19 @@ export default function CustomerOrdersPage() {
         body: JSON.stringify({ status: "delivered" }),
       });
       if (!res.ok) {
-        throw new Error("Failed to update order");
+        throw new Error(t("failed-update-order"));
       }
       setOrders((prev) =>
         prev.map((o) =>
           o.id === orderId || o.orderId === orderId ? { ...o, status: "delivered" } : o
         )
       );
-      toast.success("Thanks for confirming! Order marked as received.");
+      toast.success(t("thanks-confirming"));
     } catch (error: unknown) {
       if (error instanceof Error) {
-        toast.error(error.message || "Unable to load orders");
+        toast.error(error.message || t("unable-load-orders"));
       } else {
-        toast.error("Unable to load orders");
+        toast.error(t("unable-load-orders"));
       }
     } finally {
       setActionId(null);
@@ -149,7 +152,7 @@ export default function CustomerOrdersPage() {
   };
 
   const cancelOrder = async (orderId: string) => {
-    if (!confirm("Are you sure you want to cancel this order? The items will be returned to stock.")) {
+    if (!confirm(t("confirm-cancel"))) {
       return;
     }
     try {
@@ -160,17 +163,17 @@ export default function CustomerOrdersPage() {
         body: JSON.stringify({ status: "cancelled" }),
       });
       if (!res.ok) {
-        throw new Error("Failed to cancel order");
+        throw new Error(t("failed-update-order"));
       }
       setOrders((prev) =>
         prev.map((o) =>
           o.id === orderId || o.orderId === orderId ? { ...o, status: "cancelled" } : o
         )
       );
-      toast.success("Order cancelled successfully. Stock has been restored.");
+      toast.success(t("order-cancelled-success"));
       fetchOrders(false);
     } catch (error: any) {
-      toast.error(error?.message || "Could not cancel order");
+      toast.error(error?.message || t("could-not-cancel"));
     } finally {
       setActionId(null);
     }
@@ -179,7 +182,7 @@ export default function CustomerOrdersPage() {
   if (loading) {
     return (
       <main className="mx-auto max-w-6xl px-4 py-8">
-        <h1 className="text-2xl font-bold mb-4">My Orders</h1>
+        <h1 className="text-2xl font-bold mb-4">{t("my-orders")}</h1>
         <Card>
           <CardContent className="space-y-3 p-4">
             <Skeleton className="h-16 w-full" />
@@ -196,9 +199,9 @@ export default function CustomerOrdersPage() {
       <div className="overflow-hidden rounded-2xl border bg-gradient-to-r from-emerald-600 via-emerald-500 to-emerald-400 text-white shadow-lg">
         <div className="flex flex-col gap-3 px-6 py-5 sm:flex-row sm:items-center sm:justify-between">
           <div className="space-y-1">
-            <p className="text-sm uppercase tracking-[0.18em] text-white/80">Orders</p>
-            <h1 className="text-2xl font-semibold">My Orders</h1>
-            <p className="text-sm text-white/80">Track your packages and stay updated in real time.</p>
+            <p className="text-sm uppercase tracking-[0.18em] text-white/80">{t("orders")}</p>
+            <h1 className="text-2xl font-semibold">{t("my-orders")}</h1>
+            <p className="text-sm text-white/80">{t("track-packages")}</p>
           </div>
           <Button
             variant="secondary"
@@ -208,7 +211,7 @@ export default function CustomerOrdersPage() {
             className="flex items-center gap-2"
           >
             <RefreshCw className={`h-4 w-4 ${refreshing ? "animate-spin" : ""}`} />
-            Refresh
+            {t("refresh")}
           </Button>
         </div>
       </div>
@@ -233,14 +236,14 @@ export default function CustomerOrdersPage() {
                   <ShoppingBag className="h-7 w-7" />
                 </div>
                 <div className="space-y-1">
-                  <p className="text-lg font-semibold text-slate-900">No orders yet</p>
+                  <p className="text-lg font-semibold text-slate-900">{t("no-orders-yet")}</p>
                   <p className="text-sm text-muted-foreground">
-                    Your purchases will show up here once you place an order.
+                    {t("purchases-will-show")}
                   </p>
                 </div>
                 <Button variant="outline" size="sm" onClick={() => fetchOrders(false)}>
                   <AlertCircle className="mr-2 h-4 w-4" />
-                  Retry fetch
+                  {t("retry-fetch")}
                 </Button>
               </CardContent>
             </Card>
@@ -251,8 +254,8 @@ export default function CustomerOrdersPage() {
                   <AlertCircle className="h-6 w-6" />
                 </div>
                 <div className="space-y-1">
-                  <p className="text-base font-semibold text-slate-900">No orders in this status</p>
-                  <p className="text-sm text-muted-foreground">Try another tab to view your other orders.</p>
+                  <p className="text-base font-semibold text-slate-900">{t("no-orders-status")}</p>
+                  <p className="text-sm text-muted-foreground">{t("try-another-tab")}</p>
                 </div>
               </CardContent>
             </Card>
@@ -269,10 +272,10 @@ export default function CustomerOrdersPage() {
                         <span className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-emerald-50 text-emerald-700">
                           <Package className="h-4 w-4" />
                         </span>
-                        Order #{order.id || order.orderId}
+                        {t("order")} #{order.id || order.orderId}
                       </CardTitle>
                       <p className="text-xs text-muted-foreground">
-                        Placed on {new Date(order.createdAt).toLocaleString()}
+                        {t("placed-on")} {new Date(order.createdAt).toLocaleString()}
                       </p>
                     </div>
                   </CardHeader>
@@ -301,9 +304,9 @@ export default function CustomerOrdersPage() {
                             )}
                             <div className="flex-1 min-w-0">
                               <p className="text-sm font-medium text-slate-900 truncate">
-                                {item.productName || "Item"}
+                                {item.productName || t("item")}
                               </p>
-                              <p className="text-xs text-slate-500">Quantity: {item.quantity}</p>
+                              <p className="text-xs text-slate-500">{t("quantity")}: {item.quantity}</p>
                               <p className="text-xs font-semibold text-emerald-700">
                                 ₱{Number(item.subtotal || 0).toFixed(2)}
                               </p>
@@ -314,16 +317,16 @@ export default function CustomerOrdersPage() {
                     ) : (
                       <p className="text-sm text-muted-foreground flex items-center gap-2">
                         <AlertCircle className="h-4 w-4 text-amber-500" />
-                        No items listed.
+                        {t("no-items-listed")}
                       </p>
                     )}
                     <div className="flex justify-between text-sm font-semibold text-slate-900 pt-1">
-                      <span>Total</span>
+                      <span>{t("total")}</span>
                       <span>₱{Number(order.total || 0).toFixed(2)}</span>
                     </div>
                     {order.payment?.paymentMethod && (
                       <p className="text-xs text-muted-foreground">
-                        Payment method:{" "}
+                        {t("payment-method-label")}:{" "}
                         <span className="font-medium text-slate-900">{order.payment.paymentMethod}</span>
                       </p>
                     )}
@@ -337,7 +340,7 @@ export default function CustomerOrdersPage() {
                           className="flex items-center gap-2"
                         >
                           <X className="h-4 w-4" />
-                          {actionId === (order.id || order.orderId) ? "Cancelling..." : "Cancel Order"}
+                          {actionId === (order.id || order.orderId) ? t("cancelling") : t("cancel-order")}
                         </Button>
                       )}
                       {["accepted", "confirmed", "shipped"].includes(order.status || "") && (
@@ -347,7 +350,7 @@ export default function CustomerOrdersPage() {
                           onClick={() => markAsReceived(order.id || order.orderId)}
                           disabled={actionId === (order.id || order.orderId)}
                         >
-                          {actionId === (order.id || order.orderId) ? "Saving..." : "Mark as received"}
+                          {actionId === (order.id || order.orderId) ? t("saving") : t("mark-as-received")}
                         </Button>
                       )}
                     </div>
