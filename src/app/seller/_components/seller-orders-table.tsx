@@ -14,6 +14,7 @@ import { Eye, Check, X, Truck } from "lucide-react";
 import type { Order } from "@/types/orders";
 import { toast } from "sonner";
 import { useLanguage } from "@/lib/i18n/context";
+import { OrderDetailsModal } from "./order-details-modal";
 
 export function OrdersTabsTable({
   ordersData,
@@ -158,6 +159,10 @@ function OrdersTable({
     return filteredOrders.slice(start, start + rowsPerPage);
   }, [currentPage, filteredOrders]);
 
+  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+  const [detailsOpen, setDetailsOpen] = useState(false);
+
+
   return (
     <div className="space-y-3">
       {filteredOrders.length === 0 && (
@@ -207,9 +212,17 @@ function OrdersTable({
                   <TableCell>{order.total ?? 0}</TableCell>
 
                   <TableCell className="flex gap-2 items-center">
-                    <Button variant="ghost" size="icon">
-                      <Eye className="h-4 w-4" />
-                    </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => {
+                      setSelectedOrder(order);
+                      setDetailsOpen(true);
+                    }}
+                  >
+                    <Eye className="h-4 w-4" />
+                  </Button>
+
                   </TableCell>
 
                   <TableCell>
@@ -322,6 +335,13 @@ function OrdersTable({
           {t("next")}
         </Button>
       </div>
+
+      <OrderDetailsModal
+        open={detailsOpen}
+        onOpenChange={setDetailsOpen}
+        order={selectedOrder}
+      />
+
     </div>
   );
 }
