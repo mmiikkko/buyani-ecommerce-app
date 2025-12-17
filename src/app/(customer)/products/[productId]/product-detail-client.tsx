@@ -125,6 +125,21 @@ export function ProductDetailClient({ product, userId }: ProductDetailClientProp
     });
   };
 
+  const handleQuantityInput = (value: string) => {
+    const num = Number(value);
+  
+    if (Number.isNaN(num)) return;
+  
+    if (num < 1) {
+      setQuantity(1);
+    } else if (num > productStock) {
+      setQuantity(productStock);
+    } else {
+      setQuantity(num);
+    }
+  };
+  
+
   const handleChatSeller = async () => {
     if (!ensureAuthenticated(`/products/${product.id}`)) {
       return;
@@ -412,21 +427,38 @@ export function ProductDetailClient({ product, userId }: ProductDetailClientProp
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="h-10 w-10 rounded-r-none hover:bg-slate-100"
+                  className="h-10 w-10 rounded-r-none cursor-pointer"
                   onClick={() => handleQuantityChange(-1)}
                   disabled={quantity <= 1}
                 >
                   <Minus className="h-4 w-4" />
                 </Button>
-                <span className="w-12 text-center text-lg font-semibold">{quantity}</span>
+                <input
+                  type="number"
+                  min={1}
+                  max={productStock}
+                  value={quantity}
+                  onChange={(e) => handleQuantityInput(e.target.value)}
+                  className="
+                    w-16
+                    text-center
+                    text-lg
+                    font-semibold
+                    border-none
+                    outline-none
+                    bg-transparent
+                    appearance-none
+                    [-moz-appearance:textfield]
+                  "
+                />
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="h-10 w-10 rounded-l-none hover:bg-slate-100"
+                  className="h-10 w-10 rounded-l-none cursor-pointer"
                   onClick={() => handleQuantityChange(1)}
                   disabled={quantity >= productStock}
                 >
-                  <Plus className="h-4 w-4" />
+                  <Plus className="h-4 w-4 " />
                 </Button>
               </div>
               <span className="text-sm text-slate-500">{productStock} available</span>
@@ -436,7 +468,7 @@ export function ProductDetailClient({ product, userId }: ProductDetailClientProp
           {/* Action Buttons */}
           <div className="flex flex-wrap items-center gap-3">
             <Button
-              className="flex-1 bg-emerald-600 px-6 py-6 text-base font-semibold text-white hover:bg-emerald-700 disabled:opacity-50 transition-all"
+              className="flex-1 bg-emerald-600 px-6 py-6 text-base font-semibold text-white hover:bg-emerald-700 disabled:opacity-50 transition-all cursor-pointer"
               onClick={handleAddToCart}
               disabled={isOutOfStock || isAddingToCart}
             >
@@ -453,7 +485,7 @@ export function ProductDetailClient({ product, userId }: ProductDetailClientProp
               )}
             </Button>
             <Button
-              className="flex-1 bg-orange-500 px-6 py-6 text-base font-semibold text-white hover:bg-orange-600 disabled:opacity-50 transition-all"
+              className="flex-1 bg-orange-500 px-6 py-6 text-base font-semibold text-white hover:bg-orange-600 disabled:opacity-50 transition-all cursor-pointer"
               onClick={handleBuyNow}
               disabled={isBuying || isOutOfStock}
             >

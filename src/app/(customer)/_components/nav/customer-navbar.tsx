@@ -314,7 +314,7 @@ export default function Navbar({ className }: NavbarProps) {
                   <Button
                     variant="outline"
                     size="sm"
-                    className="h-8 rounded-full border-slate-200 hover:bg-slate-50 px-3 text-xs font-medium"
+                    className="h-8 rounded-full border-slate-200 px-3 text-xs cursor-pointer font-medium"
                   >
                     Orders
                   </Button>
@@ -324,7 +324,7 @@ export default function Navbar({ className }: NavbarProps) {
                   <Button
                     variant="outline"
                     size="icon"
-                    className="h-8 w-8 rounded-full border-slate-200 hover:bg-slate-50 relative"
+                    className="h-8 w-8 rounded-full border-slate-200 cursor-pointer relative"
                   >
                     <ShoppingCart size={16} />
                     {cartCount > 0 && (
