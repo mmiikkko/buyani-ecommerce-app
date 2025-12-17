@@ -2,6 +2,12 @@ import { drizzle } from "drizzle-orm/mysql2";
 import mysql from "mysql2/promise";
 import type { EventEmitter } from "events";
 
+// Declare global type for the pool to persist across hot reloads
+declare global {
+  // eslint-disable-next-line no-var
+  var mysqlPool: mysql.Pool | undefined;
+}
+
 // Parse connection URI and convert to connection options
 function getConnectionConfig(): mysql.PoolOptions {
   if (!process.env.DB_URI) {
@@ -28,14 +34,14 @@ function getConnectionConfig(): mysql.PoolOptions {
       user: username,
       password: password,
       database: database,
-      connectionLimit: 10,
+      connectionLimit: 5, // Reduced for development
       queueLimit: 0,
       enableKeepAlive: true,
       keepAliveInitialDelay: 0,
       connectTimeout: 60000, // 60 seconds
       waitForConnections: true,
       // Add idle timeout to close idle connections
-      idleTimeout: 600000, // 10 minutes
+      idleTimeout: 60000, // 1 minute (reduced for dev)
     };
 
     // Handle SSL if present in query params
@@ -62,13 +68,13 @@ function getConnectionConfig(): mysql.PoolOptions {
         user: username,
         password: password,
         database: database,
-        connectionLimit: 10,
+        connectionLimit: 5,
         queueLimit: 0,
         enableKeepAlive: true,
         keepAliveInitialDelay: 0,
         connectTimeout: 60000,
         waitForConnections: true,
-        idleTimeout: 600000,
+        idleTimeout: 60000,
       };
     } catch (parseError) {
       console.error("Failed to parse DB_URI:", parseError);
@@ -77,16 +83,29 @@ function getConnectionConfig(): mysql.PoolOptions {
   }
 }
 
-// Create pool with parsed connection options
-// Note: mysql2 pool automatically handles reconnections
-let pool: mysql.Pool;
+// Use global singleton pattern to prevent multiple pools during hot reload
+function getPool(): mysql.Pool {
+  if (global.mysqlPool) {
+    return global.mysqlPool;
+  }
 
-try {
   const config = getConnectionConfig();
-  pool = mysql.createPool(config);
-  
+  const pool = mysql.createPool(config);
+
+  // Handle pool-level errors
+  (pool as unknown as EventEmitter).on("error", (err: NodeJS.ErrnoException) => {
+    console.error("MySQL pool error:", err);
+
+    if (
+      err.code === "PROTOCOL_CONNECTION_LOST" ||
+      err.code === "ECONNRESET" ||
+      err.code === "ETIMEDOUT"
+    ) {
+      console.log("Pool connection lost, will reconnect automatically");
+    }
+  });
+
   // Test the connection asynchronously (non-blocking)
-  // This helps identify connection issues early without blocking startup
   pool.getConnection()
     .then((connection) => {
       console.log("✓ Database connection pool initialized successfully");
@@ -94,25 +113,15 @@ try {
     })
     .catch((err) => {
       console.error("✗ Failed to initialize database connection pool:", err.message);
-      // Don't throw - let the pool try to reconnect on first use
     });
-} catch (error) {
-  console.error("Error creating database pool:", error);
-  throw error;
+
+  // Store in global to reuse across hot reloads in development
+  if (process.env.NODE_ENV !== "production") {
+    global.mysqlPool = pool;
+  }
+
+  return pool;
 }
 
-// Handle pool-level errors (these are different from connection errors)
-// Note: mysql2/promise Pool extends EventEmitter and supports error events
-(pool as unknown as EventEmitter).on("error", (err: NodeJS.ErrnoException) => {
-  console.error("MySQL pool error:", err);
-
-  if (
-    err.code === "PROTOCOL_CONNECTION_LOST" ||
-    err.code === "ECONNRESET" ||
-    err.code === "ETIMEDOUT"
-  ) {
-    console.log("Pool connection lost, will reconnect automatically");
-  }
-});
-
+const pool = getPool();
 export const db = drizzle(pool);

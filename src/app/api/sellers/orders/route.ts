@@ -26,7 +26,7 @@ export async function GET() {
       const sellerId = session.user.id;
 
       const sellerShops = await db
-        .select({ id: shop.id })
+        .select({ id: shop.id, shopName: shop.shopName })
         .from(shop)
         .where(eq(shop.sellerId, sellerId));
 
@@ -36,6 +36,7 @@ export async function GET() {
 
       const shopIds = sellerShops.map((s) => s.id);
 
+      // Get products belonging to seller's shops
       const sellerProducts = await db
         .select({ id: products.id })
         .from(products)
@@ -47,6 +48,7 @@ export async function GET() {
         return NextResponse.json([]);
       }
 
+      // Get order items containing seller's products
       const items = await db
         .select()
         .from(orderItems)
@@ -149,6 +151,7 @@ export async function GET() {
         product: item.product
           ? {
               id: item.product.id,
+              shopId: item.product.shopId,
               productName: item.product.productName,
               price: Number(item.product.price),
               images: item.product.images || [],
@@ -161,10 +164,17 @@ export async function GET() {
         (t) => t.orderId === orderRow.id
       );
 
+      // Derive shop info from items (all items in an order now belong to same shop)
+      const firstItem = items[0];
+      const shopId = firstItem?.product?.shopId || null;
+      const shopInfo = sellerShops.find((s) => s.id === shopId);
+
       return {
         id: orderRow.id,
         buyerId: orderRow.buyerId,
         buyerName: buyerName,
+        shopId: shopId,
+        shopName: shopInfo?.shopName || null,
         addressId: orderRow.addressId,
         total: orderRow.total ? Number(orderRow.total) : null,
         createdAt: orderRow.createdAt,
