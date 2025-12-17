@@ -153,8 +153,6 @@ export const translations = {
     "find-by-category": "Hanapin ang eksaktong kailangan mo, na-organize ayon sa kategorya",
     "view-all-categories": "Tingnan lahat ng kategorya",
     "loading-categories": "Naglo-load ng kategorya...",
-    "item": "item",
-    "items": "mga item",
     
     // Featured Vendors
     "trusted-campus-sellers": "Pinagkakatiwalaang Campus Sellers",
@@ -296,7 +294,6 @@ export const translations = {
     "failed-update-order": "Nabigo ang pag-update ng order",
     
     // Seller Sidebar
-    "home": "Tahanan",
     "pos": "POS",
     "inbox": "Inbox",
     "account": "Account",
@@ -327,7 +324,6 @@ export const translations = {
     // Seller Orders Searchbar
     "search-order-placeholder": "Maghanap ayon sa order ID o pangalan ng customer",
     "filter": "Filter",
-    "all": "Lahat",
     "cancelled": "Nakansela",
     
     // Seller Products Page
@@ -722,7 +718,6 @@ export const translations = {
     // Seller Orders Searchbar
     "search-order-placeholder": "Search by order ID or customer name",
     "filter": "Filter",
-    "all": "All",
     "cancelled": "Cancelled",
     
     // Seller Products Page

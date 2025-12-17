@@ -36,7 +36,7 @@ export default async function AdminLayout({
         
             
           {/* Main Page Content */}
-          <main className="flex-1 min-w-screen self-center overflow-hidden self-center p-6 bg-#EBFEEC">
+          <main className="flex-1 min-w-screen self-center overflow-hidden self-center p-6 mt-15 bg-#EBFEEC">
             {/* Sidebar trigger at top (optional) */}
             
             {children}

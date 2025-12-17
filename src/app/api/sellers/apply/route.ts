@@ -1,11 +1,24 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/server/drizzle";
-import { shop, user, USER_ROLES } from "@/server/schema/auth-schema";
+import {
+  shop,
+  user,
+  USER_ROLES,
+  sellerApplications,
+  applicatioDocuments,
+} from "@/server/schema/auth-schema";
 import { eq } from "drizzle-orm";
 import { getServerSession } from "@/server/session";
 import { v4 as uuidv4 } from "uuid";
 
-// POST /api/sellers/apply - Apply to become a seller (create shop)
+const applicationDocuments = applicatioDocuments;
+
+// helper: convert File → base64 data URL
+async function fileToBase64(file: File) {
+  const buffer = Buffer.from(await file.arrayBuffer());
+  return `data:${file.type};base64,${buffer.toString("base64")}`;
+}
+
 export async function POST(req: NextRequest) {
   try {
     const session = await getServerSession();
@@ -14,17 +27,23 @@ export async function POST(req: NextRequest) {
     }
 
     const userId = session.user.id;
-    const body = await req.json();
-    const { shopName, description, imageURL } = body;
 
-    if (!shopName) {
+    // ✅ FIX: parse FormData
+    const formData = await req.formData();
+
+    const shopName = formData.get("shopName") as string;
+    const description = formData.get("shopDescription") as string;
+    const notarizedFile = formData.get("notarizedAgreement") as File;
+    const validIdFile = formData.get("validId") as File;
+
+    if (!shopName || !description || !notarizedFile || !validIdFile) {
       return NextResponse.json(
-        { error: "Shop name is required" },
+        { error: "Missing required fields or documents" },
         { status: 400 }
       );
     }
 
-    // Check if user already has a shop
+    // Check existing shop
     const existingShop = await db
       .select()
       .from(shop)
@@ -38,7 +57,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Check if shop name is already taken
+    // Check shop name uniqueness
     const shopNameExists = await db
       .select()
       .from(shop)
@@ -52,45 +71,68 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Create shop with pending status
-    const newShop = {
-      id: uuidv4(),
+    // Convert files
+    const notarizedBase64 = await fileToBase64(notarizedFile);
+    const validIdBase64 = await fileToBase64(validIdFile);
+
+    // Create shop
+    const shopId = uuidv4();
+    await db.insert(shop).values({
+      id: shopId,
       sellerId: userId,
-      shopName: shopName,
-      description: description || null,
-      imageURL: imageURL || null,
+      shopName,
+      description,
       status: "pending",
       createdAt: new Date(),
       updatedAt: new Date(),
-    };
+    });
 
-    await db.insert(shop).values(newShop);
+    // Create seller application
+    const applicationId = uuidv4();
+    await db.insert(sellerApplications).values({
+      id: applicationId,
+      sellerId: userId,
+      status: "pending",
+      submittedAt: new Date(),
+    });
+    
 
-    // Update user role to pending_seller if not already a seller
-    const currentUser = await db
-      .select()
-      .from(user)
-      .where(eq(user.id, userId))
-      .limit(1);
+    // Store documents
+    await db.insert(applicationDocuments).values([
+      {
+        id: uuidv4(),
+        applicationId,
+        documentType: "notarized_agreement",
+        documentURL: notarizedBase64,
+        uploadedAt: new Date(),
+        verified: false,
+      },
+      {
+        id: uuidv4(),
+        applicationId,
+        documentType: "valid_id",
+        documentURL: validIdBase64,
+        uploadedAt: new Date(),
+        verified: false,
+      },
+    ]);
+    
 
-    if (currentUser.length > 0 && currentUser[0].role !== USER_ROLES.SELLER) {
-      await db
-        .update(user)
-        .set({ role: USER_ROLES.PENDING_SELLER })
-        .where(eq(user.id, userId));
-    }
+    // Update user role
+    await db
+      .update(user)
+      .set({ role: USER_ROLES.PENDING_SELLER })
+      .where(eq(user.id, userId));
 
     return NextResponse.json({
       success: true,
-      shop: newShop,
-      message: "Shop application submitted successfully. Waiting for admin approval.",
+      message: "Shop application submitted. Awaiting admin approval.",
     });
   } catch (error) {
-    console.error("Error applying for seller:", error);
+    console.error("Seller apply error:", error);
     return NextResponse.json(
       { error: "Failed to submit application" },
       { status: 500 }
     );
   }
 }
-

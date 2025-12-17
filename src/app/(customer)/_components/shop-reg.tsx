@@ -1,248 +1,134 @@
 "use client";
 
-import Image from "next/image";
+import { useState } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import Logo from "@/assets/logo/Logo.png";
-import { LoadingButton } from "@/components/loading-button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
-import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { z } from "zod";
-import { useState } from "react";
-
-const sellerSchema = z.object({
-  shopName: z.string().min(1, { message: "Shop name is required" }),
-  description: z.string().optional(),
-});
-
-type SellerValues = z.infer<typeof sellerSchema>;
 
 export function SellerRegisterForm() {
-  const router = useRouter();
-  const [error, setError] = useState<string | null>(null);
-  const [submitted, setSubmitted] = useState(false);
-  const [submittedShop, setSubmittedShop] = useState<string>("");
+  const [shopName, setShopName] = useState("");
+  const [shopDescription, setShopDescription] = useState("");
+  const [notarizedFile, setNotarizedFile] = useState<File | null>(null);
+  const [validIdFile, setValidIdFile] = useState<File | null>(null);
+  const [loading, setLoading] = useState(false);
 
-  const form = useForm<SellerValues>({
-    resolver: zodResolver(sellerSchema),
-    defaultValues: {
-      shopName: "",
-      description: "",
-    },
-  });
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
 
-  async function onSubmit(values: SellerValues) {
-    setError(null);
+    if (!shopName || !shopDescription || !notarizedFile || !validIdFile) {
+      toast.error("Please fill all fields and upload required documents.");
+      return;
+    }
 
+    setLoading(true);
     try {
-      // Send API request to create seller shop
-      const res = await fetch("/api/sellers/apply", {
+      const formData = new FormData();
+      formData.append("shopName", shopName);
+      formData.append("shopDescription", shopDescription);
+      formData.append("notarizedAgreement", notarizedFile);
+      formData.append("validId", validIdFile);
+
+      const res = await fetch("/api/seller/apply", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(values),
+        body: formData,
       });
 
-      if (!res.ok) {
-        const d = await res.json();
-        throw new Error(d.error || "Something went wrong");
+      if (res.ok) {
+        toast.success("Application submitted successfully! Awaiting approval.");
+        setShopName("");
+        setShopDescription("");
+        setNotarizedFile(null);
+        setValidIdFile(null);
+      } else {
+        const data = await res.json();
+        toast.error(data.message || "Failed to submit application.");
       }
-
-      const data = await res.json();
-      toast.success(
-        data.message ||
-          "Shop application submitted successfully! Your application is pending approval."
-      );
-      setSubmittedShop(values.shopName);
-      setSubmitted(true);
-    } catch (e) {
-        const err = e as Error;
-        console.log(err.message);
-      }
-  }
-
-  const loading = form.formState.isSubmitting;
-
-  if (submitted) {
-    return (
-      <div className="flex items-center justify-center w-full">
-        <Card className="w-full max-w-lg shadow-2xl border-0 bg-white/90 backdrop-blur-sm">
-          <CardHeader className="space-y-3 pb-4">
-            <CardTitle className="text-2xl font-bold text-slate-900">
-              Application Submitted
-            </CardTitle>
-            <CardDescription className="text-base text-slate-600">
-              Your shop application is pending admin approval.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="p-4 bg-amber-50 rounded-lg border border-amber-200">
-              <p className="text-sm font-medium text-amber-800">
-                {submittedShop || "Your shop"} has been submitted and is awaiting review.
-                We will notify you once it is approved.
-              </p>
-            </div>
-            <div className="flex flex-col gap-3">
-              <Button
-                className="w-full h-11 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold shadow-lg"
-                onClick={() => router.push("/")}
-              >
-                Return Home
-              </Button>
-              <Button
-                variant="outline"
-                className="w-full h-11 border-slate-200 hover:bg-slate-50"
-                onClick={() => router.push("/become-seller")}
-              >
-                Refresh Status
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
+    } catch {
+      toast.error("Error submitting application.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
-    <div className="flex flex-col lg:flex-row items-center justify-center w-full max-w-6xl mx-auto gap-8 lg:gap-12">
-      {/* LEFT SIDE LOGO & BRANDING */}
-      <div className="flex flex-col items-center justify-center w-full lg:w-1/2 px-4 lg:px-8">
-        <div className="relative mb-8">
-          <div className="absolute inset-0 bg-gradient-to-br from-emerald-200/30 to-amber-200/30 rounded-full blur-3xl"></div>
-          <div className="relative bg-white/80 backdrop-blur-sm rounded-3xl p-8 shadow-xl border border-emerald-100/50">
-            <Image
-              src={Logo}
-              alt="Buyani Logo"
-              priority
-              width={200}
-              height={200}
-              className="w-48 h-48 mx-auto object-contain"
+    <section className="relative min-h-screen w-full flex items-center justify-center bg-gradient-to-br from-emerald-50 to-slate-50 px-3">
+      <div className="w-full max-w-md space-y-3">
+
+        <div>
+        {/* ✅ Back to Home Button */}
+        <Link href="/">
+          <Button
+            variant="outline"
+            className="w-full border-emerald-600 text-emerald-700 cursor-pointer"
+          >
+            ← Back to Home
+          </Button>
+        </Link>
+        </div>
+
+
+        <form
+          onSubmit={handleSubmit}
+          className="bg-white/90 backdrop-blur-sm p-6 rounded-xl shadow-lg space-y-4 border border-emerald-100"
+        >
+          <h2 className="text-2xl font-bold text-slate-900 text-center">
+            Register Your Shop
+          </h2>
+
+          <Input
+            placeholder="Shop Name"
+            value={shopName}
+            onChange={(e) => setShopName(e.target.value)}
+            required
+          />
+
+          <Input
+            placeholder="Shop Description"
+            value={shopDescription}
+            onChange={(e) => setShopDescription(e.target.value)}
+            required
+          />
+
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-slate-700">
+              Notarized Agreement
+            </label>
+            <input
+              type="file"
+              accept=".pdf,.jpg,.png"
+              onChange={(e) =>
+                e.target.files && setNotarizedFile(e.target.files[0])
+              }
+              required
+              className="w-full text-sm"
             />
           </div>
-        </div>
-        <div className="text-center space-y-4 max-w-md">
-          <h2 className="text-3xl lg:text-4xl font-bold text-emerald-700 tracking-tight">
-            Become a Seller
-          </h2>
-          <p className="text-lg text-slate-600 leading-relaxed">
-            Join our marketplace and start selling your products to thousands of customers
-          </p>
-          <div className="flex flex-wrap justify-center gap-3 pt-4">
-            <div className="flex items-center gap-2 px-4 py-2 bg-emerald-50 rounded-full">
-              <span className="text-emerald-600 text-sm font-medium">✓ Easy Setup</span>
-            </div>
-            <div className="flex items-center gap-2 px-4 py-2 bg-amber-50 rounded-full">
-              <span className="text-amber-600 text-sm font-medium">✓ Fast Approval</span>
-            </div>
+
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-slate-700">
+              Valid ID
+            </label>
+            <input
+              type="file"
+              accept=".pdf,.jpg,.png"
+              onChange={(e) =>
+                e.target.files && setValidIdFile(e.target.files[0])
+              }
+              required
+              className="w-full text-sm"
+            />
           </div>
-        </div>
+
+          <Button
+            type="submit"
+            className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-semibold"
+            disabled={loading}
+          >
+            {loading ? "Submitting..." : "Submit Application"}
+          </Button>
+        </form>
       </div>
-
-      {/* RIGHT SIDE FORM */}
-      <div className="w-full lg:w-1/2 flex justify-center px-4">
-        <Card className="w-full max-w-lg shadow-2xl border-0 bg-white/90 backdrop-blur-sm">
-          <CardHeader className="space-y-3 pb-6">
-            <div className="space-y-2">
-              <CardTitle className="text-2xl font-bold text-slate-900">
-                Apply to Become a Seller
-              </CardTitle>
-              <CardDescription className="text-base text-slate-600">
-                Fill out the form below to submit your shop application
-              </CardDescription>
-            </div>
-          </CardHeader>
-
-          <CardContent className="space-y-6">
-            <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
-                <FormField
-                  control={form.control}
-                  name="shopName"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-sm font-semibold text-slate-700">
-                        Shop Name
-                      </FormLabel>
-                      <FormControl>
-                        <Input 
-                          placeholder="My Awesome Store" 
-                          className="h-11 border-slate-200 focus:border-emerald-500 focus:ring-emerald-500"
-                          {...field} 
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="description"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-sm font-semibold text-slate-700">
-                        Shop Description
-                      </FormLabel>
-                      <FormControl>
-                        <Textarea
-                          placeholder="Tell customers about your shop, what makes it unique, and what products you'll be selling..."
-                          className="min-h-[120px] resize-none border-slate-200 focus:border-emerald-500 focus:ring-emerald-500"
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                {error && (
-                  <div role="alert" className="p-3 rounded-lg bg-red-50 border border-red-200">
-                    <p className="text-sm text-red-600 font-medium">{error}</p>
-                  </div>
-                )}
-
-                <LoadingButton
-                  type="submit"
-                  className="w-full h-11 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold shadow-lg hover:shadow-xl transition-all duration-200"
-                  loading={loading}
-                >
-                  Register Shop
-                </LoadingButton>
-              </form>
-            </Form>
-          </CardContent>
-
-          <CardFooter className="pt-6 border-t border-slate-100">
-            <div className="flex w-full justify-center">
-              <p className="text-sm text-slate-500 text-center">
-                Want to go back?{" "}
-                <Link href="/" className="text-emerald-600 hover:text-emerald-700 font-medium underline underline-offset-2 transition-colors">
-                  Return home
-                </Link>
-              </p>
-            </div>
-          </CardFooter>
-        </Card>
-      </div>
-    </div>
+    </section>
   );
 }

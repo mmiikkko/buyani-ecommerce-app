@@ -183,7 +183,7 @@ function OrdersTable({
           <TableBody>
             {currentRows.map((order, idx) => {
               const firstItem = order.items?.[0];
-              const productName = firstItem?.productId ?? firstItem?.productName ?? t("unknown-product");
+              const productName = firstItem?.productId ?? firstItem?.productName ?? "unknown-product";
               const buyerName = order.buyerName ?? order.buyerId ?? t("unknown-customer");
               const orderId = order.orderId || order.id || `order-${idx}`;
 
