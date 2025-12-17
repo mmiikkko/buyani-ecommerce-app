@@ -413,3 +413,72 @@ export const passwordResetCodes = mysqlTable("password_reset_codes", {
   verified: boolean("verified").default(false).notNull(),
   createdAt: timestamp("created_at", { fsp: 3 }).defaultNow().notNull(),
 });
+
+export const buyaniRatings = mysqlTable("buyani_ratings", {
+  id: varchar("id", { length: 36 }).primaryKey(),
+  userId: varchar("user_id", { length: 36 })
+    .notNull()
+    .references(() => user.id, { onDelete: "cascade" }),
+  rating: int("rating"),
+  review: text("review"),
+  createdAt: timestamp("created_at", { fsp: 3 }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { fsp: 3 })
+})
+
+export const tenantPayments = mysqlTable("tenant_payments", {
+  id: varchar("id", { length: 36 }).primaryKey(),
+
+  tenantId: varchar("tenant_id", { length: 36 })
+    .notNull()
+    .references(() => user.id, { onDelete: "cascade" }),
+
+  billingId: varchar("billing_id", { length: 36 })
+    .notNull()
+    .references(() => tentantBilling.id, { onDelete: "cascade" }),
+
+  receiptNumber: varchar("receipt_number", { length: 100 }).notNull(),
+  amountPaid: decimal("amount_paid", { precision: 10, scale: 2 }).notNull(),
+  receiptUrl: longtext("receipt_url").notNull(),
+  paymentDate: timestamp("payment_date", { fsp: 3 }).notNull(),
+
+  verificationStatus: varchar("verification_status", { length: 30 })
+    .default("pending"),
+
+  createdAt: timestamp("created_at", { fsp: 3 }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { fsp: 3 }),
+});
+
+
+export const tentantBilling = mysqlTable("tenant_billing", {
+  id: varchar("id", { length: 36 }).primaryKey(),
+  tenantId: varchar("tenant_id", { length: 36 })
+    .notNull()
+    .references(() => user.id, { onDelete: "cascade" }),
+  billingMonth: varchar("billing_month", { length: 20 }).notNull(),
+  amountDue: decimal("amount_due", { precision: 10, scale: 2 }).notNull(),
+  dueDate: timestamp("due_date", { fsp: 3 }).notNull(),
+  status: varchar("status", { length: 50 }).default("unpaid").notNull(),
+  createdAt: timestamp("created_at", { fsp: 3 }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { fsp: 3 })
+})
+
+export const sellerApplications = mysqlTable("seller_applications", {
+  id: varchar("id", { length: 36 }).primaryKey(),
+  sellerId: varchar("seller_id", { length: 36 })
+    .notNull()
+    .references(() => user.id, { onDelete: "cascade" }),
+  status: varchar("status", { length: 50 }).default("pending").notNull(),
+  submittedAt: timestamp("submitted_at", { fsp: 3 }).defaultNow().notNull(),
+  reviewedAt: timestamp("reviewed_at", { fsp: 3 }),
+})
+
+export const applicatioDocuments = mysqlTable("application_documents", {
+  id: varchar("id", { length: 36 }).primaryKey(),
+  applicationId: varchar("application_id", { length: 36 })
+    .notNull()
+    .references(() => sellerApplications.id, { onDelete: "cascade" }),
+  documentType: varchar("document_type", { length: 100 }).notNull(),
+  documentURL: longtext("document_url").notNull(),
+  uploadedAt: timestamp("uploaded_at", { fsp: 3 }).defaultNow().notNull(),
+  verified: boolean("verified").default(false).notNull(),
+})

@@ -82,6 +82,14 @@ export function Footer() {
                   </Link>
                 </li>
               )}
+              <li>
+                <Link
+                  href="/rate-us"
+                  className="hover:text-emerald-300 hover:underline hover:underline-offset-4 transition-colors"
+                >
+                  Rate us
+                </Link>
+              </li>
             </ul>
           </div>
 

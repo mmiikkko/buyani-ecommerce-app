@@ -36,15 +36,16 @@ const stats = [
 ];
 
 export function StatsSection() {
-  const [counts, setCounts] = useState({ products: 0, shops: 0 });
+  const [counts, setCounts] = useState({ products: 0, shops: 0, rating: 0 });
 
   useEffect(() => {
-    // Fetch real counts
+    // Fetch real counts and average rating
     Promise.all([
       fetch("/api/products").then(res => res.json()).then(data => Array.isArray(data) ? data.length : 0).catch(() => 0),
       fetch("/api/shops").then(res => res.json()).then(data => Array.isArray(data) ? data.length : 0).catch(() => 0),
-    ]).then(([products, shops]) => {
-      setCounts({ products, shops });
+      fetch("/api/ratings/average").then(res => res.json()).then(data => data.average || 0).catch(() => 0),
+    ]).then(([products, shops, rating]) => {
+      setCounts({ products, shops, rating });
     });
   }, []);
 
@@ -58,7 +59,10 @@ export function StatsSection() {
       value: counts.shops > 0 ? `${counts.shops}+` : stats[1].value,
     },
     stats[2],
-    stats[3],
+    {
+      ...stats[3],
+      value: counts.rating > 0 ? counts.rating.toFixed(1) : stats[3].value,
+    },
   ];
 
   return (
