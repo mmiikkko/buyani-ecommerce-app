@@ -22,6 +22,7 @@ import {
   Grid3x3,
   Handshake,
   Home,
+  Loader2,
   Package,
   Search,
   ShoppingCart,
@@ -40,6 +41,7 @@ export default function Navbar({ className }: NavbarProps) {
   const searchParams = useSearchParams();
   const [searchQuery, setSearchQuery] = useState("");
   const [cartCount, setCartCount] = useState(0);
+  const [isNavigating, setIsNavigating] = useState(false);
   const debounceTimer = useRef<NodeJS.Timeout | null>(null);
 
   const user = session.data?.user;
@@ -144,7 +146,7 @@ export default function Navbar({ className }: NavbarProps) {
     };
 
     fetchCartCount();
-    
+
     // Refresh cart count periodically or on focus
     const interval = setInterval(fetchCartCount, 5000); // Check every 5 seconds
     const handleFocus = () => fetchCartCount();
@@ -198,160 +200,177 @@ export default function Navbar({ className }: NavbarProps) {
     };
   }, [isAuthenticated]);
 
+  // Reset navigation state when pathname changes
+  useEffect(() => {
+    setIsNavigating(false);
+  }, [pathname]);
+
   return (
-    <nav
-      className={clsx(
-        "fixed top-0 left-0 right-0 z-50 border-b border-emerald-100/70 bg-gradient-to-r from-emerald-50/95 via-white/90 to-amber-50/95 backdrop-blur-xl shadow-[0_12px_38px_rgba(16,38,68,0.08)]",
-        className
+    <>
+      {/* Loading Overlay */}
+      {isNavigating && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/20 backdrop-blur-sm">
+          <div className="flex flex-col items-center gap-3 rounded-2xl bg-white p-8 shadow-2xl">
+            <Loader2 className="h-10 w-10 animate-spin text-emerald-600" />
+            <p className="text-sm font-medium text-slate-700">Loading...</p>
+          </div>
+        </div>
       )}
-    >
-      <div className="mx-auto flex h-16 max-w-[1400px] items-center justify-between px-4 sm:h-18 sm:px-6 lg:px-8">
-        
-        {/* Brand + primary links */}
-        <div className="flex items-center gap-4">
-          <div className="flex items-center gap-2">
-            <Link href="/" className="flex items-center gap-2">
-            <div className="relative h-9 w-9 overflow-hidden rounded-xl border border-emerald-100 bg-emerald-50/60">
-              <Image
-                  src={logo}
-                  alt="CNSC"
-                  fill
-                  sizes="36px"
-                  className="object-contain p-1.5"
-                />
-            </div>
-            <div className="relative h-9 w-9 overflow-hidden rounded-xl border border-emerald-100 bg-emerald-50/60">
-              <Image
-                  src={LOGO}
-                  alt="CNSC"
-                  fill
-                  sizes="36px"
-                  className="object-contain p-1.5"
-                />
+
+      <nav
+        className={clsx(
+          "fixed top-0 left-0 right-0 z-50 border-b border-emerald-100/70 bg-gradient-to-r from-emerald-50/95 via-white/90 to-amber-50/95 backdrop-blur-xl shadow-[0_12px_38px_rgba(16,38,68,0.08)]",
+          className
+        )}
+      >
+        <div className="mx-auto flex h-16 max-w-[1400px] items-center justify-between px-4 sm:h-18 sm:px-6 lg:px-8">
+
+          {/* Brand + primary links */}
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2">
+              <Link href="/" className="flex items-center gap-2">
+                <div className="relative h-9 w-9 overflow-hidden rounded-xl border border-emerald-100 bg-emerald-50/60">
+                  <Image
+                    src={logo}
+                    alt="CNSC"
+                    fill
+                    sizes="36px"
+                    className="object-contain p-1.5"
+                  />
+                </div>
+                <div className="relative h-9 w-9 overflow-hidden rounded-xl border border-emerald-100 bg-emerald-50/60">
+                  <Image
+                    src={LOGO}
+                    alt="CNSC"
+                    fill
+                    sizes="36px"
+                    className="object-contain p-1.5"
+                  />
+                </div>
+
+                <div className="relative h-9 w-9 overflow-hidden rounded-xl border border-emerald-100 bg-emerald-50/60">
+                  <Image
+                    src={Logo}
+                    alt="Buyani logo"
+                    fill
+                    sizes="36px"
+                    className="object-contain p-1.5"
+                  />
+                </div>
+
+                <span className="hidden text-base font-semibold tracking-tight text-slate-900 sm:inline">
+                  BuyAni
+                </span>
+              </Link>
+              {/* Mobile Become a Seller link */}
+              {!isSeller && (
+                <Link
+                  href="/become-seller"
+                  className="inline-flex items-center gap-1.5 rounded-full bg-emerald-600 px-3 py-1.5 text-xs font-medium text-white shadow-sm hover:bg-emerald-700 transition-colors sm:hidden"
+                >
+                  <Handshake size={14} />
+                  <span>Become a seller</span>
+                </Link>
+              )}
             </div>
 
-            <div className="relative h-9 w-9 overflow-hidden rounded-xl border border-emerald-100 bg-emerald-50/60">
-              <Image
-                src={Logo}
-                alt="Buyani logo"
-                fill
-                sizes="36px"
-                className="object-contain p-1.5"
+            <ul className="hidden items-center gap-2 text-sm font-medium text-slate-600 md:flex">
+              {navLinks.map((link) => {
+                const Icon = link.icon;
+                const active = isActive(link.href);
+                return (
+                  <li key={link.href}>
+                    <Link
+                      href={link.href}
+                      className={clsx(
+                        "inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.75 text-xs transition-all duration-200",
+                        "border border-transparent bg-white/60 text-slate-600 shadow-[0_4px_12px_rgba(15,23,42,0.06)] hover:-translate-y-[1px] hover:border-emerald-100 hover:bg-white",
+                        active && "border-emerald-200 bg-gradient-to-r from-emerald-50 to-emerald-100 text-emerald-700 shadow-[0_6px_16px_rgba(16,185,129,0.18)]"
+                      )}
+                    >
+                      <Icon size={14} />
+                      <span>{link.label}</span>
+                    </Link>
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+
+          {/* Search + actions */}
+          <div className="flex flex-1 items-center justify-end gap-3">
+
+            <form onSubmit={handleSearch} className="hidden w-64 items-center gap-2 rounded-full border border-emerald-100 bg-white/85 px-3.5 py-1.75 shadow-[0_6px_18px_rgba(16,38,68,0.06)] ring-1 ring-emerald-50 sm:flex">
+              <Search size={14} className="text-slate-400 flex-shrink-0" />
+              <Input
+                type="text"
+                placeholder="Search local treats and shops…"
+                value={searchQuery}
+                onChange={(e) => handleSearchChange(e.target.value)}
+                className="h-7 border-0 bg-transparent px-0 text-xs placeholder:text-slate-400 focus-visible:ring-0 focus-visible:ring-offset-0"
               />
-            </div>
+            </form>
 
-            <span className="hidden text-base font-semibold tracking-tight text-slate-900 sm:inline">
-              BuyAni
-            </span>
-            </Link>
-            {/* Mobile Become a Seller link */}
             {!isSeller && (
               <Link
                 href="/become-seller"
-                className="inline-flex items-center gap-1.5 rounded-full bg-emerald-600 px-3 py-1.5 text-xs font-medium text-white shadow-sm hover:bg-emerald-700 transition-colors sm:hidden"
+                className="hidden items-center gap-1.5 rounded-full bg-emerald-600 px-3 py-1.5 text-xs font-medium text-white shadow-sm hover:bg-emerald-700 transition-colors sm:inline-flex"
               >
                 <Handshake size={14} />
                 <span>Become a seller</span>
               </Link>
             )}
-          </div>
 
-          <ul className="hidden items-center gap-2 text-sm font-medium text-slate-600 md:flex">
-            {navLinks.map((link) => {
-              const Icon = link.icon;
-              const active = isActive(link.href);
-              return (
-                <li key={link.href}>
-                  <Link
-                    href={link.href}
-                    className={clsx(
-                      "inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.75 text-xs transition-all duration-200",
-                      "border border-transparent bg-white/60 text-slate-600 shadow-[0_4px_12px_rgba(15,23,42,0.06)] hover:-translate-y-[1px] hover:border-emerald-100 hover:bg-white",
-                      active && "border-emerald-200 bg-gradient-to-r from-emerald-50 to-emerald-100 text-emerald-700 shadow-[0_6px_16px_rgba(16,185,129,0.18)]"
-                    )}
-                  >
-                    <Icon size={14} />
-                    <span>{link.label}</span>
+
+            <div className="flex items-center gap-2 text-slate-800">
+              {isLoading ? (
+                <Skeleton className="h-8 w-[96px] rounded-full" />
+
+              ) : isAuthenticated ? (
+                <div className="flex items-center gap-2">
+                  <Link href="/orders">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-8 rounded-full border-slate-200 px-3 text-xs cursor-pointer font-medium"
+                    >
+                      Orders
+                    </Button>
                   </Link>
-                </li>
-              );
-            })}
-          </ul>
-        </div>
 
-        {/* Search + actions */}
-        <div className="flex flex-1 items-center justify-end gap-3">
+                  <Link href="/cart" className="relative">
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      className="h-8 w-8 rounded-full border-slate-200 cursor-pointer relative"
+                    >
+                      <ShoppingCart size={16} />
+                      {cartCount > 0 && (
+                        <Badge
+                          className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 bg-emerald-600 text-white text-[10px] font-bold border-2 border-white rounded-full"
+                        >
+                          {cartCount > 99 ? "99+" : cartCount}
+                        </Badge>
+                      )}
+                    </Button>
+                  </Link>
 
-          <form onSubmit={handleSearch} className="hidden w-64 items-center gap-2 rounded-full border border-emerald-100 bg-white/85 px-3.5 py-1.75 shadow-[0_6px_18px_rgba(16,38,68,0.06)] ring-1 ring-emerald-50 sm:flex">
-            <Search size={14} className="text-slate-400 flex-shrink-0" />
-            <Input
-              type="text"
-              placeholder="Search local treats and shops…"
-              value={searchQuery}
-              onChange={(e) => handleSearchChange(e.target.value)}
-              className="h-7 border-0 bg-transparent px-0 text-xs placeholder:text-slate-400 focus-visible:ring-0 focus-visible:ring-offset-0"
-            />
-          </form>
+                  <UserDropdown user={user!} />
+                </div>
 
-          {!isSeller && (
-            <Link
-              href="/become-seller"
-              className="hidden items-center gap-1.5 rounded-full bg-emerald-600 px-3 py-1.5 text-xs font-medium text-white shadow-sm hover:bg-emerald-700 transition-colors sm:inline-flex"
-            >
-              <Handshake size={14} />
-              <span>Become a seller</span>
-            </Link>
-          )}
-
-
-          <div className="flex items-center gap-2 text-slate-800">
-            {isLoading ? (
-              <Skeleton className="h-8 w-[96px] rounded-full" />
-
-            ) : isAuthenticated ? (
-              <div className="flex items-center gap-2">
-                <Link href="/orders">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="h-8 rounded-full border-slate-200 px-3 text-xs cursor-pointer font-medium"
-                  >
-                    Orders
+              ) : (
+                <Link href="/sign-in">
+                  <Button className="inline-flex h-8 items-center gap-1.5 rounded-full bg-slate-900 px-3 text-xs font-medium text-white hover:bg-slate-800">
+                    <UserIcon size={14} />
+                    <span>Log in</span>
                   </Button>
                 </Link>
+              )}
+            </div>
 
-                <Link href="/cart" className="relative">
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    className="h-8 w-8 rounded-full border-slate-200 cursor-pointer relative"
-                  >
-                    <ShoppingCart size={16} />
-                    {cartCount > 0 && (
-                      <Badge 
-                        className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 bg-emerald-600 text-white text-[10px] font-bold border-2 border-white rounded-full"
-                      >
-                        {cartCount > 99 ? "99+" : cartCount}
-                      </Badge>
-                    )}
-                  </Button>
-                </Link>
-
-                <UserDropdown user={user!} />
-              </div>
-
-            ) : (
-              <Link href="/sign-in">
-                <Button className="inline-flex h-8 items-center gap-1.5 rounded-full bg-slate-900 px-3 text-xs font-medium text-white hover:bg-slate-800">
-                  <UserIcon size={14} />
-                  <span>Log in</span>
-                </Button>
-              </Link>
-            )}
           </div>
-
         </div>
-      </div>
-    </nav>
+      </nav>
+    </>
   );
 }
