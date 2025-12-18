@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/server/drizzle";
 import { orders, payments, transactions } from "@/server/schema/auth-schema";
 import { eq } from "drizzle-orm";
-import { getServerSession } from "@/server/session";
+import { getAuthenticatedUser } from "@/lib/mobile-auth";
 import { v4 as uuidv4 } from "uuid";
 
 // PUT /api/sellers/orders/[orderId]/status - Update seller order status (accept/reject)
@@ -11,8 +11,8 @@ export async function PUT(
   { params }: { params: Promise<{ orderId: string }> | { orderId: string } }
 ) {
   try {
-    const session = await getServerSession();
-    if (!session?.user?.id) {
+    const user = await getAuthenticatedUser(req);
+    if (!user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 

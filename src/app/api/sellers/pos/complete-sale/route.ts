@@ -10,18 +10,18 @@ import {
   shop,
 } from "@/server/schema/auth-schema";
 import { eq, inArray } from "drizzle-orm";
-import { getServerSession } from "@/server/session";
+import { getAuthenticatedUser } from "@/lib/mobile-auth";
 import { v4 as uuidv4 } from "uuid";
 
 // POST /api/sellers/pos/complete-sale - Complete an in-store sale
 export async function POST(req: NextRequest) {
   try {
-    const session = await getServerSession();
-    if (!session?.user?.id) {
+    const user = await getAuthenticatedUser(req);
+    if (!user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const sellerId = session.user.id;
+    const sellerId = user.id;
     const body = await req.json();
     const { items, paymentMethod, paymentReceived, change } = body;
 

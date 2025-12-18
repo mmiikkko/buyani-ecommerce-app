@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/server/drizzle";
-import { getServerSession } from "@/server/session";
+import { getAuthenticatedUser } from "@/lib/mobile-auth";
 import { conversations, user, products, shop, messages } from "@/server/schema/auth-schema";
 import { eq, or, and, desc } from "drizzle-orm";
 import { v4 as uuidv4 } from "uuid";
@@ -8,12 +8,12 @@ import { v4 as uuidv4 } from "uuid";
 // GET /api/conversations - Get all conversations for the current user
 export async function GET(req: NextRequest) {
   try {
-    const session = await getServerSession();
-    if (!session?.user?.id) {
+    const authUser = await getAuthenticatedUser(req);
+    if (!authUser?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const userId = session.user.id;
+    const userId = authUser.id;
 
     // Get all conversations where user is either customer or seller
     const userConversations = await db
@@ -87,8 +87,8 @@ export async function GET(req: NextRequest) {
 // POST /api/conversations - Create a new conversation
 export async function POST(req: NextRequest) {
   try {
-    const session = await getServerSession();
-    if (!session?.user?.id) {
+    const authUser = await getAuthenticatedUser(req);
+    if (!authUser?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
@@ -101,7 +101,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const customerId = session.user.id;
+    const customerId = authUser.id;
 
     // Check if conversation already exists
     const existingConversation = await db
@@ -151,8 +151,8 @@ export async function POST(req: NextRequest) {
 // DELETE /api/conversations?id=xxx - Delete a conversation
 export async function DELETE(req: NextRequest) {
   try {
-    const session = await getServerSession();
-    if (!session?.user?.id) {
+    const authUser = await getAuthenticatedUser(req);
+    if (!authUser?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
@@ -166,7 +166,7 @@ export async function DELETE(req: NextRequest) {
       );
     }
 
-    const userId = session.user.id;
+    const userId = authUser.id;
 
     // Verify the user is part of this conversation
     const conversation = await db

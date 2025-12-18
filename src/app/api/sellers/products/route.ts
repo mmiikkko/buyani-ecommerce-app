@@ -10,7 +10,7 @@ import {
   shop,
 } from "@/server/schema/auth-schema";
 import { and, eq, inArray, sql } from "drizzle-orm";
-import { getServerSession } from "@/server/session";
+import { getAuthenticatedUser } from "@/lib/mobile-auth";
 import { v4 as uuidv4 } from "uuid";
 
 // ------------------- NEW TYPES ADDED ------------------- //
@@ -65,14 +65,14 @@ export type UpdatedProductPayload = {
 // -------------------------------------------------------- //
 
 // GET -----------------------------------------------------
-export async function GET() {
+export async function GET(req: NextRequest) {
   try {
-    const session = await getServerSession();
-    if (!session?.user?.id) {
+    const user = await getAuthenticatedUser(req);
+    if (!user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const sellerId = session.user.id;
+    const sellerId = user.id;
 
     const sellerShops = await db
       .select({ id: shop.id })
@@ -151,12 +151,12 @@ export async function GET() {
 // POST ----------------------------------------------------
 export async function POST(req: NextRequest) {
   try {
-    const session = await getServerSession();
-    if (!session?.user?.id) {
+    const user = await getAuthenticatedUser(req);
+    if (!user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const sellerId = session.user.id;
+    const sellerId = user.id;
     const body: ProductPayload = await req.json();
 
     const executeQuery = async <T>(fn: () => Promise<T>, retries = 3): Promise<T> => {
@@ -268,8 +268,8 @@ export async function POST(req: NextRequest) {
 // PUT -----------------------------------------------------
 export async function PUT(req: NextRequest) {
   try {
-    const session = await getServerSession();
-    if (!session?.user?.id) {
+    const user = await getAuthenticatedUser(req);
+    if (!user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 

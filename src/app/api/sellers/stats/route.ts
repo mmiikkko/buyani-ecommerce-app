@@ -2,13 +2,13 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/server/drizzle";
 import { orders, shop, payments, products, orderItems } from "@/server/schema/auth-schema";
 import { eq, inArray, sql, and, gte, lte } from "drizzle-orm";
-import { getServerSession } from "@/server/session";
+import { getAuthenticatedUser } from "@/lib/mobile-auth";
 
 // GET /api/sellers/stats - Get seller dashboard statistics
 export async function GET(req: NextRequest) {
   try {
-    const session = await getServerSession();
-    if (!session?.user?.id) {
+    const user = await getAuthenticatedUser(req);
+    if (!user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
@@ -37,7 +37,7 @@ export async function GET(req: NextRequest) {
     }
     // If no date filter, show all time
 
-    const sellerId = session.user.id;
+    const sellerId = user.id;
 
     // Get seller's shops
     const sellerShops = await db

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/server/drizzle";
-import { getServerSession } from "@/server/session";
+import { getAuthenticatedUser } from "@/lib/mobile-auth";
 import { messages, conversations } from "@/server/schema/auth-schema";
 import { eq, and, asc } from "drizzle-orm";
 import { v4 as uuidv4 } from "uuid";
@@ -11,13 +11,13 @@ export async function GET(
   { params }: { params: Promise<{ conversationId: string }> }
 ) {
   try {
-    const session = await getServerSession();
-    if (!session?.user?.id) {
+    const authUser = await getAuthenticatedUser(req);
+    if (!authUser?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const { conversationId } = await params;
-    const userId = session.user.id;
+    const userId = authUser.id;
 
     // Verify user is part of this conversation
     const conversation = await db
@@ -81,14 +81,14 @@ export async function POST(
   { params }: { params: Promise<{ conversationId: string }> }
 ) {
   try {
-    const session = await getServerSession();
-    if (!session?.user?.id) {
+    const authUser = await getAuthenticatedUser(req);
+    if (!authUser?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const { conversationId } = await params;
     const { content } = await req.json();
-    const senderId = session.user.id;
+    const senderId = authUser.id;
 
     if (!content || content.trim() === "") {
       return NextResponse.json(

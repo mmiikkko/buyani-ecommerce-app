@@ -2,17 +2,17 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/server/drizzle";
 import { shop, user } from "@/server/schema/auth-schema";
 import { eq } from "drizzle-orm";
-import { getServerSession } from "@/server/session";
+import { getAuthenticatedUser } from "@/lib/mobile-auth";
 
 // GET /api/sellers/shop - Get current seller's shop and user data
-export async function GET() {
+export async function GET(req: NextRequest) {
   try {
-    const session = await getServerSession();
-    if (!session?.user?.id) {
+    const user = await getAuthenticatedUser(req);
+    if (!user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const sellerId = session.user.id;
+    const sellerId = user.id;
 
     // Get user data
     const userData = await db
@@ -67,12 +67,12 @@ type ShopUpdates = {
 // PUT /api/sellers/shop - Update shop information
 export async function PUT(req: NextRequest) {
   try {
-    const session = await getServerSession();
-    if (!session?.user?.id) {
+    const user = await getAuthenticatedUser(req);
+    if (!user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const sellerId = session.user.id;
+    const sellerId = user.id;
     const body = await req.json();
 
     // Verify seller has a shop

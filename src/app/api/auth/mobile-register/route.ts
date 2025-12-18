@@ -127,7 +127,9 @@ export async function POST(req: NextRequest) {
       }
 
       // Update user role
-      const userRole = role === 'seller' ? USER_ROLES.SELLER : USER_ROLES.CUSTOMER;
+      // For sellers, start as pending_seller so admin must approve first (same as website flow)
+      const userRole =
+        role === 'seller' ? USER_ROLES.PENDING_SELLER : USER_ROLES.CUSTOMER;
       await db
         .update(user)
         .set({ role: userRole })

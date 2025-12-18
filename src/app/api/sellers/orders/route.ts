@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/server/drizzle";
 import {
   orders,
@@ -11,19 +11,19 @@ import {
   user,
 } from "@/server/schema/auth-schema";
 import { eq, inArray } from "drizzle-orm";
-import { getServerSession } from "@/server/session";
+import { getAuthenticatedUser } from "@/lib/mobile-auth";
 
 // GET /api/sellers/orders - Get orders for the current seller
-export async function GET() {
+export async function GET(req: NextRequest) {
   try {
-    const session = await getServerSession();
-    if (!session?.user?.id) {
+    const user = await getAuthenticatedUser(req);
+    if (!user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     // Handle database connection errors gracefully
     try {
-      const sellerId = session.user.id;
+      const sellerId = user.id;
 
       const sellerShops = await db
         .select({ id: shop.id })
