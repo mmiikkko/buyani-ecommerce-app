@@ -48,7 +48,7 @@ export function AppSidebar() {
     { title: t("pos"), url: "/seller/POS", icon: Store },
     { title: t("products"), url: "/seller/products", icon: Package },
     { title: t("inbox"), url: "/seller/inbox", icon: Inbox },
-    { title: t("monthly-dues"), url: "/seller/monthly-dues", icon: CalendarSync },
+    { title: t("monthly-dues") || "Monthly Dues", url: "/seller/monthly-dues", icon: CalendarSync },
   ];
   
   // Avoid SSR/client mismatch

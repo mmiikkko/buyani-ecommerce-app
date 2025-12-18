@@ -142,22 +142,29 @@ export async function GET() {
       );
 
       // 🟩 FIX: removed "any", strong typing applied
-      const items = Object.values(itemsWithProducts).map((item) => ({
-        id: item.orderItem.id,
-        orderId: item.orderItem.orderId,
-        productId: item.orderItem.productId,
-        quantity: item.orderItem.quantity,
-        subtotal: Number(item.orderItem.subtotal),
-        product: item.product
-          ? {
-              id: item.product.id,
-              shopId: item.product.shopId,
-              productName: item.product.productName,
-              price: Number(item.product.price),
-              images: item.product.images || [],
-            }
-          : null,
-      }));
+      const items = Object.values(itemsWithProducts).map((item) => {
+        const primaryImage = item.product?.images?.find((img: any) => img.is_primary) || item.product?.images?.[0];
+        const productImageUrl = primaryImage?.image_url?.[0] || null;
+        
+        return {
+          id: item.orderItem.id,
+          orderId: item.orderItem.orderId,
+          productId: item.orderItem.productId,
+          productName: item.product?.productName || "Unknown Product",
+          quantity: item.orderItem.quantity,
+          subtotal: Number(item.orderItem.subtotal),
+          productImage: productImageUrl,
+          product: item.product
+            ? {
+                id: item.product.id,
+                shopId: item.product.shopId,
+                productName: item.product.productName,
+                price: Number(item.product.price),
+                images: item.product.images || [],
+              }
+            : null,
+        };
+      });
 
       const payment = allPayments.find((p) => p.orderId === orderRow.id);
       const orderTransactions = allTransactions.filter(
