@@ -26,7 +26,7 @@ export async function GET(req: NextRequest) {
       const sellerId = user.id;
 
       const sellerShops = await db
-        .select({ id: shop.id })
+        .select({ id: shop.id, shopName: shop.shopName })
         .from(shop)
         .where(eq(shop.sellerId, sellerId));
 
@@ -36,6 +36,7 @@ export async function GET(req: NextRequest) {
 
       const shopIds = sellerShops.map((s) => s.id);
 
+      // Get products belonging to seller's shops
       const sellerProducts = await db
         .select({ id: products.id })
         .from(products)
@@ -47,6 +48,7 @@ export async function GET(req: NextRequest) {
         return NextResponse.json([]);
       }
 
+      // Get order items containing seller's products
       const items = await db
         .select()
         .from(orderItems)
@@ -140,31 +142,46 @@ export async function GET(req: NextRequest) {
       );
 
       // 🟩 FIX: removed "any", strong typing applied
-      const items = Object.values(itemsWithProducts).map((item) => ({
-        id: item.orderItem.id,
-        orderId: item.orderItem.orderId,
-        productId: item.orderItem.productId,
-        quantity: item.orderItem.quantity,
-        subtotal: Number(item.orderItem.subtotal),
-        product: item.product
-          ? {
-              id: item.product.id,
-              productName: item.product.productName,
-              price: Number(item.product.price),
-              images: item.product.images || [],
-            }
-          : null,
-      }));
+      const items = Object.values(itemsWithProducts).map((item) => {
+        const primaryImage = item.product?.images?.find((img: any) => img.is_primary) || item.product?.images?.[0];
+        const productImageUrl = primaryImage?.image_url?.[0] || null;
+        
+        return {
+          id: item.orderItem.id,
+          orderId: item.orderItem.orderId,
+          productId: item.orderItem.productId,
+          productName: item.product?.productName || "Unknown Product",
+          quantity: item.orderItem.quantity,
+          subtotal: Number(item.orderItem.subtotal),
+          productImage: productImageUrl,
+          product: item.product
+            ? {
+                id: item.product.id,
+                shopId: item.product.shopId,
+                productName: item.product.productName,
+                price: Number(item.product.price),
+                images: item.product.images || [],
+              }
+            : null,
+        };
+      });
 
       const payment = allPayments.find((p) => p.orderId === orderRow.id);
       const orderTransactions = allTransactions.filter(
         (t) => t.orderId === orderRow.id
       );
 
+      // Derive shop info from items (all items in an order now belong to same shop)
+      const firstItem = items[0];
+      const shopId = firstItem?.product?.shopId || null;
+      const shopInfo = sellerShops.find((s) => s.id === shopId);
+
       return {
         id: orderRow.id,
         buyerId: orderRow.buyerId,
         buyerName: buyerName,
+        shopId: shopId,
+        shopName: shopInfo?.shopName || null,
         addressId: orderRow.addressId,
         total: orderRow.total ? Number(orderRow.total) : null,
         createdAt: orderRow.createdAt,

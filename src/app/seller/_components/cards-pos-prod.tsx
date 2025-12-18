@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import Image from "next/image";
 import type { Product } from "@/types/products";
+import { useLanguage } from "@/lib/i18n/context";
 
 type POSProduct = {
   id: string;
@@ -21,6 +22,7 @@ interface CardsPosProdProps {
 }
 
 export function CardsPosProd({ onAddToCart }: CardsPosProdProps) {
+  const { t } = useLanguage();
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
@@ -84,7 +86,7 @@ export function CardsPosProd({ onAddToCart }: CardsPosProdProps) {
       <CardHeader className="pb-0">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <SearchInput
-            placeholder="Search products..."
+            placeholder={t("search-products")}
             className="bg-[#f3f3f5]"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
@@ -94,10 +96,10 @@ export function CardsPosProd({ onAddToCart }: CardsPosProdProps) {
 
       <CardContent className="min-h-[200px] max-h-[600px] overflow-y-auto">
         {loading ? (
-          <p className="text-gray-500 text-center py-8">Loading products...</p>
+          <p className="text-gray-500 text-center py-8">{t("loading-products-pos")}</p>
         ) : filteredProducts.length === 0 ? (
           <p className="text-gray-500 text-center py-8">
-            {searchQuery ? "No products found." : "You have no listed products yet."}
+            {searchQuery ? t("no-products-found-pos") : t("you-have-no-products")}
           </p>
         ) : (
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
@@ -132,7 +134,7 @@ export function CardsPosProd({ onAddToCart }: CardsPosProdProps) {
                       )
                     ) : (
                       <div className="w-full h-full flex items-center justify-center text-gray-400 text-xs">
-                        No Image
+                        {t("no-image")}
                       </div>
                     )}
                   </div>
@@ -143,7 +145,7 @@ export function CardsPosProd({ onAddToCart }: CardsPosProdProps) {
                     ₱{product.price?.toFixed(2) || "0.00"}
                   </p>
                   <p className="text-xs text-gray-500 mb-2">
-                    Stock: {product.stock || 0}
+                    {t("stock")}: {product.stock || 0}
                   </p>
                   <Button
                     size="sm"
@@ -152,7 +154,7 @@ export function CardsPosProd({ onAddToCart }: CardsPosProdProps) {
                     disabled={isOutOfStock}
                   >
                     <Plus className="w-3 h-3 mr-1" />
-                    Add
+                    {t("add")}
                   </Button>
                 </div>
               );

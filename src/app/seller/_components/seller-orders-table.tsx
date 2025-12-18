@@ -13,6 +13,8 @@ import { Button } from "@/components/ui/button";
 import { Eye, Check, X, Truck } from "lucide-react";
 import type { Order } from "@/types/orders";
 import { toast } from "sonner";
+import { useLanguage } from "@/lib/i18n/context";
+import { OrderDetailsModal } from "./order-details-modal";
 
 export function OrdersTabsTable({
   ordersData,
@@ -53,6 +55,7 @@ function OrdersTable({
   onStatusUpdate?: (orderId: string, newStatus: string) => void;
   onRefresh?: () => void;
 }) {
+  const { t } = useLanguage();
   const [currentPage, setCurrentPage] = useState(1);
   const [processingOrder, setProcessingOrder] = useState<string | null>(null);
   const rowsPerPage = 8;
@@ -68,10 +71,10 @@ function OrdersTable({
 
       if (!res.ok) {
         const error = await res.json();
-        throw new Error(error.error || "Failed to update order status");
+        throw new Error(error.error || t("failed-update-status"));
       }
 
-      toast.success(`Order ${status} successfully`);
+      toast.success(status === "accepted" ? t("order-accepted-success") : t("order-rejected-success"));
       
       // Call the parent's status update handler if provided
       if (onStatusUpdate) {
@@ -82,7 +85,7 @@ function OrdersTable({
         onRefresh();
       }
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : "Failed to update order";
+      const errorMessage = err instanceof Error ? err.message : t("failed-update-order");
       toast.error(errorMessage);
     } finally {
       setProcessingOrder(null);
@@ -100,10 +103,10 @@ function OrdersTable({
 
       if (!res.ok) {
         const error = await res.json();
-        throw new Error(error.error || "Failed to update order status");
+        throw new Error(error.error || t("failed-update-status"));
       }
 
-      toast.success("Order marked as shipped");
+      toast.success(t("order-shipped-success"));
 
       if (onStatusUpdate) {
         onStatusUpdate(orderId, "shipped");
@@ -113,7 +116,7 @@ function OrdersTable({
         onRefresh();
       }
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : "Failed to update order";
+      const errorMessage = err instanceof Error ? err.message : t("failed-update-order");
       toast.error(errorMessage);
     } finally {
       setProcessingOrder(null);
@@ -156,11 +159,15 @@ function OrdersTable({
     return filteredOrders.slice(start, start + rowsPerPage);
   }, [currentPage, filteredOrders]);
 
+  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+  const [detailsOpen, setDetailsOpen] = useState(false);
+
+
   return (
     <div className="space-y-3">
       {filteredOrders.length === 0 && (
         <div className="w-full text-center py-6 text-muted-foreground border rounded-md bg-white">
-          No orders found.
+          {t("no-orders-found")}
         </div>
       )}
 
@@ -168,21 +175,21 @@ function OrdersTable({
         <Table className="bg-white rounded-xl shadow-sm">
           <TableHeader>
             <TableRow>
-              <TableHead>Order ID</TableHead>
-              <TableHead>Customer</TableHead>
-              <TableHead>Product</TableHead>
-              <TableHead>Qty</TableHead>
-              <TableHead>Amount</TableHead>
-              <TableHead>Actions</TableHead>
-              <TableHead>Seller Action</TableHead>
+              <TableHead>{t("order-id")}</TableHead>
+              <TableHead>{t("customer")}</TableHead>
+              <TableHead>{t("product")}</TableHead>
+              <TableHead>{t("qty")}</TableHead>
+              <TableHead>{t("amount")}</TableHead>
+              <TableHead>{t("actions")}</TableHead>
+              <TableHead>{t("seller-action")}</TableHead>
             </TableRow>
           </TableHeader>
 
           <TableBody>
             {currentRows.map((order, idx) => {
               const firstItem = order.items?.[0];
-              const productName = firstItem?.productId ?? firstItem?.productName ?? "Unknown";
-              const buyerName = order.buyerName ?? order.buyerId ?? "Unknown Customer";
+              const productName = firstItem?.productId ?? firstItem?.productName ?? "unknown-product";
+              const buyerName = order.buyerName ?? order.buyerId ?? t("unknown-customer");
               const orderId = order.orderId || order.id || `order-${idx}`;
 
               return (
@@ -205,9 +212,17 @@ function OrdersTable({
                   <TableCell>{order.total ?? 0}</TableCell>
 
                   <TableCell className="flex gap-2 items-center">
-                    <Button variant="ghost" size="icon">
-                      <Eye className="h-4 w-4" />
-                    </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => {
+                      setSelectedOrder(order);
+                      setDetailsOpen(true);
+                    }}
+                  >
+                    <Eye className="h-4 w-4" />
+                  </Button>
+
                   </TableCell>
 
                   <TableCell>
@@ -223,7 +238,7 @@ function OrdersTable({
                         return (
                           <div className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-red-100 text-red-800">
                             <X className="h-3 w-3 mr-1" />
-                            Rejected
+                            {t("rejected")}
                           </div>
                         );
                       }
@@ -232,7 +247,7 @@ function OrdersTable({
                         return (
                           <div className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
                             <Check className="h-3 w-3 mr-1" />
-                            {isDelivered ? "Delivered" : "Completed"}
+                            {isDelivered ? t("delivered") : t("completed")}
                           </div>
                         );
                       }
@@ -241,7 +256,7 @@ function OrdersTable({
                         return (
                           <div className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
                             <Truck className="h-3 w-3 mr-1" />
-                            Shipped
+                            {t("shipped")}
                           </div>
                         );
                       }
@@ -251,7 +266,7 @@ function OrdersTable({
                           <div className="flex gap-2 items-center">
                             <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
                               <Check className="h-3 w-3 mr-1" />
-                              Accepted
+                              {t("accepted")}
                             </span>
                             <Button
                               variant="default"
@@ -261,7 +276,7 @@ function OrdersTable({
                               className="bg-blue-600 hover:bg-blue-700 text-white"
                             >
                               <Truck className="h-3 w-3 mr-1" />
-                              Mark Shipped
+                              {t("mark-shipped")}
                             </Button>
                           </div>
                         );
@@ -277,7 +292,7 @@ function OrdersTable({
                             className="bg-green-600 hover:bg-green-700 text-white"
                           >
                             <Check className="h-3 w-3 mr-1" />
-                            Accept
+                            {t("accept")}
                           </Button>
                           <Button
                             variant="destructive"
@@ -286,7 +301,7 @@ function OrdersTable({
                             disabled={processingOrder === orderId}
                           >
                             <X className="h-3 w-3 mr-1" />
-                            Reject
+                            {t("reject")}
                           </Button>
                         </div>
                       );
@@ -305,11 +320,11 @@ function OrdersTable({
           disabled={currentPage === 1}
           onClick={() => setCurrentPage((p) => p - 1)}
         >
-          Previous
+          {t("previous")}
         </Button>
 
         <span className="text-sm">
-          Page {currentPage} of {pageCount}
+          {t("page")} {currentPage} {t("of")} {pageCount}
         </span>
 
         <Button
@@ -317,9 +332,16 @@ function OrdersTable({
           disabled={currentPage === pageCount}
           onClick={() => setCurrentPage((p) => p + 1)}
         >
-          Next
+          {t("next")}
         </Button>
       </div>
+
+      <OrderDetailsModal
+        open={detailsOpen}
+        onOpenChange={setDetailsOpen}
+        order={selectedOrder}
+      />
+
     </div>
   );
 }

@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { CardsPosProd } from "../_components/cards-pos-prod";
 import { CardsPosTransac } from "../_components/cards-pos-transac";
+import { useLanguage } from "@/lib/i18n/context";
 
 type CartItem = {
   id: string;
@@ -20,6 +21,7 @@ type POSProduct = {
 };
 
 export default function POS() {
+  const { t } = useLanguage();
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
 
   const handleAddToCart = (product: POSProduct) => {
@@ -56,8 +58,8 @@ export default function POS() {
     <section className="relative min-h-screen min-w-[80%] max-w-[100%] overflow-hidden space-y-5 mx-3">
       <div className="flex flex-row justify-between">
         <div className="flex flex-col">
-          <h1 className="text-xl mb-1 font-bold text-[#2E7D32]">POS</h1>
-          <p>Process in-store transactions</p>
+          <h1 className="text-xl mb-1 font-bold text-[#2E7D32]">{t("pos")}</h1>
+          <p>{t("process-transactions")}</p>
         </div>
       </div>
       <div className="flex flex-row gap-4">

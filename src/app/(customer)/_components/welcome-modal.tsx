@@ -20,6 +20,7 @@ import {
   Tag,
   Star,
 } from "lucide-react";
+import { useLanguage } from "@/lib/i18n/context";
 
 const WELCOME_STORAGE_KEY = "buyani-welcome-seen";
 const PROMO_STORAGE_KEY = "buyani-promo-last-shown";
@@ -28,6 +29,7 @@ export function WelcomeModal() {
   const [isOpen, setIsOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(0);
   const totalPages = 3;
+  const { t } = useLanguage();
 
   useEffect(() => {
     // Only show to first-time visitors
@@ -69,11 +71,11 @@ export function WelcomeModal() {
           <div className="flex items-center gap-2 mb-2">
             <Sparkles className="h-6 w-6 text-emerald-600" />
             <DialogTitle className="text-2xl font-bold text-slate-900">
-              Welcome to Buyani!
+              {t("welcome-title")}
             </DialogTitle>
           </div>
           <DialogDescription className="text-base text-slate-600">
-            Your campus marketplace for local products and student-made goods
+            {t("welcome-description")}
           </DialogDescription>
         </DialogHeader>
 
@@ -87,12 +89,10 @@ export function WelcomeModal() {
             <div className="min-w-full px-1 py-4 flex flex-col justify-center">
               <div className="space-y-4">
                 <h3 className="text-xl font-semibold text-slate-900 text-center">
-                  What is Buyani?
+                  {t("what-is-buyani")}
                 </h3>
                 <p className="text-slate-600 leading-relaxed text-center px-4">
-                  Buyani is a student-focused e-commerce platform that connects campus communities 
-                  with local vendors, student entrepreneurs, and makers. Discover unique products, 
-                  support your peers, and shop from trusted sellers all in one place.
+                  {t("what-is-buyani-desc")}
                 </p>
                 <div className="flex justify-center pt-4">
                   <Sparkles className="h-16 w-16 text-emerald-600 opacity-20" />
@@ -104,17 +104,17 @@ export function WelcomeModal() {
             <div className="min-w-full px-1 py-4 flex flex-col justify-center">
               <div className="space-y-4">
                 <h3 className="text-xl font-semibold text-slate-900 text-center mb-4">
-                  What you can do:
+                  {t("what-you-can-do")}
                 </h3>
                 <div className="grid gap-3 sm:grid-cols-2">
                   <div className="flex gap-3 p-3 rounded-lg bg-emerald-50/50 border border-emerald-100">
                     <ShoppingBag className="h-5 w-5 text-emerald-600 mt-0.5 flex-shrink-0" />
                     <div>
                       <h4 className="font-semibold text-slate-900 text-sm mb-1">
-                        Shop Products
+                        {t("shop-products")}
                       </h4>
                       <p className="text-xs text-slate-600">
-                        Browse best sellers, shop by category, and find unique items
+                        {t("shop-products-desc")}
                       </p>
                     </div>
                   </div>
@@ -123,10 +123,10 @@ export function WelcomeModal() {
                     <Store className="h-5 w-5 text-blue-600 mt-0.5 flex-shrink-0" />
                     <div>
                       <h4 className="font-semibold text-slate-900 text-sm mb-1">
-                        Explore Vendors
+                        {t("explore-vendors")}
                       </h4>
                       <p className="text-xs text-slate-600">
-                        Discover featured vendors and support student entrepreneurs
+                        {t("explore-vendors-desc")}
                       </p>
                     </div>
                   </div>
@@ -135,10 +135,10 @@ export function WelcomeModal() {
                     <Heart className="h-5 w-5 text-rose-600 mt-0.5 flex-shrink-0" />
                     <div>
                       <h4 className="font-semibold text-slate-900 text-sm mb-1">
-                        Easy Shopping
+                        {t("easy-shopping")}
                       </h4>
                       <p className="text-xs text-slate-600">
-                        Add items to cart, manage quantities, and checkout seamlessly
+                        {t("easy-shopping-desc")}
                       </p>
                     </div>
                   </div>
@@ -147,10 +147,10 @@ export function WelcomeModal() {
                     <Sparkles className="h-5 w-5 text-amber-600 mt-0.5 flex-shrink-0" />
                     <div>
                       <h4 className="font-semibold text-slate-900 text-sm mb-1">
-                        Campus Focused
+                        {t("campus-focused")}
                       </h4>
                       <p className="text-xs text-slate-600">
-                        Products and vendors curated for the campus community
+                        {t("campus-focused-desc")}
                       </p>
                     </div>
                   </div>
@@ -162,25 +162,25 @@ export function WelcomeModal() {
             <div className="min-w-full px-1 py-4 flex flex-col justify-center">
               <div className="space-y-4">
                 <h3 className="text-xl font-semibold text-slate-900 text-center">
-                  Getting Started
+                  {t("getting-started")}
                 </h3>
                 <div className="space-y-3 p-4 rounded-lg bg-gradient-to-br from-emerald-50 to-blue-50 border border-emerald-200">
                   <ul className="space-y-3 text-slate-700 text-sm">
                     <li className="flex items-start gap-2">
                       <span className="text-emerald-600 font-bold">•</span>
-                      <span>Browse products by category or check out best sellers</span>
+                      <span>{t("getting-started-1")}</span>
                     </li>
                     <li className="flex items-start gap-2">
                       <span className="text-emerald-600 font-bold">•</span>
-                      <span>Explore featured vendors to discover new shops</span>
+                      <span>{t("getting-started-2")}</span>
                     </li>
                     <li className="flex items-start gap-2">
                       <span className="text-emerald-600 font-bold">•</span>
-                      <span>Sign in to add items to your cart and make purchases</span>
+                      <span>{t("getting-started-3")}</span>
                     </li>
                     <li className="flex items-start gap-2">
                       <span className="text-emerald-600 font-bold">•</span>
-                      <span>Support your fellow students and local makers!</span>
+                      <span>{t("getting-started-4")}</span>
                     </li>
                   </ul>
                 </div>
@@ -224,7 +224,7 @@ export function WelcomeModal() {
               onClick={handleClose}
               className="bg-emerald-600 hover:bg-emerald-700 text-white px-6"
             >
-              Get Started
+              {t("get-started")}
             </Button>
           ) : (
             <Button
@@ -246,6 +246,7 @@ export function WelcomeModal() {
 // Promo / advertisement modal for returning visitors
 export function PromoModal() {
   const [isOpen, setIsOpen] = useState(false);
+  const { t } = useLanguage();
 
   useEffect(() => {
     const hasWindow = typeof window !== "undefined";
@@ -275,14 +276,14 @@ export function PromoModal() {
         <DialogHeader className="space-y-2">
           <div className="inline-flex items-center gap-2 self-start rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-700">
             <Sparkles className="h-4 w-4" />
-            Just for you
+            {t("just-for-you")}
           </div>
           <DialogTitle className="text-2xl font-bold text-slate-900 flex items-center gap-2">
             <Gift className="h-6 w-6 text-amber-500" />
-            Fresh deals for loyal shoppers
+            {t("fresh-deals")}
           </DialogTitle>
           <DialogDescription className="text-base text-slate-600">
-            Catch the latest campus picks, limited drops, and free pickup perks.
+            {t("fresh-deals-desc")}
           </DialogDescription>
         </DialogHeader>
 
@@ -290,22 +291,22 @@ export function PromoModal() {
           <div className="flex items-start gap-3 rounded-xl bg-emerald-50 p-3">
             <Star className="h-5 w-5 text-emerald-600 mt-0.5" />
             <div>
-              <p className="font-semibold text-slate-900">Top-rated this week</p>
-              <p className="text-sm text-slate-600">See what’s trending with 4.5★+ reviews.</p>
+              <p className="font-semibold text-slate-900">{t("top-rated")}</p>
+              <p className="text-sm text-slate-600">{t("top-rated-desc")}</p>
             </div>
           </div>
           <div className="flex items-start gap-3 rounded-xl bg-amber-50 p-3">
             <Tag className="h-5 w-5 text-amber-600 mt-0.5" />
             <div>
-              <p className="font-semibold text-slate-900">Limited promos</p>
-              <p className="text-sm text-slate-600">Bundle savings and flash offers from campus sellers.</p>
+              <p className="font-semibold text-slate-900">{t("limited-promos")}</p>
+              <p className="text-sm text-slate-600">{t("limited-promos-desc")}</p>
             </div>
           </div>
           <div className="flex items-start gap-3 rounded-xl bg-blue-50 p-3">
             <ShoppingBag className="h-5 w-5 text-blue-600 mt-0.5" />
             <div>
-              <p className="font-semibold text-slate-900">Fast pickup perks</p>
-              <p className="text-sm text-slate-600">Skip the wait with near-campus pickup spots.</p>
+              <p className="font-semibold text-slate-900">{t("fast-pickup")}</p>
+              <p className="text-sm text-slate-600">{t("fast-pickup-desc")}</p>
             </div>
           </div>
         </div>
@@ -315,10 +316,10 @@ export function PromoModal() {
             className="bg-emerald-600 hover:bg-emerald-700 text-white px-5"
             onClick={handleClose}
           >
-            Shop best-sellers
+            {t("shop-best-sellers")}
           </Button>
           <Button variant="outline" className="border-slate-200 bg-white/90 text-slate-800 px-4" onClick={handleClose}>
-            View new arrivals
+            {t("view-new-arrivals")}
           </Button>
         </div>
       </DialogContent>

@@ -5,6 +5,7 @@ import { ArrowRight, Tag, Sparkles } from "lucide-react";
 import Link from "next/link";
 import { AnimatedSection } from "@/components/animated-section";
 import { AnimatedCategoryCard } from "./animated-category-card";
+import { useLanguage } from "@/lib/i18n/context";
 
 interface Category {
   id: string;
@@ -25,6 +26,7 @@ const colorSchemes = [
 export function ShopByCategorySection() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
+  const { t } = useLanguage();
 
   useEffect(() => {
     async function fetchCategories() {
@@ -51,7 +53,7 @@ export function ShopByCategorySection() {
       <section className="py-10 bg-gradient-to-b from-emerald-50/70 via-emerald-50/40 to-slate-50">
         <div className="mx-auto flex w-full max-w-7xl flex-col gap-6 px-4 sm:px-6 lg:px-8">
           <div className="text-center py-8">
-            <p className="text-slate-500">Loading categories...</p>
+            <p className="text-slate-500">{t("loading-categories")}</p>
           </div>
         </div>
       </section>
@@ -74,18 +76,18 @@ export function ShopByCategorySection() {
               <div className="flex items-center gap-2">
                 <Sparkles className="w-5 h-5 text-emerald-500 animate-pulse" />
                 <p className="text-xs font-bold uppercase tracking-[0.2em] text-emerald-600 bg-emerald-100 px-3 py-1 rounded-full">
-                  Shop by category
+                  {t("shop-by-category")}
                 </p>
               </div>
             </div>
             <div>
               <h2 className="text-3xl sm:text-4xl font-bold tracking-tight bg-gradient-to-r from-slate-900 via-emerald-800 to-amber-800 bg-clip-text text-transparent">
-                Browse from campus sellers and local makers
+                {t("browse-campus-sellers")}
               </h2>
               <div className="flex items-center gap-3 mt-2">
                 <div className="h-1 w-16 bg-gradient-to-r from-emerald-500 to-amber-500 rounded-full"></div>
                 <p className="text-base text-slate-700 font-medium">
-                  Find exactly what you need, organized by category
+                  {t("find-by-category")}
                 </p>
               </div>
             </div>
@@ -95,7 +97,7 @@ export function ShopByCategorySection() {
             href="/categories"
             className="inline-flex items-center gap-2 rounded-full border-2 border-emerald-200 bg-gradient-to-r from-emerald-500 to-emerald-600 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-emerald-500/30 hover:shadow-xl hover:shadow-emerald-500/40 transition-all duration-200 hover:-translate-y-0.5"
           >
-            View all categories
+            {t("view-all-categories")}
             <ArrowRight className="size-4" />
           </Link>
         </header>
@@ -125,7 +127,7 @@ export function ShopByCategorySection() {
                         className={`h-1.5 w-1.5 rounded-full ${colorScheme.itemCountClassName}`}
                       />
                       <p className="text-[11px] font-medium text-slate-600">
-                        {category.productCount || 0} {category.productCount === 1 ? "item" : "items"}
+                        {category.productCount || 0} {category.productCount === 1 ? t("item") : t("items")}
                       </p>
                     </div>
                   </div>

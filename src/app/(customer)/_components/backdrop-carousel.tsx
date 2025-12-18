@@ -6,6 +6,7 @@ import Autoplay from "embla-carousel-autoplay";
 import { Link } from "lucide-react";
 import Image from "next/image";
 import { useRef, useEffect, useState } from "react";
+import { useLanguage } from "@/lib/i18n/context";
 
 interface CarouselImage {
   id: string;
@@ -18,6 +19,7 @@ export function BackdropCarousel() {
   const [isMounted, setIsMounted] = useState(false);
   const [items, setItems] = useState<CarouselImage[]>([]);
   const plugin = useRef<ReturnType<typeof Autoplay> | null>(null);
+  const { t } = useLanguage();
 
   // Fetch images dynamically from API
   useEffect(() => {
@@ -49,24 +51,23 @@ export function BackdropCarousel() {
           <div className="relative z-10 max-w-3xl space-y-7">
             <span className="inline-flex items-center gap-2 rounded-full border border-emerald-100 bg-white/80 px-3.5 py-1.5 text-[12px] font-semibold text-emerald-700 shadow-xs backdrop-blur">
               <span className="h-2 w-2 rounded-full bg-emerald-500" />
-              Quality snacks & essentials from CNSC students and local producers
+              {t("hero-badge")}
             </span>
 
             <h1 className="text-balance text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl lg:text-[3.2rem]">
-              Discover fresh picks from{" "}
+              {t("hero-title")}{" "}
               <span className="bg-gradient-to-r from-emerald-600 to-amber-500 bg-clip-text text-transparent">
-                campus sellers & local makers
+                {t("hero-title-highlight")}
               </span>
             </h1>
 
             <p className="max-w-3xl text-lg leading-relaxed text-slate-600 sm:text-[16px]">
-              Explore curated goods crafted by CNSC students and trusted local producers.
-              Simple, clean shopping designed for everyday cravings and useful essentials.
+              {t("hero-description")}
             </p>
 
             <div className="flex flex-wrap items-center gap-3 pt-2">
               <p className="w-full text-[12px] text-slate-500 sm:w-auto">
-                Bringing campus and community together
+                {t("hero-tagline")}
               </p>
             </div>
           </div>
@@ -105,7 +106,7 @@ export function BackdropCarousel() {
                         <div className="absolute inset-0 bg-gradient-to-t from-slate-950/60 via-slate-900/15 to-transparent" />
                         <div className="absolute inset-x-0 bottom-0 flex flex-col gap-2 px-5 pb-5">
                           <span className="inline-flex w-fit items-center gap-1 rounded-full bg-slate-950/70 px-2 py-1 text-[10px] font-medium text-slate-50">
-                            {item.imageDescription || "Featured Item"}
+                            {item.imageDescription || t("featured-item")}
                           </span>
                         </div>
                       </div>
@@ -118,7 +119,7 @@ export function BackdropCarousel() {
             {/* If no images in DB */}
             {isMounted && items.length === 0 && (
               <div className="h-[20rem] rounded-2xl border border-gray-200 bg-gray-50 flex items-center justify-center">
-                <p className="text-gray-500 text-sm">No carousel images found.</p>
+                <p className="text-gray-500 text-sm">{t("no-carousel-images")}</p>
               </div>
             )}
           </div>

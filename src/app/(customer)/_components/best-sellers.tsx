@@ -7,6 +7,7 @@ import type { Product } from "@/types/products";
 import { AnimatedSection } from "@/components/animated-section";
 import { AnimatedProductCard } from "./animated-product-card";
 import { PageLoader } from "@/components/loading-overlay";
+import { useLanguage } from "@/lib/i18n/context";
 
 
 const MAX_BEST_SELLERS = 10;
@@ -14,6 +15,7 @@ const MAX_BEST_SELLERS = 10;
 export function BestSellersSection() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
+  const { t } = useLanguage();
 
   useEffect(() => {
     fetch("/api/products")
@@ -67,7 +69,7 @@ export function BestSellersSection() {
               <div className="flex items-center gap-2">
                 <Sparkles className="w-5 h-5 text-emerald-500 animate-pulse" />
                 <p className="text-xs font-bold uppercase tracking-[0.2em] text-emerald-600 bg-emerald-100 px-3 py-1 rounded-full">
-                  Crowd favorites
+                  {t("crowd-favorites")}
                 </p>
               </div>
             </div>
@@ -75,13 +77,13 @@ export function BestSellersSection() {
               <h2 className="text-3xl sm:text-4xl font-bold tracking-tight bg-gradient-to-r from-slate-900 via-emerald-800 to-slate-900 bg-clip-text text-transparent">
                 <span className="inline-flex items-center gap-2">
                   <Star className="w-7 h-7 text-amber-500 fill-amber-500" />
-                  Best sellers this week
+                  {t("best-sellers-week")}
                 </span>
               </h2>
               <div className="flex items-center gap-3 mt-2">
                 <div className="h-1 w-16 bg-gradient-to-r from-emerald-500 to-amber-500 rounded-full"></div>
                 <p className="text-base text-slate-700 font-medium">
-                  Simple, popular picks students keep coming back for.
+                  {t("best-sellers-desc")}
                 </p>
               </div>
             </div>
@@ -91,18 +93,18 @@ export function BestSellersSection() {
             href="/products"
             className="inline-flex items-center gap-2 rounded-full border-2 border-emerald-200 bg-gradient-to-r from-emerald-500 to-emerald-600 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-emerald-500/30 hover:shadow-xl hover:shadow-emerald-500/40 transition-all duration-200 hover:-translate-y-0.5"
           >
-            View all products
+            {t("view-all-products")}
             <ArrowRight className="size-4" />
           </Link>
         </header>
 
         {loading ? (
           <div className="text-center py-12">
-            <p className="text-slate-500">Loading products...</p>
+            <p className="text-slate-500">{t("loading-products")}</p>
           </div>
         ) : products.length === 0 ? (
           <div className="text-center py-12">
-            <p className="text-slate-500">No products available at the moment.</p>
+            <p className="text-slate-500">{t("no-products-available")}</p>
           </div>
         ) : (
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">

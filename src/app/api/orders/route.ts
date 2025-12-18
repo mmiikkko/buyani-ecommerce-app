@@ -11,6 +11,7 @@ import {
   products,
   productInventory,
   productImages,
+  shop,
 } from '@/server/schema/auth-schema';
 import { eq, inArray } from 'drizzle-orm';
 import { getServerSession } from '@/server/session';
@@ -42,7 +43,6 @@ export async function OPTIONS() {
 
 
 // GET /api/orders - Get orders for the current user
-// GET /api/orders - Get orders for the current user
 export async function GET(req: NextRequest) {
   try {
     const userId = await getUserId(req);
@@ -50,7 +50,7 @@ export async function GET(req: NextRequest) {
       return corsResponse({ error: "Unauthorized" }, 401);
     }
 
-    // Join orders with user table to get the buyer's name
+    // Get orders for the user
     const userOrders = await db
       .select({
         id: orders.id,
@@ -65,7 +65,7 @@ export async function GET(req: NextRequest) {
       .leftJoin(user, eq(orders.buyerId, user.id))
       .where(eq(orders.buyerId, userId));
 
-    // fetch items for each order with product images
+    // fetch items for each order with product images and shop info
     const orderIds = userOrders.map((o) => o.id);
     const items = orderIds.length
       ? await db
@@ -73,11 +73,14 @@ export async function GET(req: NextRequest) {
             orderId: orderItems.orderId,
             productId: orderItems.productId,
             productName: products.productName,
+            shopId: products.shopId,
+            shopName: shop.shopName,
             quantity: orderItems.quantity,
             subtotal: orderItems.subtotal,
           })
           .from(orderItems)
           .leftJoin(products, eq(orderItems.productId, products.id))
+          .leftJoin(shop, eq(products.shopId, shop.id))
           .where(inArray(orderItems.orderId, orderIds))
       : [];
 
@@ -120,11 +123,18 @@ export async function GET(req: NextRequest) {
           .where(inArray(payments.orderId, orderIds))
       : [];
 
-    const withItems = userOrders.map((o) => ({
-      ...o,
-      items: itemsWithImages.filter((i) => i.orderId === o.id),
-      payment: paymentsData.find((p) => p.orderId === o.id),
-    }));
+    // Derive shop info from items (all items in an order belong to same shop)
+    const withItems = userOrders.map((o) => {
+      const orderItemsList = itemsWithImages.filter((i) => i.orderId === o.id);
+      const firstItem = orderItemsList[0];
+      return {
+        ...o,
+        shopId: firstItem?.shopId || null,
+        shopName: firstItem?.shopName || null,
+        items: orderItemsList,
+        payment: paymentsData.find((p) => p.orderId === o.id),
+      };
+    });
 
     return corsResponse(withItems);
   } catch (error) {
@@ -137,11 +147,14 @@ export async function GET(req: NextRequest) {
 }
 
 type CartItem = {
-  price?: number; // Optional, as indicated by `item.price || 0`
+  id?: string;
+  productId: string;
+  price?: number;
   quantity: number;
+  shopId?: string;
 };
 
-// POST /api/orders - Create a new order from cart
+// POST /api/orders - Create new orders from cart (separated by shop)
 export async function POST(req: NextRequest) {
   try {
     const userId = await getUserId(req);
@@ -158,12 +171,6 @@ export async function POST(req: NextRequest) {
         400
       );
     }
-
-    // Calculate total
-    const subtotal = items.reduce(
-      (sum: number, item: CartItem) => sum + (item.price || 0) * item.quantity,
-      0
-    );
 
     // Create or get address
     let addressId: string | null = null;
@@ -213,8 +220,18 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // Check stock availability before creating order
-    const productIds = items.map((item: any) => item.productId);
+    // Get product info with shop IDs
+    const productIds = items.map((item: CartItem) => item.productId);
+    const productData = await db
+      .select({
+        id: products.id,
+        shopId: products.shopId,
+        productName: products.productName,
+      })
+      .from(products)
+      .where(inArray(products.id, productIds));
+
+    // Check stock availability before creating orders
     const inventory = await db
       .select()
       .from(productInventory)
@@ -223,72 +240,109 @@ export async function POST(req: NextRequest) {
     for (const item of items) {
       const inv = inventory.find((inv) => inv.productId === item.productId);
       if (!inv || (Number(inv.quantityInStock || 0)) < item.quantity) {
-        const product = await db
-          .select({ productName: products.productName })
-          .from(products)
-          .where(eq(products.id, item.productId))
-          .limit(1);
+        const product = productData.find((p) => p.id === item.productId);
         return corsResponse(
           {
-            error: `Insufficient stock for ${product[0]?.productName || "product"}. Available: ${inv?.quantityInStock || 0}, Requested: ${item.quantity}`,
+            error: `Insufficient stock for ${product?.productName || "product"}. Available: ${inv?.quantityInStock || 0}, Requested: ${item.quantity}`,
           },
           400
         );
       }
     }
 
-    // Create order
-    const orderId = uuidv4();
-    await db.insert(orders).values({
-      id: orderId,
-      buyerId: userId,
-      addressId,
-      total: String(subtotal),
-    });
-
-    // Create order items and decrease stock
+    // Group items by shop
+    const itemsByShop = new Map<string, CartItem[]>();
     for (const item of items) {
-      await db.insert(orderItems).values({
-        id: uuidv4(),
-        orderId,
-        productId: item.productId,
-        quantity: item.quantity,
-        subtotal: String((item.price || 0) * item.quantity),
-      });
-
-      // Decrease product stock
-      const inventory = await db
-        .select()
-        .from(productInventory)
-        .where(eq(productInventory.productId, item.productId))
-        .limit(1);
-
-      if (inventory.length > 0) {
-        const currentStock = Number(inventory[0].quantityInStock || 0);
-        const newStock = Math.max(0, currentStock - item.quantity);
-        await db
-          .update(productInventory)
-          .set({
-            quantityInStock: newStock,
-            itemsSold: (Number(inventory[0].itemsSold || 0) + item.quantity),
-          })
-          .where(eq(productInventory.productId, item.productId));
+      const product = productData.find((p) => p.id === item.productId);
+      const shopId = product?.shopId || item.shopId || "unknown";
+      
+      if (!itemsByShop.has(shopId)) {
+        itemsByShop.set(shopId, []);
       }
+      itemsByShop.get(shopId)!.push(item);
     }
 
-    // Create payment record
-    const paymentId = uuidv4();
-    const isCOD = paymentMethod === "cod";
-    const isGCash = paymentMethod === "gcash";
-    
-    await db.insert(payments).values({
-      id: paymentId,
-      orderId,
-      paymentMethod: paymentMethod, // Store payment method type
-      paymentReceived: isCOD || isGCash ? null : String(subtotal), // For COD/GCash, payment received is null until confirmed
-      change: null, // Will be calculated when payment is received
-      status: isCOD || isGCash ? "pending" : "completed", // COD and GCash are pending until confirmed
-    });
+    // Get shop names for the response
+    const shopIds = Array.from(itemsByShop.keys()).filter(id => id !== "unknown");
+    const shopData = shopIds.length > 0
+      ? await db
+          .select({ id: shop.id, shopName: shop.shopName })
+          .from(shop)
+          .where(inArray(shop.id, shopIds))
+      : [];
+
+    const createdOrders: { orderId: string; shopId: string; shopName: string; subtotal: number }[] = [];
+    let totalSubtotal = 0;
+
+    // Create separate order for each shop
+    for (const [shopId, shopItems] of itemsByShop) {
+      const shopSubtotal = shopItems.reduce(
+        (sum: number, item: CartItem) => sum + (item.price || 0) * item.quantity,
+        0
+      );
+      totalSubtotal += shopSubtotal;
+
+      const shopInfo = shopData.find((s) => s.id === shopId);
+      const orderId = uuidv4();
+
+      // Create order (shop is determined by products in order items)
+      await db.insert(orders).values({
+        id: orderId,
+        buyerId: userId,
+        addressId,
+        total: String(shopSubtotal),
+      });
+
+      // Create order items and decrease stock for this shop's items
+      for (const item of shopItems) {
+        await db.insert(orderItems).values({
+          id: uuidv4(),
+          orderId,
+          productId: item.productId,
+          quantity: item.quantity,
+          subtotal: String((item.price || 0) * item.quantity),
+        });
+
+        // Decrease product stock
+        const inv = inventory.find((i) => i.productId === item.productId);
+        if (inv) {
+          const currentStock = Number(inv.quantityInStock || 0);
+          const newStock = Math.max(0, currentStock - item.quantity);
+          await db
+            .update(productInventory)
+            .set({
+              quantityInStock: newStock,
+              itemsSold: (Number(inv.itemsSold || 0) + item.quantity),
+            })
+            .where(eq(productInventory.productId, item.productId));
+          
+          // Update the inventory object for subsequent items
+          inv.quantityInStock = newStock;
+          inv.itemsSold = (Number(inv.itemsSold || 0) + item.quantity);
+        }
+      }
+
+      // Create payment record for this order
+      const paymentId = uuidv4();
+      const isCOD = paymentMethod === "cod";
+      const isGCash = paymentMethod === "gcash";
+      
+      await db.insert(payments).values({
+        id: paymentId,
+        orderId,
+        paymentMethod: paymentMethod,
+        paymentReceived: isCOD || isGCash ? null : String(shopSubtotal),
+        change: null,
+        status: isCOD || isGCash ? "pending" : "completed",
+      });
+
+      createdOrders.push({
+        orderId,
+        shopId,
+        shopName: shopInfo?.shopName || "Unknown Shop",
+        subtotal: shopSubtotal,
+      });
+    }
 
     // Clear only the checked-out cart items, keep others intact
     const cart = await db
@@ -299,7 +353,7 @@ export async function POST(req: NextRequest) {
 
     const cartItemIds = Array.isArray(items)
       ? items
-          .map((item: any) => item.id)
+          .map((item: CartItem) => item.id)
           .filter((id: string | undefined) => Boolean(id))
       : [];
 
@@ -316,10 +370,12 @@ export async function POST(req: NextRequest) {
 
     return corsResponse({
       success: true,
-      orderId,
-      subtotal,
+      orders: createdOrders,
+      // Keep backward compatibility - return first orderId for single shop orders
+      orderId: createdOrders[0]?.orderId,
+      subtotal: totalSubtotal,
       paymentMethod,
-      message: "Order placed successfully",
+      message: `${createdOrders.length} order(s) placed successfully`,
     });
   } catch (error) {
     console.error("Error creating order:", error);

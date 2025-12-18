@@ -5,11 +5,13 @@ import type { Shop } from "@/types/shops";
 import { AnimatedSection } from "@/components/animated-section";
 import { AnimatedShopCard } from "../_components/animated-shop-card";
 import { Store, Sparkles, Heart, Award } from "lucide-react";
+import { useLanguage } from "@/lib/i18n/context";
 
 export default function ShopsPage() {
   const [shops, setShops] = useState<Shop[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { t } = useLanguage();
 
   useEffect(() => {
     const loadShops = async () => {
@@ -70,7 +72,7 @@ export default function ShopsPage() {
                 <div className="flex items-center gap-2">
                   <Sparkles className="w-5 h-5 text-blue-500 animate-pulse" />
                   <p className="text-xs font-bold uppercase tracking-[0.2em] text-blue-600 bg-blue-100 px-3 py-1 rounded-full">
-                    All Shops
+                    {t("all-shops")}
                   </p>
                 </div>
               </div>
@@ -79,7 +81,7 @@ export default function ShopsPage() {
                 <h2 className="text-3xl sm:text-4xl font-bold tracking-tight bg-gradient-to-r from-slate-900 via-blue-800 to-purple-800 bg-clip-text text-transparent">
                   <span className="inline-flex items-center gap-2">
                     <Award className="w-7 h-7 text-amber-500 fill-amber-500" />
-                    Browse all available shops
+                    {t("browse-all-shops")}
                   </span>
                 </h2>
                 <div className="flex items-center gap-3">
@@ -87,7 +89,7 @@ export default function ShopsPage() {
                   <div className="flex items-center gap-2">
                     <Heart className="w-4 h-4 text-rose-500 fill-rose-500" />
                     <p className="text-base text-slate-700 font-medium">
-                      Curated stalls from students and local makers with the best reviews.
+                      {t("curated-stalls-desc")}
                     </p>
                   </div>
                 </div>
@@ -99,7 +101,7 @@ export default function ShopsPage() {
             <div className="text-center py-16">
               <div className="inline-flex items-center gap-3 px-6 py-4 bg-white rounded-2xl shadow-lg border border-blue-100">
                 <div className="w-5 h-5 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
-                <p className="text-slate-700 font-medium">Loading shops...</p>
+                <p className="text-slate-700 font-medium">{t("loading-shops")}</p>
               </div>
             </div>
           ) : error ? (
@@ -109,13 +111,13 @@ export default function ShopsPage() {
                   <Store className="w-8 h-8 text-red-500" />
                 </div>
                 <div className="space-y-2">
-                  <p className="text-red-600 font-semibold text-lg">Could not load shops.</p>
+                  <p className="text-red-600 font-semibold text-lg">{t("could-not-load-shops")}</p>
                   <p className="text-slate-500 text-sm">{error}</p>
                   <button
                     onClick={() => window.location.reload()}
                     className="mt-4 px-6 py-2 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-lg font-medium hover:shadow-lg transition-all duration-200"
                   >
-                    Retry
+                    {t("retry")}
                   </button>
                 </div>
               </div>
@@ -126,7 +128,7 @@ export default function ShopsPage() {
                 <div className="w-16 h-16 rounded-full bg-slate-100 flex items-center justify-center">
                   <Store className="w-8 h-8 text-slate-400" />
                 </div>
-                <p className="text-slate-600 font-medium">No shops available at the moment.</p>
+                <p className="text-slate-600 font-medium">{t("no-shops-available")}</p>
               </div>
             </div>
           ) : (

@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Shield, Wallet, ShoppingBag, ArrowLeft, Edit } from "lucide-react";
 import Image from "next/image";
 import { toast } from "sonner";
+import { useLanguage } from "@/lib/i18n/context";
 
 type CartItem = {
   id: string;
@@ -47,21 +48,22 @@ export function ReviewStep({
   userId,
 }: ReviewStepProps) {
   const router = useRouter();
+  const { t } = useLanguage();
   const [isProcessing, setIsProcessing] = useState(false);
 
   const handlePlaceOrder = async () => {
     if (!address || !paymentMethod) {
-      toast.error("Please complete all steps before placing order");
+      toast.error(t("complete-steps"));
       return;
     }
     if (!cartItems || cartItems.length === 0) {
-      toast.error("No items selected for checkout.");
+      toast.error(t("no-items-selected"));
       return;
     }
 
     setIsProcessing(true);
     try {
-      // Create order
+      // Create order(s) - one per shop
       const response = await fetch("/api/orders", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -97,16 +99,24 @@ export function ReviewStep({
       }
 
       // Handle GCash payment - redirect to PayMongo
+      // For multiple orders, we use the first order for the combined payment
       if (paymentMethod === "gcash") {
-        toast.info("Redirecting to GCash payment...");
+        toast.info(t("redirecting-gcash"));
+
+        // For multiple shop orders, combine them into one payment description
+        const orderCount = result.orders?.length || 1;
+        const description = orderCount > 1
+          ? `Buyani Orders (${orderCount} shops) - Total: ₱${result.subtotal}`
+          : `Buyani Order #${result.orderId}`;
 
         const gcashResponse = await fetch("/api/payments/gcash", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             orderId: result.orderId,
+            orderIds: result.orders?.map((o: any) => o.orderId) || [result.orderId],
             amount: result.subtotal,
-            description: `Buyani Order #${result.orderId}`,
+            description,
           }),
         });
 
@@ -123,11 +133,16 @@ export function ReviewStep({
       }
 
       // For COD and other payment methods
-      toast.success("Order placed successfully!");
+      const orderCount = result.orders?.length || 1;
+      if (orderCount > 1) {
+        toast.success(`${orderCount} ${t("order-placed-success")}`);
+      } else {
+        toast.success(t("order-placed-success"));
+      }
       router.push("/settings/orders");
     } catch (error) {
       console.error("Error placing order:", error);
-      const message = error instanceof Error ? error.message : "Failed to place order. Please try again.";
+      const message = error instanceof Error ? error.message : t("failed-place-order");
       toast.error(message);
     } finally {
       setIsProcessing(false);
@@ -137,13 +152,13 @@ export function ReviewStep({
   const getPaymentMethodName = (method: string | null) => {
     switch (method) {
       case "gcash":
-        return "GCash";
+        return t("gcash");
       case "paymaya":
-        return "PayMaya";
+        return t("paymaya");
       case "cod":
-        return "Cash on Delivery";
+        return t("cash-delivery");
       default:
-        return "Not selected";
+        return t("not-selected");
     }
   };
 
@@ -155,11 +170,11 @@ export function ReviewStep({
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Shield className="h-5 w-5 text-emerald-600" />
-              <CardTitle>Delivery Address</CardTitle>
+              <CardTitle>{t("delivery-address")}</CardTitle>
             </div>
             <Button variant="ghost" size="sm" onClick={() => onBack()}>
               <Edit className="h-4 w-4 mr-1" />
-              Edit
+              {t("edit")}
             </Button>
           </div>
         </CardHeader>
@@ -174,15 +189,15 @@ export function ReviewStep({
               </p>
               <p>{address.zipcode}</p>
               <p>{address.country}</p>
-              <p className="mt-2">Contact: {address.contactNumber}</p>
+              <p className="mt-2">{t("contact")}: {address.contactNumber}</p>
               {address.deliveryNotes && (
                 <p className="mt-2 text-sm text-slate-600">
-                  Notes: {address.deliveryNotes}
+                  {t("notes")}: {address.deliveryNotes}
                 </p>
               )}
             </div>
           ) : (
-            <p className="text-slate-500">No address provided</p>
+            <p className="text-slate-500">{t("no-address-provided")}</p>
           )}
         </CardContent>
       </Card>
@@ -193,11 +208,11 @@ export function ReviewStep({
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Wallet className="h-5 w-5 text-emerald-600" />
-              <CardTitle>Payment Method</CardTitle>
+              <CardTitle>{t("payment-method")}</CardTitle>
             </div>
             <Button variant="ghost" size="sm" onClick={() => onBack()}>
               <Edit className="h-4 w-4 mr-1" />
-              Edit
+              {t("edit")}
             </Button>
           </div>
         </CardHeader>
@@ -220,14 +235,14 @@ export function ReviewStep({
       {/* Order Items */}
       <Card>
         <CardHeader>
-          <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <ShoppingBag className="h-5 w-5 text-emerald-600" />
-              <CardTitle>Order Items ({cartItems.length})</CardTitle>
+              <CardTitle>{t("order-items")} ({cartItems.length})</CardTitle>
             </div>
             <Button variant="ghost" size="sm" onClick={() => router.push("/cart")}>
               <Edit className="h-4 w-4 mr-1" />
-              Edit
+              {t("edit")}
             </Button>
           </div>
         </CardHeader>
@@ -245,15 +260,15 @@ export function ReviewStep({
                     />
                   ) : (
                     <div className="h-full w-full flex items-center justify-center text-slate-400 text-xs">
-                      No Image
+                      {t("no-image")}
                     </div>
                   )}
                 </div>
                 <div className="flex-1 min-w-0">
                   <h3 className="font-semibold text-slate-900">
-                    {item.productName || "Unnamed Product"}
+                    {item.productName || t("unnamed-product")}
                   </h3>
-                  <p className="text-sm text-slate-600">Qty: {item.quantity}</p>
+                  <p className="text-sm text-slate-600">{t("qty")}: {item.quantity}</p>
                   <p className="text-lg font-bold text-emerald-600 mt-1">
                     ₱{((item.price || 0) * item.quantity).toFixed(2)}
                   </p>
@@ -273,7 +288,7 @@ export function ReviewStep({
           className="flex-1"
         >
           <ArrowLeft className="mr-2 h-4 w-4" />
-          Back
+          {t("back")}
         </Button>
         <Button
           type="button"
@@ -285,10 +300,10 @@ export function ReviewStep({
             }`}
         >
           {isProcessing
-            ? "Processing..."
+            ? t("processing")
             : paymentMethod === "cod"
-              ? "Place Order (Cash on Delivery)"
-              : "Proceed to Payment"}
+              ? t("place-order-cod")
+              : t("proceed-payment")}
         </Button>
       </div>
     </div>

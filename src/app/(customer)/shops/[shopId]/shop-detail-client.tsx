@@ -125,22 +125,6 @@ export function ShopDetailClient({ shop, shopId }: ShopDetailClientProps) {
                   </span>
                 </div>
 
-                {/* Status Badge */}
-                {shop.status && (
-                  <Badge
-                    className="px-4 py-2 text-sm font-semibold shadow-sm"
-                    variant={
-                      shop.status === "approved"
-                        ? "default"
-                        : shop.status === "pending"
-                        ? "secondary"
-                        : "destructive"
-                    }
-                  >
-                    <Award className="h-3 w-3 mr-1" />
-                    {shop.status}
-                  </Badge>
-                )}
               </div>
             </div>
           </div>
