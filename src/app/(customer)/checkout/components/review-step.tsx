@@ -106,8 +106,8 @@ export function ReviewStep({
         // For multiple shop orders, combine them into one payment description
         const orderCount = result.orders?.length || 1;
         const description = orderCount > 1
-          ? `Buyani Orders (${orderCount} shops) - Total: ₱${result.subtotal}`
-          : `Buyani Order #${result.orderId}`;
+          ? `BuyAni Orders (${orderCount} shops) - Total: ₱${result.subtotal}`
+          : `BuyAni Order #${result.orderId}`;
 
         const gcashResponse = await fetch("/api/payments/gcash", {
           method: "POST",

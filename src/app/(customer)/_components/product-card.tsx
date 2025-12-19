@@ -56,10 +56,10 @@ export function ProductCard({ product }: ProductCardProps) {
     <Link
       href={`/products/${product.id}`}
       prefetch={true}
-      className="group flex h-full min-h-[360px] flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md"
+      className="group flex h-full min-h-[400px] flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md"
     >
       {/* Product Image */}
-      <div className="relative aspect-square w-full overflow-hidden bg-slate-100">
+      <div className="relative aspect-square w-full overflow-hidden bg-slate-100 flex-shrink-0">
         {primaryImage ? (
           <Image
             src={primaryImage}
@@ -83,36 +83,39 @@ export function ProductCard({ product }: ProductCardProps) {
       </div>
 
       {/* Product Info */}
-      <div className="flex flex-1 flex-col gap-2 p-4">
-        <h3 className="text-base font-semibold text-slate-900 line-clamp-2 transition-colors group-hover:text-emerald-600">
+      <div className="flex flex-1 flex-col gap-2 p-4 min-h-[140px]">
+        <h3 className="text-base font-semibold text-slate-900 line-clamp-2 min-h-[3rem] transition-colors group-hover:text-emerald-600">
           {product.productName}
         </h3>
 
-        {/* Rating */}
-        {rating > 0 && (
-          <div className="flex items-center gap-1.5">
-            <div className="flex items-center gap-0.5">
-              {[...Array(5)].map((_, i) => (
-                <Star
-                  key={i}
-                  className={`h-3.5 w-3.5 ${
-                    i < Math.round(rating)
-                      ? "fill-amber-400 text-amber-400"
-                      : "fill-slate-200 text-slate-200"
-                  }`}
-                />
-              ))}
-            </div>
-            <span className="text-xs font-medium text-slate-700">
-              {rating.toFixed(1)}
-            </span>
-            {product.reviewCount !== undefined && product.reviewCount > 0 && (
-              <span className="text-xs text-slate-500">
-                ({product.reviewCount})
-              </span>
-            )}
+        {/* Rating - Always show */}
+        <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-0.5">
+            {[...Array(5)].map((_, i) => (
+              <Star
+                key={i}
+                className={`h-3.5 w-3.5 ${
+                  rating > 0 && i < Math.round(rating)
+                    ? "fill-amber-400 text-amber-400"
+                    : "fill-slate-200 text-slate-200"
+                }`}
+              />
+            ))}
           </div>
-        )}
+          <span className="text-xs font-medium text-slate-700">
+            {rating > 0 ? rating.toFixed(1) : "0.0"}
+          </span>
+          {product.reviewCount !== undefined && product.reviewCount > 0 && (
+            <span className="text-xs text-slate-500">
+              ({product.reviewCount})
+            </span>
+          )}
+          {(!product.reviewCount || product.reviewCount === 0) && (
+            <span className="text-xs text-slate-500">
+              (0)
+            </span>
+          )}
+        </div>
 
         {/* Price */}
         <div className="flex items-baseline gap-1 text-xl font-bold text-emerald-600">

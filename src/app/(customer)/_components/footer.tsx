@@ -1,12 +1,12 @@
 "use client";
 
 import Logo from "@/assets/logo/Logo.png";
+import { useLanguage } from "@/lib/i18n/context";
+import { authClient } from "@/server/auth-client";
+import { USER_ROLES } from "@/server/schema/auth-schema";
 import { Facebook, MapPin, Phone, ShieldCheck } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import { authClient } from "@/server/auth-client";
-import { USER_ROLES } from "@/server/schema/auth-schema";
-import { useLanguage } from "@/lib/i18n/context";
 
 export function Footer() {
   const session = authClient.useSession();
@@ -24,14 +24,14 @@ export function Footer() {
               <div className="relative h-9 w-9 overflow-hidden rounded-xl border border-emerald-400/60 bg-emerald-500/40">
                 <Image
                   src={Logo}
-                  alt="Buyani logo"
+                  alt="BuyAni logo"
                   fill
                   sizes="36px"
                   className="object-contain p-1.5"
                 />
               </div>
               <span className="text-base font-semibold tracking-tight text-slate-50">
-                Buyani
+                BuyAni
               </span>
             </div>
             <p className="max-w-md text-xs leading-relaxed text-slate-300/90">
@@ -104,11 +104,14 @@ export function Footer() {
             <div className="space-y-2">
               <p className="text-xs font-medium text-slate-200">{t("follow-us")}</p>
               <Link
-                href="#"
-                className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-emerald-300/60 bg-emerald-500/30 text-slate-50 transition-colors hover:border-emerald-200 hover:bg-emerald-500/60"
-              >
-                <Facebook className="h-4 w-4" />
-              </Link>
+  href="https://www.facebook.com/CNSCExtensionServicesDivision"
+  target="_blank"
+  rel="noopener noreferrer"
+  className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-emerald-300/60 bg-emerald-500/30 text-slate-50 transition-colors hover:border-emerald-200 hover:bg-emerald-500/60"
+>
+  <Facebook className="h-4 w-4" />
+</Link>
+
             </div>
           </div>
         </div>

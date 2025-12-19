@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/server/drizzle';
-import { products, productImages, productInventory, shop, cartItems, orderItems, reviews, orders } from '@/server/schema/auth-schema';
+import { products, productImages, productInventory, shop, cartItems, orderItems, reviews, orders, categories } from '@/server/schema/auth-schema';
 import { eq, and, inArray, sql } from 'drizzle-orm';
 import { v4 as uuidv4 } from 'uuid';
 import { corsResponse, corsOptions } from '@/lib/api-utils';
@@ -37,6 +37,7 @@ export async function GET(req: NextRequest) {
         id: products.id,
         shopId: products.shopId,
         categoryId: products.categoryId,
+        categoryName: categories.categoryName,
         productName: products.productName,
         SKU: products.SKU,
         description: products.description,
@@ -54,6 +55,7 @@ export async function GET(req: NextRequest) {
       .from(products)
       .leftJoin(productInventory, eq(productInventory.productId, products.id))
       .leftJoin(shop, eq(products.shopId, shop.id))
+      .leftJoin(categories, eq(products.categoryId, categories.id))
       .where(and(...whereConditions));
 
     // Get all images for products
@@ -126,6 +128,7 @@ export async function GET(req: NextRequest) {
       
       return {
         ...product,
+        categoryName: product.categoryName ?? null, // Explicitly include categoryName
         images: productImagesList
           .filter(img => img.url && img.url.trim() !== "") // Filter out null/empty URLs
           .map(img => ({

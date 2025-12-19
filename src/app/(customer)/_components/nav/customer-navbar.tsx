@@ -261,7 +261,7 @@ export default function Navbar({ className }: NavbarProps) {
                 <div className="relative h-9 w-9 overflow-hidden rounded-xl border border-emerald-100 bg-emerald-50/60">
                   <Image
                     src={Logo}
-                    alt="Buyani logo"
+                    alt="BuyAni logo"
                     fill
                     sizes="36px"
                     className="object-contain p-1.5"

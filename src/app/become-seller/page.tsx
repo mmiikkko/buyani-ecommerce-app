@@ -155,6 +155,17 @@ export default function BecomeSellerPage() {
           <div className="flex items-center justify-center">
             <Card className="w-full max-w-lg shadow-2xl border-0 bg-white/90 backdrop-blur-sm">
               <CardHeader className="space-y-3">
+                {/* Logo */}
+                <div className="flex justify-center mb-4">
+                  <div className="relative w-20 h-20">
+                    <Image
+                      src={Logo}
+                      alt="BuyAni Logo"
+                      fill
+                      className="object-contain"
+                    />
+                  </div>
+                </div>
                 <CardTitle className="text-2xl font-bold text-slate-900">Shop Application Status</CardTitle>
                 <CardDescription className="text-base text-slate-600">
                   Your shop application status

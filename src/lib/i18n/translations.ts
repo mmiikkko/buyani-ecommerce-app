@@ -169,6 +169,7 @@ export const translations = {
     "products-available": "Mga Produkto Available",
     "active-shops": "Aktibong Shops",
     "happy-customers": "Masayang Customers",
+    "customers": "Customers",
     "average-rating": "Average Rating",
     "connect-partner": "Gusto mong kumonekta at maging isa sa BuyAni? Makipag-ugnayan sa amin — gusto naming makipagtulungan sa inyo.",
     
@@ -563,6 +564,7 @@ export const translations = {
     "products-available": "Products Available",
     "active-shops": "Active Shops",
     "happy-customers": "Happy Customers",
+    "customers": "Customers",
     "average-rating": "Average Rating",
     "connect-partner": "Want to connect and be one of BuyAni? Contact us — we'd love to partner with you.",
     

@@ -21,6 +21,7 @@ import {
   Star,
 } from "lucide-react";
 import { useLanguage } from "@/lib/i18n/context";
+import { useRouter } from "next/navigation";
 
 const WELCOME_STORAGE_KEY = "buyani-welcome-seen";
 const PROMO_STORAGE_KEY = "buyani-promo-last-shown";
@@ -247,6 +248,7 @@ export function WelcomeModal() {
 export function PromoModal() {
   const [isOpen, setIsOpen] = useState(false);
   const { t } = useLanguage();
+  const router = useRouter();
 
   useEffect(() => {
     const hasWindow = typeof window !== "undefined";
@@ -314,11 +316,23 @@ export function PromoModal() {
         <div className="flex flex-wrap items-center gap-3 pt-2">
           <Button
             className="bg-emerald-600 hover:bg-emerald-700 text-white px-5"
-            onClick={handleClose}
+            onClick={() => {
+              handleClose();
+              // Redirect to products page filtered by best sellers (sorted by itemsSold)
+              router.push("/products?sort=best-sellers");
+            }}
           >
             {t("shop-best-sellers")}
           </Button>
-          <Button variant="outline" className="border-slate-200 bg-white/90 text-slate-800 px-4" onClick={handleClose}>
+          <Button 
+            variant="outline" 
+            className="border-slate-200 bg-white/90 text-slate-800 px-4" 
+            onClick={() => {
+              handleClose();
+              // Redirect to products page with sort=new
+              router.push("/products?sort=new");
+            }}
+          >
             {t("view-new-arrivals")}
           </Button>
         </div>

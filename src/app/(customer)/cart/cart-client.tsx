@@ -1,14 +1,15 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Trash2, Plus, Minus, ShoppingCart } from "lucide-react";
+import { Trash2, Plus, Minus, ShoppingCart, ArrowLeft, Edit, X } from "lucide-react";
 import Image from "next/image";
 import { removeFromCart, updateCartItemQuantity } from "@/lib/queries/cart";
 import { useRouter } from "next/navigation";
 import { useLanguage } from "@/lib/i18n/context";
+import { toast } from "sonner";
 
 interface CartItem {
   id: string;
@@ -32,8 +33,39 @@ export function CartClient({ initialItems, userId }: CartClientProps) {
   const [selectedItems, setSelectedItems] = useState<Set<string>>(
     new Set(initialItems.map(item => item.id))
   );
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [itemsToDelete, setItemsToDelete] = useState<Set<string>>(new Set());
   const router = useRouter();
   const { t } = useLanguage();
+  const [previousPath, setPreviousPath] = useState<string | null>(null);
+
+  useEffect(() => {
+    // Get the previous path from sessionStorage
+    const storedPath = sessionStorage.getItem("previousPath");
+    if (storedPath && storedPath !== "/cart") {
+      setPreviousPath(storedPath);
+    }
+    
+    // Store current path as previous for next navigation
+    const currentPath = window.location.pathname;
+    const referrer = document.referrer;
+    if (referrer) {
+      try {
+        const referrerUrl = new URL(referrer);
+        if (referrerUrl.pathname !== currentPath) {
+          sessionStorage.setItem("previousPath", referrerUrl.pathname);
+          setPreviousPath(referrerUrl.pathname);
+        }
+      } catch (e) {
+        // If referrer parsing fails, use stored path or default to home
+        if (!storedPath) {
+          setPreviousPath("/");
+        }
+      }
+    } else if (!storedPath) {
+      setPreviousPath("/");
+    }
+  }, []);
 
   const handleRemove = async (itemId: string) => {
     setLoading((prev) => ({ ...prev, [itemId]: true }));
@@ -119,27 +151,163 @@ export function CartClient({ initialItems, userId }: CartClientProps) {
     );
   }
 
+  const handleBack = () => {
+    if (previousPath && previousPath !== window.location.pathname) {
+      router.push("/");
+    } else {
+      router.back();
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    if (itemsToDelete.size === 0) {
+      toast.error("Please select items to delete");
+      return;
+    }
+
+    setLoading((prev) => {
+      const newLoading = { ...prev };
+      itemsToDelete.forEach(id => {
+        newLoading[id] = true;
+      });
+      return newLoading;
+    });
+
+    try {
+      const deletePromises = Array.from(itemsToDelete).map(itemId =>
+        removeFromCart(userId, itemId)
+      );
+      
+      const results = await Promise.all(deletePromises);
+      const allSuccess = results.every(r => r.success);
+      
+      if (allSuccess) {
+        setItems((prev) => prev.filter((item) => !itemsToDelete.has(item.id)));
+        setSelectedItems((prev) => {
+          const newSet = new Set(prev);
+          itemsToDelete.forEach(id => newSet.delete(id));
+          return newSet;
+        });
+        setItemsToDelete(new Set());
+        setIsEditMode(false);
+        toast.success(`Successfully deleted ${itemsToDelete.size} item(s)`);
+      } else {
+        toast.error("Some items could not be deleted");
+      }
+    } catch (error) {
+      toast.error("Error deleting items");
+    } finally {
+      setLoading((prev) => {
+        const newLoading = { ...prev };
+        itemsToDelete.forEach(id => {
+          delete newLoading[id];
+        });
+        return newLoading;
+      });
+    }
+  };
+
+  const toggleItemForDeletion = (itemId: string) => {
+    setItemsToDelete((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(itemId)) {
+        newSet.delete(itemId);
+      } else {
+        newSet.add(itemId);
+      }
+      return newSet;
+    });
+  };
+
   return (
     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-      <h1 className="text-3xl font-bold text-slate-900 mb-8">{t("shopping-cart")}</h1>
+      <div className="flex items-center justify-between mb-8">
+        <div className="flex items-center gap-4">
+          <Button
+            variant="ghost"
+            onClick={handleBack}
+            className="flex items-center gap-2"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Back
+          </Button>
+          <h1 className="text-3xl font-bold text-slate-900">{t("shopping-cart")}</h1>
+        </div>
+        {!isEditMode ? (
+          <Button
+            variant="outline"
+            onClick={() => setIsEditMode(true)}
+            className="flex items-center gap-2"
+          >
+            <Edit className="h-4 w-4" />
+            Edit
+          </Button>
+        ) : (
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setIsEditMode(false);
+                setItemsToDelete(new Set());
+              }}
+              className="flex items-center gap-2"
+            >
+              <X className="h-4 w-4" />
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleBulkDelete}
+              disabled={itemsToDelete.size === 0}
+              className="flex items-center gap-2"
+            >
+              <Trash2 className="h-4 w-4" />
+              Delete ({itemsToDelete.size})
+            </Button>
+          </div>
+        )}
+      </div>
 
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
         {/* Cart Items */}
         <div className="lg:col-span-2 space-y-4">
           {/* Select All Checkbox */}
-          <div className="flex items-center gap-2 pb-2 border-b">
-            <Checkbox
-              id="select-all"
-              checked={selectedItems.size === items.length && items.length > 0}
-              onCheckedChange={handleSelectAll}
-            />
-            <label
-              htmlFor="select-all"
-              className="text-sm font-medium text-slate-700 cursor-pointer"
-            >
-              {t("select-all")} ({selectedItems.size} of {items.length})
-            </label>
-          </div>
+          {!isEditMode && (
+            <div className="flex items-center gap-2 pb-2 border-b">
+              <Checkbox
+                id="select-all"
+                checked={selectedItems.size === items.length && items.length > 0}
+                onCheckedChange={handleSelectAll}
+              />
+              <label
+                htmlFor="select-all"
+                className="text-sm font-medium text-slate-700 cursor-pointer"
+              >
+                {t("select-all")} ({selectedItems.size} of {items.length})
+              </label>
+            </div>
+          )}
+          {isEditMode && (
+            <div className="flex items-center gap-2 pb-2 border-b">
+              <Checkbox
+                id="select-all-delete"
+                checked={itemsToDelete.size === items.length && items.length > 0}
+                onCheckedChange={() => {
+                  if (itemsToDelete.size === items.length) {
+                    setItemsToDelete(new Set());
+                  } else {
+                    setItemsToDelete(new Set(items.map(item => item.id)));
+                  }
+                }}
+              />
+              <label
+                htmlFor="select-all-delete"
+                className="text-sm font-medium text-slate-700 cursor-pointer"
+              >
+                Select All for Deletion ({itemsToDelete.size} of {items.length})
+              </label>
+            </div>
+          )}
 
           {/* Shop Groups */}
           {shopGroups.map((shopGroup) => {
@@ -183,11 +351,19 @@ export function CartClient({ initialItems, userId }: CartClientProps) {
                       <div className="flex gap-4">
                         {/* Checkbox */}
                         <div className="flex items-start pt-1">
-                          <Checkbox
-                            id={`item-${item.id}`}
-                            checked={selectedItems.has(item.id)}
-                            onCheckedChange={() => handleToggleSelect(item.id)}
-                          />
+                          {isEditMode ? (
+                            <Checkbox
+                              id={`delete-${item.id}`}
+                              checked={itemsToDelete.has(item.id)}
+                              onCheckedChange={() => toggleItemForDeletion(item.id)}
+                            />
+                          ) : (
+                            <Checkbox
+                              id={`item-${item.id}`}
+                              checked={selectedItems.has(item.id)}
+                              onCheckedChange={() => handleToggleSelect(item.id)}
+                            />
+                          )}
                         </div>
 
                         {/* Product Image */}
@@ -245,15 +421,17 @@ export function CartClient({ initialItems, userId }: CartClientProps) {
                               </Button>
                             </div>
 
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8 text-red-500 hover:text-red-700 hover:bg-red-50"
-                              onClick={() => handleRemove(item.id)}
-                              disabled={loading[item.id]}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
+                            {!isEditMode && (
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 text-red-500 hover:text-red-700 hover:bg-red-50"
+                                onClick={() => handleRemove(item.id)}
+                                disabled={loading[item.id]}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            )}
                           </div>
                         </div>
                       </div>

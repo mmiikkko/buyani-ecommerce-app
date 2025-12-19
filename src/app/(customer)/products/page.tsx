@@ -9,51 +9,109 @@ import { AnimatedProductCard } from "../_components/animated-product-card";
 import { Sparkles, ShoppingBag, TrendingUp, Star, SlidersHorizontal } from "lucide-react";
 import { useLanguage } from "@/lib/i18n/context";
 
+interface Category {
+  id: string;
+  categoryName: string;
+  productCount?: number;
+}
+
 export default function ProductsPage() {
   const searchParams = useSearchParams();
   const searchQuery = searchParams.get("search") || "";
+  const sortParam = searchParams.get("sort") || "";
   const { t } = useLanguage();
   
   const [allProducts, setAllProducts] = useState<Product[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
-  const [sortOption, setSortOption] = useState<"default" | "rating" | "new" | "old">("default");
+  const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
+  const [sortOption, setSortOption] = useState<"default" | "rating" | "new" | "old" | "best-sellers">(
+    (sortParam === "new" ? "new" : sortParam === "best-sellers" ? "best-sellers" : "default") as "default" | "rating" | "new" | "old" | "best-sellers"
+  );
+
+  // Update sort option when URL param changes
+  useEffect(() => {
+    if (sortParam === "new") {
+      setSortOption("new");
+    } else if (sortParam === "best-sellers") {
+      setSortOption("best-sellers");
+    }
+  }, [sortParam]);
 
   useEffect(() => {
-    async function fetchProducts() {
+    async function fetchData() {
       try {
-        const response = await fetch("/api/products");
-        if (response.ok) {
-          const data = await response.json();
-          // Ensure data is an array
-          if (Array.isArray(data)) {
-            setAllProducts(data);
+        // Fetch products and categories in parallel
+        const [productsRes, categoriesRes] = await Promise.all([
+          fetch("/api/products"),
+          fetch("/api/categories?withCounts=true")
+        ]);
+
+        // Handle products
+        if (productsRes.ok) {
+          const productsData = await productsRes.json();
+          if (Array.isArray(productsData)) {
+            // Debug: Check if categoryName exists
+            if (productsData.length > 0) {
+              const sample = productsData[0];
+              console.log('Sample product:', {
+                name: sample.productName,
+                categoryName: sample.categoryName,
+                categoryId: sample.categoryId,
+                hasCategoryName: !!sample.categoryName
+              });
+              // Log all unique category names found
+              const uniqueCategories = [...new Set(productsData.map((p: Product) => p.categoryName).filter(Boolean))];
+              console.log('Unique category names in products:', uniqueCategories);
+            }
+            setAllProducts(productsData);
           } else {
-            console.error("Expected array but got:", data);
+            console.error("Expected array but got:", productsData);
             setAllProducts([]);
           }
         } else {
           console.error("Failed to fetch products");
           setAllProducts([]);
         }
+
+        // Handle categories - show ALL categories
+        if (categoriesRes.ok) {
+          const categoriesData = await categoriesRes.json();
+          console.log('Categories fetched:', categoriesData.map((c: Category) => c.categoryName));
+          setCategories(categoriesData);
+        } else {
+          console.error("Failed to fetch categories");
+          setCategories([]);
+        }
       } catch (error) {
-        console.error("Error fetching products:", error);
+        console.error("Error fetching data:", error);
         setAllProducts([]);
+        setCategories([]);
       } finally {
         setLoading(false);
       }
     }
 
-    fetchProducts();
+    fetchData();
   }, []);
 
   const categoryOptions = useMemo(() => {
-    const unique = new Set<string>();
-    allProducts.forEach((p) => {
-      if (p.categoryName) unique.add(p.categoryName);
+    // Use all categories from API, sorted alphabetically
+    return categories.map(cat => ({
+      id: cat.id,
+      name: cat.categoryName
+    })).sort((a, b) => a.name.localeCompare(b.name));
+  }, [categories]);
+
+  // Create a map of categoryId to categoryName for filtering
+  const categoryMap = useMemo(() => {
+    const map = new Map<string, string>();
+    categories.forEach(cat => {
+      map.set(cat.id, cat.categoryName);
     });
-    return Array.from(unique);
-  }, [allProducts]);
+    return map;
+  }, [categories]);
 
   // Filter + sort products
   const products = useMemo(() => {
@@ -66,9 +124,18 @@ export default function ProductsPage() {
         product.description?.toLowerCase().includes(query) ||
         product.shopName?.toLowerCase().includes(query);
 
-      const matchesCategory =
-        selectedCategory === "all" ||
-        (product.categoryName || "").toLowerCase() === selectedCategory.toLowerCase();
+      let matchesCategory = true;
+      if (selectedCategory !== "all" && selectedCategoryId) {
+        // Filter by categoryId for more reliable matching
+        matchesCategory = product.categoryId === selectedCategoryId;
+        
+        // Fallback: also check categoryName if categoryId doesn't match
+        if (!matchesCategory && product.categoryName) {
+          const selectedCategoryName = selectedCategory.toLowerCase().trim();
+          const productCategoryName = product.categoryName.toLowerCase().trim();
+          matchesCategory = productCategoryName === selectedCategoryName;
+        }
+      }
 
       return matchesSearch && matchesCategory;
     });
@@ -79,6 +146,15 @@ export default function ProductsPage() {
         const rb = Number(b.rating || 0);
         if (rb !== ra) return rb - ra;
         return (b.reviewCount || 0) - (a.reviewCount || 0);
+      }
+
+      if (sortOption === "best-sellers") {
+        const aSold = a.itemsSold ?? 0;
+        const bSold = b.itemsSold ?? 0;
+        if (bSold !== aSold) return bSold - aSold;
+        const ra = Number(a.rating || 0);
+        const rb = Number(b.rating || 0);
+        return rb - ra;
       }
 
       const dateA = new Date(a.createdAt).getTime();
@@ -157,13 +233,22 @@ export default function ProductsPage() {
                 <label className="text-xs font-medium text-slate-600">{t("category")}</label>
                 <select
                   value={selectedCategory}
-                  onChange={(e) => setSelectedCategory(e.target.value)}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    setSelectedCategory(value);
+                    if (value === "all") {
+                      setSelectedCategoryId(null);
+                    } else {
+                      const selectedCat = categoryOptions.find(cat => cat.name === value);
+                      setSelectedCategoryId(selectedCat?.id || null);
+                    }
+                  }}
                   className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 shadow-xs focus:border-emerald-500 focus:outline-none"
                 >
                   <option value="all">{t("all")}</option>
                   {categoryOptions.map((cat) => (
-                    <option key={cat} value={cat}>
-                      {cat}
+                    <option key={cat.id} value={cat.name}>
+                      {cat.name}
                     </option>
                   ))}
                 </select>
@@ -174,11 +259,12 @@ export default function ProductsPage() {
                 <select
                   value={sortOption}
                   onChange={(e) =>
-                    setSortOption(e.target.value as "default" | "rating" | "new" | "old")
+                    setSortOption(e.target.value as "default" | "rating" | "new" | "old" | "best-sellers")
                   }
                   className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 shadow-xs focus:border-emerald-500 focus:outline-none"
                 >
                   <option value="default">{t("default")}</option>
+                  <option value="best-sellers">{t("best-sellers") || "Best Sellers"}</option>
                   <option value="rating">{t("high-ratings")}</option>
                   <option value="new">{t("new")}</option>
                   <option value="old">{t("old")}</option>

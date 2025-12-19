@@ -6,64 +6,67 @@ import { useEffect, useState } from "react";
 import { useLanguage } from "@/lib/i18n/context";
 
 export function   StatsSection() {
-  const [counts, setCounts] = useState({ products: 0, shops: 0, rating: 0 });
+  const [counts, setCounts] = useState({ products: 0, shops: 0, users: 0, rating: 0 });
   const { t } = useLanguage();
   
+  const fetchStats = async () => {
+    try {
+      const [statsRes, ratingRes] = await Promise.all([
+        fetch("/api/stats/customer").then(res => res.json()).catch(() => ({ products: 0, shops: 0, users: 0 })),
+        fetch("/api/ratings/average").then(res => res.json()).then(data => ({ average: data.average || 0 })).catch(() => ({ average: 0 })),
+      ]);
+      
+      setCounts({
+        products: statsRes.products || 0,
+        shops: statsRes.shops || 0,
+        users: statsRes.users || 0,
+        rating: ratingRes.average || 0,
+      });
+    } catch (error) {
+      console.error("Error fetching stats:", error);
+    }
+  };
+
+  useEffect(() => {
+    // Initial fetch
+    fetchStats();
+    
+    // Silent refresh every 30 seconds
+    const interval = setInterval(() => {
+      fetchStats();
+    }, 30000);
+    
+    return () => clearInterval(interval);
+  }, []);
+
   const stats = [
     {
       icon: ShoppingBag,
-      value: "500+",
+      value: counts.products > 0 ? `${counts.products}+` : "500+",
       label: t("products-available"),
       color: "from-emerald-500 to-emerald-600",
       bgColor: "bg-emerald-50",
     },
     {
       icon: Store,
-      value: "50+",
+      value: counts.shops > 0 ? `${counts.shops}+` : "50+",
       label: t("active-shops"),
       color: "from-blue-500 to-blue-600",
       bgColor: "bg-blue-50",
     },
     {
       icon: Users,
-      value: "1000+",
-      label: t("happy-customers"),
+      value: counts.users > 0 ? `${counts.users}+` : "1000+",
+      label: t("customers"),
       color: "from-purple-500 to-purple-600",
       bgColor: "bg-purple-50",
     },
     {
       icon: Star,
-      value: "4.8",
+      value: counts.rating > 0 ? counts.rating.toFixed(1) : "4.8",
       label: t("average-rating"),
       color: "from-amber-500 to-amber-600",
       bgColor: "bg-amber-50",
-    },
-  ];
-
-  useEffect(() => {
-    // Fetch real counts and average rating
-    Promise.all([
-      fetch("/api/products").then(res => res.json()).then(data => Array.isArray(data) ? data.length : 0).catch(() => 0),
-      fetch("/api/shops").then(res => res.json()).then(data => Array.isArray(data) ? data.length : 0).catch(() => 0),
-      fetch("/api/ratings/average").then(res => res.json()).then(data => data.average || 0).catch(() => 0),
-    ]).then(([products, shops, rating]) => {
-      setCounts({ products, shops, rating });
-    });
-  }, []);
-
-  const displayStats = [
-    {
-      ...stats[0],
-      value: counts.products > 0 ? `${counts.products}+` : stats[0].value,
-    },
-    {
-      ...stats[1],
-      value: counts.shops > 0 ? `${counts.shops}+` : stats[1].value,
-    },
-    stats[2],
-    {
-      ...stats[3],
-      value: counts.rating > 0 ? counts.rating.toFixed(1) : stats[3].value,
     },
   ];
 
@@ -83,7 +86,7 @@ export function   StatsSection() {
         </div>
 
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 w-full">
-          {displayStats.map((stat, index) => {
+          {stats.map((stat, index) => {
             const Icon = stat.icon;
             return (
               <AnimatedSection

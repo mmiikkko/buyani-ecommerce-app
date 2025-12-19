@@ -18,6 +18,7 @@ import { useRouter } from "next/navigation";
 import { z } from "zod";
 import { Info } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 
 const newPasswordSchema = z
   .object({
@@ -62,15 +63,21 @@ export function NewPasswordForm({ email, code }: NewPasswordFormProps) {
       const data = await response.json();
 
       if (!response.ok) {
-        setError(data.error || "Failed to reset password");
+        const errorMessage = data.error || "Failed to reset password";
+        setError(errorMessage);
+        toast.error(errorMessage);
         return;
       }
 
-      // Show success and redirect to sign in
-      alert("Password reset successful! You can now sign in with your new password.");
-      router.push("/sign-in");
+      // Show success toast and redirect to sign in
+      toast.success("Password reset successful! You can now sign in with your new password.");
+      setTimeout(() => {
+        router.push("/sign-in");
+      }, 1000);
     } catch (error) {
-      setError("Failed to reset password. Please try again.");
+      const errorMessage = "Failed to reset password. Please try again.";
+      setError(errorMessage);
+      toast.error(errorMessage);
     }
   }
 

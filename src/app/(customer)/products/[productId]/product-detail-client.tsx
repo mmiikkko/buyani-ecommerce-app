@@ -105,15 +105,15 @@ export function ProductDetailClient({ product, userId }: ProductDetailClientProp
       const result = await addToCart(userId!, product.id, quantity);
       if (!result.success) {
         toast.error(result.error ?? "Failed to add item to cart.");
+        setIsBuying(false);
         return;
       }
-      startTransition(() => {
-        router.push(`/checkout?productId=${product.id}&quantity=${quantity}`);
-      });
+      // Keep loading state until redirect completes
+      router.push(`/checkout?productId=${product.id}&quantity=${quantity}`);
+      // Loading state will be reset when component unmounts on navigation
     } catch (error) {
       console.error(error);
       toast.error("Failed to start checkout.");
-    } finally {
       setIsBuying(false);
     }
   };

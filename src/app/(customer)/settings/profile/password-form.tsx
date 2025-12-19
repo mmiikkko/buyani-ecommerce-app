@@ -20,6 +20,7 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 
 const updatePasswordSchema = z.object({
   currentPassword: z
@@ -84,17 +85,28 @@ export function PasswordForm() {
     setStatus(null);
     setError(null);
 
-    const { error } = await authClient.changePassword({
-      currentPassword,
-      newPassword,
-      revokeOtherSessions: true,
-    });
+    try {
+      const { error } = await authClient.changePassword({
+        currentPassword,
+        newPassword,
+        revokeOtherSessions: true,
+      });
 
-    if (error) {
-      setError(error.message || "Failed to change password");
-    } else {
-      setStatus("Password was changed successfully");
-      changePasswordForm.reset();
+      if (error) {
+        const errorMessage = error.message || "Failed to change password";
+        setError(errorMessage);
+        toast.error(errorMessage);
+      } else {
+        const successMessage = "Password was changed successfully";
+        setStatus(successMessage);
+        toast.success(successMessage);
+        changePasswordForm.reset();
+      }
+    } catch (err) {
+      console.error("Password change error:", err);
+      const errorMessage = err instanceof Error ? err.message : "Failed to change password. Please try again.";
+      setError(errorMessage);
+      toast.error(errorMessage);
     }
   }
 
@@ -115,9 +127,13 @@ export function PasswordForm() {
         });
 
         if (error) {
-          setError(error.message || "Failed to send password reset email");
+          const errorMessage = error.message || "Failed to send password reset email";
+          setError(errorMessage);
+          toast.error(errorMessage);
         } else {
-          setStatus("A password reset link has been sent to your email. Please check your inbox to set a password.");
+          const successMessage = "A password reset link has been sent to your email. Please check your inbox to set a password.";
+          setStatus(successMessage);
+          toast.success("Password setup email sent! Please check your inbox.");
         }
       } else {
         setError("Failed to fetch user information. Please try again.");
