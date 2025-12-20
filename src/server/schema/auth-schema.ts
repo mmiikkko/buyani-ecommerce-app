@@ -1,5 +1,3 @@
-
-import { create } from "domain";
 import {
   mysqlTable,
   varchar,
@@ -11,7 +9,7 @@ import {
   unique,
   longtext,
 } from "drizzle-orm/mysql-core";
-import { id } from "zod/v4/locales";
+
 
 
 export const USER_ROLES = {
@@ -101,9 +99,9 @@ export const addresses = mysqlTable("addresses", {
   zipcode: varchar("zipcode", { length: 20 }),
   remarks: text("remarks"),
 
-  addedAt: timestamp("added_at", { fsp: 3 }).defaultNow(),
-  modifiedAt: timestamp("modified_at", { fsp: 3 })
-    .$onUpdate(() => new Date())
+  addedAt: timestamp("added_at", { fsp: 3 }).defaultNow().notNull(),
+  modifiedAt: timestamp("modified_at", { fsp: 3 }).defaultNow()
+    //.$onUpdate(() => new Date())
 });
 
 export const shop = mysqlTable("shop", {
@@ -143,10 +141,7 @@ export const products = mysqlTable("products", {
     .references(() => categories.id, { onDelete: "cascade" }),
 
   productName: varchar("product_name", { length: 255 }).notNull(),
-  SKU: varchar("sku", { length: 255 }).unique(),
   description: text("description"),
-
-  price: decimal("price", { precision: 10, scale: 2 }).notNull(),
   rating: int("rating"),
 
   isAvailable: boolean("is_available").default(true),
@@ -158,13 +153,32 @@ export const products = mysqlTable("products", {
     .notNull(),
 });
 
-
-export const productInventory = mysqlTable("product_inventory", {
+export const productVariation = mysqlTable("product_variation", {
   id: varchar("id", { length: 36 }).primaryKey(),
 
   productId: varchar("product_id", { length: 36 })
     .notNull()
     .references(() => products.id, { onDelete: "cascade" }),
+
+  variationName: varchar("variation_name", { length: 100 }).notNull(),
+  variationType: varchar("variation_type", { length: 100 }).notNull(),
+  variationValue: varchar("variation_value", { length: 100 }).notNull(),
+
+  price: decimal("price", { precision: 10, scale: 2 }).notNull(),
+  SKU: varchar("sku", { length: 255 }).unique(),
+
+  createdAt: timestamp("created_at", { fsp: 3 }).defaultNow(),
+  updatedAt: timestamp("updated_at", { fsp: 3 })
+    .$onUpdate(() => new Date())
+    .notNull(),
+});
+
+export const productInventory = mysqlTable("product_inventory", {
+  id: varchar("id", { length: 36 }).primaryKey(),
+
+  product_variation_id: varchar("product_variation_id", { length: 36 })
+    .notNull()
+    .references(() => productVariation.id, { onDelete: "cascade" }),
 
   quantityInStock: int("quantity_in_stock"),
   itemsSold: int("items_sold"),
@@ -183,6 +197,59 @@ export const productImages = mysqlTable("product_images", {
   url: longtext("url"),
 });
 
+export const productVariationImages = mysqlTable("product_variation_images", {
+  id: varchar("id", { length: 36 }).primaryKey(),
+  variationId: varchar("variation_id", { length: 36 })
+  .notNull()
+  .references(() => productVariation.id, { onDelete: "cascade" }),
+  url: longtext("url"),
+});
+
+
+export const orders = mysqlTable("orders", {
+  id: varchar("id", { length: 36 }).primaryKey(),
+
+  buyerId: varchar("buyer_id", { length: 36 })
+    .notNull()
+    .references(() => user.id, { onDelete: "cascade" }),
+
+  addressId: varchar("address_id", { length: 36 })
+    .references(() => addresses.id, { onDelete: "set null" }),
+
+  total: decimal("total", { precision: 10, scale: 2 }),
+
+  createdAt: timestamp("created_at", { fsp: 3 }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { fsp: 3 })
+    .$onUpdate(() => new Date())
+    .notNull(),
+});
+
+export const orderItems = mysqlTable(
+  "order_items",
+  {
+    id: varchar("id", { length: 36 }).primaryKey(),
+
+    orderId: varchar("order_id", { length: 36 })
+      .notNull()
+      .references(() => orders.id, { onDelete: "cascade" }),
+
+    product_variation_id: varchar("product_variation_id", { length: 36 })
+      .notNull()
+      .references(() => productVariation.id, { onDelete: "cascade" }),
+
+    quantity: int("quantity").notNull(),
+    subtotal: decimal("subtotal", { precision: 10, scale: 2 }).notNull(),
+  },
+
+  //(table) => ({
+    //Prevent duplicate product rows in the same order
+    //orderProductUnique: unique("order_product_unique").on(
+    //table.orderId,
+    //table.productVariationId
+    //),
+  //})
+);
+
 export const shippingInfo = mysqlTable("shipping_info", {
   id: varchar("id", { length: 36 }).primaryKey(),
 
@@ -200,52 +267,7 @@ export const shippingInfo = mysqlTable("shipping_info", {
   updatedAt: timestamp("updated_at", { fsp: 3 })
     .$onUpdate(() => new Date())
     .notNull(),
-}
-)
-
-export const orders = mysqlTable("orders", {
-  id: varchar("id", { length: 36 }).primaryKey(),
-
-  buyerId: varchar("buyer_id", { length: 36 })
-    .notNull()
-    .references(() => user.id, { onDelete: "cascade" }),
-
-  addressId: varchar("address_id", { length: 36 })
-    .references(() => addresses.id, { onDelete: "set null" }),
-
-  total: decimal("price", { precision: 10, scale: 2 }),
-
-  createdAt: timestamp("created_at", { fsp: 3 }).defaultNow().notNull(),
-  updatedAt: timestamp("updated_at", { fsp: 3 })
-    .$onUpdate(() => new Date())
-    .notNull(),
 });
-
-export const orderItems = mysqlTable(
-  "order_items",
-  {
-    id: varchar("id", { length: 36 }).primaryKey(),
-
-    orderId: varchar("order_id", { length: 36 })
-      .notNull()
-      .references(() => orders.id, { onDelete: "cascade" }),
-
-    productId: varchar("product_id", { length: 36 })
-      .notNull()
-      .references(() => products.id, { onDelete: "cascade" }),
-
-    quantity: int("quantity").notNull(),
-    subtotal: decimal("subtotal", { precision: 10, scale: 2 }).notNull(),
-  },
-
-  (table) => ({
-    // Prevent duplicate product rows in the same order
-    orderProductUnique: unique("order_product_unique").on(
-      table.orderId,
-      table.productId
-    ),
-  })
-);
 
 
 export const payments = mysqlTable("payments", {
@@ -296,9 +318,10 @@ export const carts = mysqlTable("carts", {
   modifiedAt: timestamp("modified_at", { fsp: 3 })
     .$onUpdate(() => new Date()),
 },
-  (table) => ({
-    buyerUnique: unique("buyer_unique").on(table.buyerId),
-  }));
+  //(table) => ({
+    //buyerUnique: unique("buyer_unique").on(table.buyerId),
+  //})
+);
   
 
   export const cartItems = mysqlTable(
@@ -310,23 +333,23 @@ export const carts = mysqlTable("carts", {
         .notNull()
         .references(() => carts.id, { onDelete: "cascade" }),
   
-      productId: varchar("product_id", { length: 36 })
+        productVariationId: varchar("product_variation_id", { length: 36 })
         .notNull()
-        .references(() => products.id, { onDelete: "cascade" }),
+        .references(() => productVariation.id, { onDelete: "cascade" }),
   
       quantity: int("quantity").notNull().default(1),
   
-      addedAt: timestamp("added_at", { fsp: 3 }).defaultNow(),
+      addedAt: timestamp("added_at", { fsp: 3 }).defaultNow().notNull(),
       modifiedAt: timestamp("modified_at", { fsp: 3 }).$onUpdate(() => new Date()),
     },
   
-    (table) => ({
+    //(table) => ({
       // Prevents duplicate products in the same cart
-      uniqueCartItem: unique("unique_cart_item").on(
-        table.cartId,
-        table.productId
-      ),
-    })
+      //uniqueCartItem: unique("unique_cart_item").on(
+        //table.cartId,
+        //table.productVariationId
+      //),
+    //})
   );
   
 export const reviews = mysqlTable("reviews", {
@@ -346,9 +369,10 @@ export const reviews = mysqlTable("reviews", {
   updatedAt: timestamp("updated_at", { fsp: 3 })
     .$onUpdate(() => new Date()),
 },
-(table) => ({
-  reviewUnique: unique("review_unique").on(table.orderId, table.buyerId),
-}));
+//(table) => ({
+  //reviewUnique: unique("review_unique").on(table.orderId, table.buyerId),
+//})
+);
 
 export const conversations = mysqlTable("conversations", {
   id: varchar("id", { length: 36 }).primaryKey(),
@@ -370,13 +394,14 @@ export const conversations = mysqlTable("conversations", {
     .$onUpdate(() => new Date())
     .notNull(),
 },
-(table) => ({
-  uniqueConversation: unique("unique_conversation").on(
-    table.customerId,
-    table.sellerId,
-    table.productId
-  ),
-}));
+//(table) => ({
+  //uniqueConversation: unique("unique_conversation").on(
+    //table.customerId,
+    //table.sellerId,
+    //table.productId
+  //),
+//})
+);
 
 export const messages = mysqlTable("messages", {
   id: varchar("id", { length: 36 }).primaryKey(),
@@ -402,7 +427,7 @@ export const carouselImages = mysqlTable("carousel_images", {
   id: varchar("id", { length: 36 }).primaryKey(),
   imageDescription: text("image_description"),
   imageURL: longtext("image_url"),
-  addeadAt: timestamp("added_at", { fsp: 3 }).defaultNow(),
+  addedAt: timestamp("added_at", { fsp: 3 }).defaultNow().notNull(),
 })
 
 export const passwordResetCodes = mysqlTable("password_reset_codes", {
@@ -422,7 +447,20 @@ export const buyaniRatings = mysqlTable("buyani_ratings", {
   rating: int("rating"),
   review: text("review"),
   createdAt: timestamp("created_at", { fsp: 3 }).defaultNow().notNull(),
-  updatedAt: timestamp("updated_at", { fsp: 3 })
+  updatedAt: timestamp("updated_at", { fsp: 3 }).defaultNow()
+})
+
+export const tenantBilling = mysqlTable("tenant_billing", {
+  id: varchar("id", { length: 36 }).primaryKey(),
+  tenantId: varchar("tenant_id", { length: 36 })
+    .notNull()
+    .references(() => user.id, { onDelete: "cascade" }),
+  billingMonth: varchar("billing_month", { length: 20 }).notNull(),
+  amountDue: decimal("amount_due", { precision: 10, scale: 2 }).notNull(),
+  dueDate: timestamp("due_date", { fsp: 3 }).notNull(),
+  status: varchar("status", { length: 50 }).default("unpaid").notNull(),
+  createdAt: timestamp("created_at", { fsp: 3 }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { fsp: 3 }).defaultNow()
 })
 
 export const tenantPayments = mysqlTable("tenant_payments", {
@@ -434,7 +472,7 @@ export const tenantPayments = mysqlTable("tenant_payments", {
 
   billingId: varchar("billing_id", { length: 36 })
     .notNull()
-    .references(() => tentantBilling.id, { onDelete: "cascade" }),
+    .references(() => tenantBilling.id, { onDelete: "cascade" }),
 
   receiptNumber: varchar("receipt_number", { length: 100 }).notNull(),
   amountPaid: decimal("amount_paid", { precision: 10, scale: 2 }).notNull(),
@@ -445,22 +483,8 @@ export const tenantPayments = mysqlTable("tenant_payments", {
     .default("pending"),
 
   createdAt: timestamp("created_at", { fsp: 3 }).defaultNow().notNull(),
-  updatedAt: timestamp("updated_at", { fsp: 3 }),
+  updatedAt: timestamp("updated_at", { fsp: 3 }).defaultNow()
 });
-
-
-export const tentantBilling = mysqlTable("tenant_billing", {
-  id: varchar("id", { length: 36 }).primaryKey(),
-  tenantId: varchar("tenant_id", { length: 36 })
-    .notNull()
-    .references(() => user.id, { onDelete: "cascade" }),
-  billingMonth: varchar("billing_month", { length: 20 }).notNull(),
-  amountDue: decimal("amount_due", { precision: 10, scale: 2 }).notNull(),
-  dueDate: timestamp("due_date", { fsp: 3 }).notNull(),
-  status: varchar("status", { length: 50 }).default("unpaid").notNull(),
-  createdAt: timestamp("created_at", { fsp: 3 }).defaultNow().notNull(),
-  updatedAt: timestamp("updated_at", { fsp: 3 })
-})
 
 export const sellerApplications = mysqlTable("seller_applications", {
   id: varchar("id", { length: 36 }).primaryKey(),

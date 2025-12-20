@@ -23,7 +23,7 @@ interface CardActivityProps {
   totalOrders?: number | string;
   pendingOrders?: number | string;
   totalProducts?: number | string;
-  removedProducts?: number | string;
+  outOfStockProducts?: number | string;
   dateRange?: DateRange;
   onDateRangeChange?: (range: DateRange) => void;
 }
@@ -33,7 +33,7 @@ export function CardActivity({
   totalOrders,
   pendingOrders,
   totalProducts,
-  removedProducts,
+  outOfStockProducts,
   dateRange = "all",
   onDateRangeChange,
 }: CardActivityProps) {
@@ -142,21 +142,26 @@ export function CardActivity({
         </CardContent>
       </Card>
 
-      {/* Removed Products */}
-      <Card className="relative overflow-hidden transition-all duration-300 hover:shadow-lg hover:-translate-y-1 border-gray-100">
-        <div className="absolute top-0 right-0 w-32 h-32 bg-gray-500/5 rounded-full -mr-16 -mt-16" />
+      {/* Out of Stock Products */}
+      <Card className="relative overflow-hidden transition-all duration-300 hover:shadow-lg hover:-translate-y-1 border-red-100">
+        <div className="absolute top-0 right-0 w-32 h-32 bg-red-500/5 rounded-full -mr-16 -mt-16" />
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
-            <div className="p-2.5 rounded-lg bg-gray-500/10">
-              <Package className="h-5 w-5 text-gray-600" />
+            <div className="p-2.5 rounded-lg bg-red-500/10">
+              <Package className="h-5 w-5 text-red-600" />
             </div>
           </div>
         </CardHeader>
         <CardContent className="space-y-1">
-          <p className="text-sm font-medium text-muted-foreground">{t("removed-products")}</p>
-          <p className="text-2xl font-bold text-gray-600">{removedProducts ?? 0}</p>
+          <p className="text-sm font-medium text-muted-foreground">
+            {"out-of-stock-products"}
+          </p>
+          <p className="text-2xl font-bold text-red-600">
+            {outOfStockProducts ?? 0}
+          </p>
         </CardContent>
       </Card>
+
       </div>
     </div>
   );
