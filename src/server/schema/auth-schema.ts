@@ -100,7 +100,7 @@ export const addresses = mysqlTable("addresses", {
   remarks: text("remarks"),
 
   addedAt: timestamp("added_at", { fsp: 3 }).defaultNow().notNull(),
-  modifiedAt: timestamp("modified_at", { fsp: 3 }).defaultNow()
+  modifiedAt: timestamp("modified_at", { fsp: 3 }).defaultNow().notNull(),
     //.$onUpdate(() => new Date())
 });
 
@@ -314,9 +314,9 @@ export const carts = mysqlTable("carts", {
     .notNull()
     .references(() => user.id, { onDelete: "cascade" }),
 
-  createdAt: timestamp("created_at", { fsp: 3 }).defaultNow(),
-  modifiedAt: timestamp("modified_at", { fsp: 3 })
-    .$onUpdate(() => new Date()),
+  createdAt: timestamp("created_at", { fsp: 3 }).defaultNow().notNull(),
+  modifiedAt: timestamp("modified_at", { fsp: 3 }).defaultNow().notNull(),
+    //.$onUpdate(() => new Date()),
 },
   //(table) => ({
     //buyerUnique: unique("buyer_unique").on(table.buyerId),
@@ -496,7 +496,7 @@ export const sellerApplications = mysqlTable("seller_applications", {
   reviewedAt: timestamp("reviewed_at", { fsp: 3 }),
 })
 
-export const applicatioDocuments = mysqlTable("application_documents", {
+export const applicationDocuments = mysqlTable("application_documents", {
   id: varchar("id", { length: 36 }).primaryKey(),
   applicationId: varchar("application_id", { length: 36 })
     .notNull()
