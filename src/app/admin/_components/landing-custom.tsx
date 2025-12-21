@@ -20,7 +20,7 @@ export function LandingCustom() {
   const [urlList, setUrlList] = useState<string[]>([]);
   const [singleUrl, setSingleUrl] = useState("");
   const [saving, setSaving] = useState(false);
-
+  const [uploadingImages, setUploadingImages] = useState(false);
   // Load existing images from DB
   useEffect(() => {
     async function loadImages() {
@@ -44,25 +44,52 @@ export function LandingCustom() {
       reader.onerror = (err) => reject(err);
     });
 
-  const handleMultipleUpload = async (
-    e: React.ChangeEvent<HTMLInputElement>
-  ) => {
-    const selectedFiles = Array.from(e.target.files || []);
-
-    for (const file of selectedFiles) {
-      if (!file.type.startsWith("image/")) {
-        toast.error(`${file.name} is not an image`);
-        continue;
+    const handleMultipleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+      const selectedFiles = Array.from(e.target.files || []);
+      
+      if (selectedFiles.length === 0) return;
+    
+      // Validate files
+      for (const file of selectedFiles) {
+        if (!file.type.startsWith("image/")) {
+          toast.error(`${file.name} is not an image`);
+          return;
+        }
+        if (file.size > 10 * 1024 * 1024) {
+          toast.error(`${file.name} exceeds 10MB`);
+          return;
+        }
       }
-      if (file.size > 5 * 1024 * 1024) {
-        toast.error(`${file.name} exceeds 5MB`);
-        continue;
+    
+      setUploadingImages(true);
+    
+      try {
+        const formData = new FormData();
+        selectedFiles.forEach(file => {
+          formData.append('images', file);
+        });
+    
+        const response = await fetch('/api/sellers/upload-images', {
+          method: 'POST',
+          body: formData,
+        });
+    
+        if (!response.ok) {
+          throw new Error('Upload failed');
+        }
+    
+        const { images } = await response.json();
+        
+        // Add Cloudinary URLs to newImages for preview
+        setNewImages(prev => [...prev, ...images.map((img: any) => img.url)]);
+        toast.success(`${images.length} image(s) uploaded successfully!`);
+      } catch (error) {
+        console.error('Upload error:', error);
+        toast.error('Failed to upload images');
+      } finally {
+        setUploadingImages(false);
       }
-
-      const base64 = await convertToBase64(file);
-      setNewImages((prev) => [...prev, base64]);
-    }
-  };
+    };
 
   const addImageUrl = () => {
     if (!singleUrl.trim()) return;
@@ -97,9 +124,9 @@ export function LandingCustom() {
       toast.error("Please select images or add URLs.");
       return;
     }
-
+  
     setSaving(true);
-
+  
     try {
       // Save URLs
       for (const url of urlList) {
@@ -112,26 +139,24 @@ export function LandingCustom() {
           }),
         });
       }
-
-      // Save new base64 images
-      for (const base64 of newImages) {
+  
+      // Save Cloudinary URLs (no longer base64!)
+      for (const cloudinaryUrl of newImages) {
         await fetch("/api/carousel", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             imageDescription: "Uploaded Carousel Banner",
-            imageURL: base64,
+            imageURL: cloudinaryUrl,
           }),
         });
       }
-
+  
       toast.success("Images saved!");
-
-      // Reload existing images
+  
+      // Reload
       const updated = await fetch("/api/carousel").then((r) => r.json());
       setExistingImages(updated);
-
-      // Clear new uploads
       setNewImages([]);
       setUrlList([]);
     } catch {
@@ -187,7 +212,21 @@ export function LandingCustom() {
           <label className="font-semibold flex items-center gap-2">
             <Upload className="h-4 w-4" /> Upload New Images
           </label>
-          <Input type="file" accept="image/*" multiple onChange={handleMultipleUpload} />
+          <div className="relative">
+            <Input 
+              type="file" 
+              accept="image/*" 
+              multiple 
+              onChange={handleMultipleUpload}
+              disabled={uploadingImages}
+              className={uploadingImages ? 'opacity-50' : ''}
+            />
+            {uploadingImages && (
+              <div className="absolute inset-0 flex items-center justify-center bg-white/80 rounded">
+                <span className="text-sm text-emerald-600 font-medium">Uploading to cloud...</span>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* URL Input */}
