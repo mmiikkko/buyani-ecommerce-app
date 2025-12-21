@@ -38,7 +38,6 @@ import {
 
 import { authClient } from "@/server/auth-client";
 import { toast } from "sonner";
-import { AdminLoader } from "../admin-loader";
 import { usePathname } from "next/navigation";
 
 
