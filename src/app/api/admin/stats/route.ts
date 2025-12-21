@@ -7,14 +7,34 @@ import { USER_ROLES } from "@/server/schema/auth-schema";
 // GET /api/admin/stats - Get admin dashboard statistics
 export async function GET(req: NextRequest) {
   try {
-    // Total Revenue - sum of all payments
-    const revenueResult = await db
-      .select({
-        total: sql<number>`COALESCE(SUM(${payments.paymentReceived}), 0)`,
-      })
-      .from(payments);
+    // Total Revenue - refined to include COD and successful online/POS payments
+    const successfulStatuses = ["paid", "completed", "succeeded", "captured"];
+    const activeCODStatuses = ["pending", "confirmed", "accepted", "shipped", "delivered"];
+    const excludedStatuses = ["rejected", "cancelled"];
 
-    const totalRevenue = Number(revenueResult[0]?.total || 0);
+    const allOrders = await db
+      .select({
+        total: orders.total,
+        paymentStatus: payments.status,
+        paymentMethod: payments.paymentMethod,
+      })
+      .from(orders)
+      .leftJoin(payments, eq(orders.id, payments.orderId));
+
+    const totalRevenue = allOrders.reduce((sum, order) => {
+      const status = order.paymentStatus?.toLowerCase();
+      const method = order.paymentMethod?.toLowerCase();
+
+      if (!status || excludedStatuses.includes(status)) return sum;
+
+      const isSuccessful = successfulStatuses.includes(status);
+      const isCODActive = method === "cod" && activeCODStatuses.includes(status);
+
+      if (isSuccessful || isCODActive) {
+        return sum + Number(order.total || 0);
+      }
+      return sum;
+    }, 0);
 
     // Total Orders - count of all orders
     const ordersResult = await db
@@ -57,22 +77,39 @@ export async function GET(req: NextRequest) {
       const monthStart = new Date(d.getFullYear(), d.getMonth(), 1);
       const monthEnd = new Date(d.getFullYear(), d.getMonth() + 1, 0, 23, 59, 59, 999);
 
-      const monthRevenueResult = await db
+      const monthOrders = await db
         .select({
-          total: sql<number>`COALESCE(SUM(${payments.paymentReceived}), 0)`,
+          total: orders.total,
+          paymentStatus: payments.status,
+          paymentMethod: payments.paymentMethod,
         })
-        .from(payments)
+        .from(orders)
+        .leftJoin(payments, eq(orders.id, payments.orderId))
         .where(
           and(
-            gte(payments.createdAt, monthStart),
-            lte(payments.createdAt, monthEnd),
-            eq(payments.status, "completed")
+            gte(orders.createdAt, monthStart),
+            lte(orders.createdAt, monthEnd)
           )
         );
 
+      const monthTotal = monthOrders.reduce((sum, order) => {
+        const status = order.paymentStatus?.toLowerCase();
+        const method = order.paymentMethod?.toLowerCase();
+
+        if (!status) return sum;
+
+        const isSuccessful = successfulStatuses.includes(status);
+        const isCODActive = method === "cod" && activeCODStatuses.includes(status);
+
+        if (isSuccessful || isCODActive) {
+          return sum + Number(order.total || 0);
+        }
+        return sum;
+      }, 0);
+
       monthlyRevenue.push({
         month: monthYear,
-        total: Number(monthRevenueResult[0]?.total || 0),
+        total: monthTotal,
       });
     }
 

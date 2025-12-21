@@ -125,40 +125,69 @@ export async function GET(req: NextRequest) {
         dateConditions.push(lte(orders.createdAt, endDateFilter));
       }
 
-      // Get orders with payments and order totals
+      // Get orders with payments and order totals/subtotals
       const ordersWithPayments = await db
         .select({
           orderId: orders.id,
-          orderTotal: orders.total,
-          paymentReceived: payments.paymentReceived,
+          itemSubtotal: orderItems.subtotal,
+          paymentMethod: payments.paymentMethod,
           status: payments.status,
           createdAt: orders.createdAt,
         })
         .from(orders)
+        .innerJoin(orderItems, eq(orders.id, orderItems.orderId))
+        .innerJoin(productVariation, eq(orderItems.product_variation_id, productVariation.id))
+        .innerJoin(products, eq(productVariation.productId, products.id))
         .leftJoin(payments, eq(payments.orderId, orders.id))
-        .where(and(...dateConditions));
+        .where(
+          and(
+            inArray(orders.id, orderIds),
+            inArray(products.shopId, shopIds), // Ensure we only count items for this seller's shops
+            dateFilter ? gte(orders.createdAt, dateFilter) : undefined as any,
+            endDateFilter ? lte(orders.createdAt, endDateFilter) : undefined as any
+          )
+        );
 
-      // Calculate total sales
-      // For seller stats, we use order total (which represents the seller's revenue from that order)
-      // This matches how recent-orders displays amounts
-      // Exclude rejected orders from total sales
-      totalSales = ordersWithPayments.reduce((sum, order) => {
-        // Skip rejected orders - they shouldn't count towards sales
-        const orderStatus = order.status?.toLowerCase();
-        if (orderStatus === "rejected") {
+      // Define successful and active statuses
+      const successfulStatuses = ["paid", "completed", "succeeded", "captured"];
+      const activeCODStatuses = ["pending", "confirmed", "accepted", "shipped", "delivered"];
+      const excludedStatuses = ["rejected", "cancelled"];
+
+      // Calculate total sales using item subtotals
+      totalSales = ordersWithPayments.reduce((sum, item) => {
+        const status = item.status?.toLowerCase();
+        const method = item.paymentMethod?.toLowerCase();
+
+        if (!status || excludedStatuses.includes(status)) {
           return sum;
         }
 
-        // Use order total as the primary source (seller's revenue from the order)
-        // paymentReceived might be different (e.g., includes change for cash payments)
-        const amount = order.orderTotal ? Number(order.orderTotal) : 0;
-        return sum + amount;
+        const isSuccessful = successfulStatuses.includes(status);
+        const isCODActive = method === "cod" && activeCODStatuses.includes(status);
+
+        if (isSuccessful || isCODActive) {
+          return sum + Number(item.itemSubtotal || 0);
+        }
+        return sum;
       }, 0);
 
-      // Count pending orders (status is null or "pending")
-      pendingOrders = ordersWithPayments.filter(
-        (order) => !order.status || order.status.toLowerCase() === "pending"
-      ).length;
+      // Count unique orders that are NOT rejected or cancelled
+      const validOrders = new Set(
+        ordersWithPayments
+          .filter(item => {
+            const status = item.status?.toLowerCase();
+            return status && !excludedStatuses.includes(status);
+          })
+          .map(item => item.orderId)
+      );
+      totalOrders = validOrders.size;
+
+      // Count pending orders (specifically those with "pending" status and NOT cancelled/rejected)
+      pendingOrders = new Set(
+        ordersWithPayments
+          .filter(item => item.status?.toLowerCase() === "pending")
+          .map(item => item.orderId)
+      ).size;
     }
 
     return NextResponse.json({

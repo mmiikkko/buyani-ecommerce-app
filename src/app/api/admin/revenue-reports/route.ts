@@ -60,10 +60,11 @@ export async function GET(req: NextRequest) {
         const ordersData = await db
             .select({
                 orderId: orders.id,
-                orderTotal: orders.total,
+                itemSubtotal: orderItems.subtotal,
                 orderDate: orders.createdAt,
                 shopId: shop.id,
                 paymentStatus: payments.status,
+                paymentMethod: payments.paymentMethod,
             })
             .from(orders)
             .leftJoin(payments, eq(orders.id, payments.orderId))
@@ -73,9 +74,27 @@ export async function GET(req: NextRequest) {
             .innerJoin(shop, eq(products.shopId, shop.id))
             .where(and(...whereConditions));
 
-        // Filter only paid orders
+        // Filter only paid/completed orders or active COD orders
+        // Expanding status list to include potential PayMongo or legacy statuses
+        const successfulStatuses = ["paid", "completed", "succeeded", "captured"];
+        const activeCODStatuses = ["pending", "confirmed", "accepted", "shipped", "delivered"];
+        const excludedStatuses = ["rejected", "cancelled"];
+
         const paidOrders = ordersData.filter(
-            (order) => order.paymentStatus === "paid" || order.paymentStatus === "completed"
+            (order) => {
+                const status = order.paymentStatus?.toLowerCase();
+                const method = order.paymentMethod?.toLowerCase();
+
+                if (!status || excludedStatuses.includes(status)) return false;
+
+                // If it's a COD order, include it if it's in an active/successful status
+                if (method === "cod") {
+                    return activeCODStatuses.includes(status) || successfulStatuses.includes(status);
+                }
+
+                // For other payment methods, require successful payment
+                return successfulStatuses.includes(status);
+            }
         );
 
         // Map shops to their sales data
@@ -118,9 +137,9 @@ export async function GET(req: NextRequest) {
                 }
             }
 
-            const orderTotal = Number(order.orderTotal || 0);
-            sellerData.weeklyBreakdown[weekNumber] = (sellerData.weeklyBreakdown[weekNumber] || 0) + orderTotal;
-            sellerData.totalSales += orderTotal;
+            const itemSubtotal = Number(order.itemSubtotal || 0);
+            sellerData.weeklyBreakdown[weekNumber] = (sellerData.weeklyBreakdown[weekNumber] || 0) + itemSubtotal;
+            sellerData.totalSales += itemSubtotal;
         }
 
         // Total operating days in the period

@@ -42,26 +42,23 @@ export function ShopCard({ shop }: ShopCardProps) {
           {shop.shop_name}
         </h3>
 
-        {/* Rating */}
-        {rating > 0 && (
-          <div className="flex items-center gap-1.5">
-            <div className="flex items-center gap-0.5">
-              {[...Array(5)].map((_, i) => (
-                <Star
-                  key={i}
-                  className={`h-3.5 w-3.5 ${
-                    i < Math.round(rating)
-                      ? "fill-amber-400 text-amber-400"
-                      : "fill-slate-200 text-slate-200"
+        {/* Rating - Always show */}
+        <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-0.5">
+            {[...Array(5)].map((_, i) => (
+              <Star
+                key={i}
+                className={`h-3.5 w-3.5 ${rating > 0 && i < Math.round(rating)
+                  ? "fill-amber-400 text-amber-400"
+                  : "fill-slate-200 text-slate-200"
                   }`}
-                />
-              ))}
-            </div>
-            <span className="text-xs font-medium text-slate-700">
-              {rating.toFixed(1)}
-            </span>
+              />
+            ))}
           </div>
-        )}
+          <span className="text-xs font-medium text-slate-700">
+            {rating > 0 ? rating.toFixed(1) : "0.0"}
+          </span>
+        </div>
 
         {/* Product Count */}
         <p className="text-sm text-slate-600">

@@ -15,10 +15,9 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useTransition, useEffect, useMemo } from "react";
 import { toast } from "sonner";
+import { RatingOverlay } from "../../_components/rating-overlay";
 import { AddToCartModal } from "../../_components/add-to-cart-modal";
 import { AnimatedSection } from "@/components/animated-section";
-import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
 
 type ProductDetailClientProps = {
   product: Product;
@@ -374,7 +373,7 @@ export function ProductDetailClient({ product, userId }: ProductDetailClientProp
     fetchUserOrders();
   }, [userId, product.id]);
 
-  const handleSubmitReview = async () => {
+  const handleSubmitReview = async (rating: number, comment: string) => {
     if (!userId) {
       toast.error("Please sign in to submit a review");
       return;
@@ -385,11 +384,6 @@ export function ProductDetailClient({ product, userId }: ProductDetailClientProp
       return;
     }
 
-    if (reviewRating === 0) {
-      toast.error("Please select a rating");
-      return;
-    }
-
     setSubmittingReview(true);
     try {
       const response = await fetch("/api/reviews", {
@@ -397,39 +391,27 @@ export function ProductDetailClient({ product, userId }: ProductDetailClientProp
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           orderId: selectedOrderId,
-          rating: reviewRating,
-          comment: reviewComment.trim() || null,
+          rating,
+          comment: comment.trim() || null,
         }),
       });
 
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || "Failed to submit review");
-      }
-
-      const result = await response.json();
-      toast.success(existingReviewForOrder ? "Review updated successfully!" : "Review submitted successfully!");
-      setShowReviewForm(false);
-      setReviewRating(0);
-      setReviewComment("");
-      setExistingReviewForOrder(null);
-
-      // Refresh reviews after a short delay to ensure DB is updated
-      setTimeout(async () => {
-        try {
-          const reviewsResponse = await fetch(`/api/reviews?productId=${product.id}`);
-          if (reviewsResponse.ok) {
-            const data = await reviewsResponse.json();
-            setReviews(Array.isArray(data) ? data : []);
-          } else {
-            console.error("Failed to refresh reviews:", await reviewsResponse.text());
-          }
-        } catch (error) {
-          console.error("Error refreshing reviews:", error);
+      if (response.ok) {
+        toast.success("Review submitted successfully!");
+        setShowReviewForm(false);
+        // Refresh reviews
+        const res = await fetch(`/api/reviews?productId=${product.id}`);
+        if (res.ok) {
+          const data = await res.json();
+          setReviews(Array.isArray(data) ? data : []);
         }
-      }, 500);
-    } catch (error: any) {
-      toast.error(error.message || "Failed to submit review");
+      } else {
+        const error = await response.json();
+        toast.error(error.error || "Failed to submit review");
+      }
+    } catch (error) {
+      console.error("Error submitting review:", error);
+      toast.error("Failed to submit review");
     } finally {
       setSubmittingReview(false);
     }
@@ -759,145 +741,6 @@ export function ProductDetailClient({ product, userId }: ProductDetailClientProp
               )}
             </div>
 
-            {/* Review Submission Form */}
-            {showReviewForm && userId && userOrders.length > 0 && (
-              <div className="mb-8 bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-lg font-semibold text-slate-900">
-                    {existingReviewForOrder ? "Edit Your Review" : "Write a Review"}
-                  </h3>
-                  {existingReviewForOrder && (
-                    <span className="text-xs bg-amber-100 text-amber-800 px-2 py-1 rounded-full">
-                      Editing existing review
-                    </span>
-                  )}
-                </div>
-
-                {existingReviewForOrder && (
-                  <div className="mb-4 p-3 bg-slate-50 rounded-lg border border-slate-200">
-                    <p className="text-xs text-slate-600 mb-1">Your current review:</p>
-                    <div className="flex items-center gap-1 mb-1">
-                      {[...Array(5)].map((_, i) => (
-                        <Star
-                          key={i}
-                          className={`h-3 w-3 ${i < existingReviewForOrder.rating
-                            ? "fill-amber-400 text-amber-400"
-                            : "fill-slate-200 text-slate-200"
-                            }`}
-                        />
-                      ))}
-                      <span className="text-xs text-slate-600 ml-1">
-                        {existingReviewForOrder.rating}/5
-                      </span>
-                    </div>
-                    {existingReviewForOrder.comment && (
-                      <p className="text-xs text-slate-700 italic">{existingReviewForOrder.comment}</p>
-                    )}
-                  </div>
-                )}
-
-                <div className="space-y-4">
-                  {/* Order Selection */}
-                  {userOrders.length > 1 && (
-                    <div className="space-y-2">
-                      <Label htmlFor="order-select">Select Order</Label>
-                      <select
-                        id="order-select"
-                        value={selectedOrderId}
-                        onChange={(e) => {
-                          setSelectedOrderId(e.target.value);
-                          checkExistingReview(e.target.value);
-                        }}
-                        className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                      >
-                        {userOrders.map((order) => {
-                          const orderId = order.id || order.orderId;
-                          const hasReview = reviews.some((r: any) => r.orderId === orderId);
-                          return (
-                            <option key={orderId} value={orderId}>
-                              Order #{orderId} - {new Date(order.createdAt).toLocaleDateString()}
-                              {hasReview ? " (Reviewed)" : ""}
-                            </option>
-                          );
-                        })}
-                      </select>
-                    </div>
-                  )}
-
-                  {/* Rating Selection */}
-                  <div className="space-y-2">
-                    <Label>Rating *</Label>
-                    <div className="flex items-center gap-2">
-                      {[1, 2, 3, 4, 5].map((star) => (
-                        <button
-                          key={star}
-                          type="button"
-                          onClick={() => setReviewRating(star)}
-                          className="focus:outline-none transition-transform hover:scale-110"
-                        >
-                          <Star
-                            className={`h-8 w-8 ${star <= reviewRating
-                              ? "fill-amber-400 text-amber-400"
-                              : "fill-slate-200 text-slate-200"
-                              }`}
-                          />
-                        </button>
-                      ))}
-                      {reviewRating > 0 && (
-                        <span className="ml-2 text-sm font-medium text-slate-700">
-                          {reviewRating} out of 5
-                        </span>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Comment */}
-                  <div className="space-y-2">
-                    <Label htmlFor="review-comment">Your Review (Optional)</Label>
-                    <Textarea
-                      id="review-comment"
-                      value={reviewComment}
-                      onChange={(e) => setReviewComment(e.target.value)}
-                      placeholder="Share your experience with this product..."
-                      rows={4}
-                      className="resize-none"
-                    />
-                  </div>
-
-                  {/* Submit Buttons */}
-                  <div className="flex items-center gap-3 pt-2">
-                    <Button
-                      onClick={handleSubmitReview}
-                      disabled={submittingReview || reviewRating === 0}
-                      className="bg-emerald-600 hover:bg-emerald-700"
-                    >
-                      {submittingReview ? (
-                        <>
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                          Submitting...
-                        </>
-                      ) : (
-                        <>
-                          <Send className="mr-2 h-4 w-4" />
-                          Submit Review
-                        </>
-                      )}
-                    </Button>
-                    <Button
-                      variant="outline"
-                      onClick={() => {
-                        setShowReviewForm(false);
-                        setReviewRating(0);
-                        setReviewComment("");
-                      }}
-                      disabled={submittingReview}
-                    >
-                      Cancel
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            )}
 
             {!userId && (
               <div className="mb-6 bg-slate-50 rounded-xl border border-slate-200 p-4 text-center">
@@ -1010,6 +853,62 @@ export function ProductDetailClient({ product, userId }: ProductDetailClientProp
           </div>
         </div>
       </AnimatedSection >
+
+      <RatingOverlay
+        open={showReviewForm}
+        onOpenChange={setShowReviewForm}
+        onSubmit={handleSubmitReview}
+        title={existingReviewForOrder ? "Edit Your Review" : "Write a Review"}
+        description={`Share your experience with ${product.productName}.`}
+        showCommentField
+        placeholder="What did you like or dislike about this product?"
+      >
+        {/* Order Selection (if multiple orders) */}
+        {userOrders.length > 1 && (
+          <div className="space-y-3">
+            <label className="text-sm font-bold text-slate-700 uppercase tracking-wider">Select Order to Review</label>
+            <select
+              value={selectedOrderId}
+              onChange={(e) => {
+                setSelectedOrderId(e.target.value);
+                checkExistingReview(e.target.value);
+              }}
+              className="w-full rounded-2xl border-2 border-slate-100 bg-slate-50 px-4 py-3 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+            >
+              {userOrders.map((order) => {
+                const orderId = order.id || order.orderId;
+                const hasReview = reviews.some((r: any) => r.orderId === orderId);
+                return (
+                  <option key={orderId} value={orderId}>
+                    Order #{orderId.substring(0, 8)} - {new Date(order.createdAt).toLocaleDateString()}
+                    {hasReview ? " (Already Reviewed)" : ""}
+                  </option>
+                );
+              })}
+            </select>
+          </div>
+        )}
+
+        {existingReviewForOrder && (
+          <div className="p-4 bg-amber-50 rounded-2xl border border-amber-200">
+            <p className="text-xs font-bold text-amber-800 uppercase tracking-wider mb-2">Your current review:</p>
+            <div className="flex items-center gap-1 mb-2">
+              {[...Array(5)].map((_, i) => (
+                <Star
+                  key={i}
+                  className={`h-3.5 w-3.5 ${i < existingReviewForOrder.rating
+                    ? "fill-amber-400 text-amber-400"
+                    : "fill-amber-200 text-amber-200"
+                    }`}
+                />
+              ))}
+            </div>
+            {existingReviewForOrder.comment && (
+              <p className="text-sm text-amber-900 italic font-medium">"{existingReviewForOrder.comment}"</p>
+            )}
+          </div>
+        )}
+      </RatingOverlay>
 
       <AddToCartModal
         open={modalOpen}

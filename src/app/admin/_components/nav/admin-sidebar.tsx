@@ -49,6 +49,7 @@ const items = [
   { title: "Tenants", url: "/admin/tenant-payments", icon: CalendarSync },
   { title: "Revenue Reports", url: "/admin/revenue-reports", icon: BarChart3 },
   { title: "Transactions", url: "/admin/transactions", icon: Wallet },
+  { title: "Platform Feedback", url: "/admin/feedback", icon: Layout },
   { title: "Site Settings", url: "/admin/site-settings", icon: Layout },
 ];
 

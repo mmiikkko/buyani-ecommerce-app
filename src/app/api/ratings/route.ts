@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/server/drizzle";
-import { buyaniRatings } from "@/server/schema/auth-schema";
+import { buyaniRatings, user } from "@/server/schema/auth-schema";
+import { eq, desc } from "drizzle-orm";
 import { getServerSession } from "@/server/session";
 import { v4 as uuidv4 } from "uuid";
 
@@ -54,9 +55,18 @@ export async function GET(req: NextRequest) {
         }
 
         const ratings = await db
-            .select()
+            .select({
+                id: buyaniRatings.id,
+                rating: buyaniRatings.rating,
+                review: buyaniRatings.review,
+                createdAt: buyaniRatings.createdAt,
+                userName: user.name,
+                userEmail: user.email,
+                userImage: user.image,
+            })
             .from(buyaniRatings)
-            .orderBy(buyaniRatings.createdAt);
+            .leftJoin(user, eq(buyaniRatings.userId, user.id))
+            .orderBy(desc(buyaniRatings.createdAt));
 
         return NextResponse.json(ratings);
     } catch (error) {

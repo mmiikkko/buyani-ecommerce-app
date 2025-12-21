@@ -306,7 +306,7 @@ export default function RevenueReportsPage() {
                                     {/* Excel Row 3 - Date Ranges */}
                                     <tr>
                                         {reportData.weeks.map((week) => (
-                                            <th key={week.weekNumber} className="border border-gray-300 bg-[#f0f7ff] text-[#003366] px-2 py-1 text-center font-normal">
+                                            <th key={week.weekNumber} className="border border-gray-300 bg-[#f0f7ff] text-[#003366] px-2 py-1 text-center font-bold">
                                                 {week.dateRange}
                                             </th>
                                         ))}
@@ -314,7 +314,7 @@ export default function RevenueReportsPage() {
                                     {/* Excel Row 4 - Day Counts */}
                                     <tr>
                                         {reportData.weeks.map((week) => (
-                                            <th key={week.weekNumber} className="border border-gray-300 bg-[#f3e5f5] text-[#4a148c] px-2 py-1 text-center font-normal italic">
+                                            <th key={week.weekNumber} className="border border-gray-300 bg-[#f3e5f5] text-[#4a148c] px-2 py-1 text-center font-bold italic">
                                                 {week.daysCount} days
                                             </th>
                                         ))}
@@ -332,7 +332,7 @@ export default function RevenueReportsPage() {
 
                                                 {/* Weekly Sales (Axis X: C-G) */}
                                                 {reportData.weeks.map((week) => (
-                                                    <td key={week.weekNumber} className="border border-gray-300 px-3 text-right">
+                                                    <td key={week.weekNumber} className="border border-gray-300 px-3 text-right font-bold">
                                                         {seller.weeklyBreakdown[week.weekNumber] > 0
                                                             ? seller.weeklyBreakdown[week.weekNumber].toLocaleString('en-US')
                                                             : "-"}

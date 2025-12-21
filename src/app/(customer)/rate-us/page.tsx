@@ -1,6 +1,6 @@
 import { getServerSession } from "@/server/session";
 import { redirect } from "next/navigation";
-import { RatingForm } from "../_components/rating-form";
+import { RateUsClient } from "./_components/rate-us-client";
 import { BackButton } from "./_components/back-button";
 
 export default async function RateBuyani() {
@@ -12,22 +12,11 @@ export default async function RateBuyani() {
   }
 
   return (
-    <main className="relative min-h-screen bg-gradient-to-b from-emerald-50 via-slate-50 to-amber-50">
+    <main className="relative min-h-screen bg-gradient-to-br from-emerald-50 via-white to-amber-50/30">
       <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
         <BackButton />
 
-        <header className="flex flex-col gap-2 text-center mb-12">
-          <div className="space-y-2">
-            <h1 className="text-3xl font-semibold tracking-tight text-slate-900 sm:text-4xl">
-              Rate BuyAni
-            </h1>
-            <p className="text-base text-slate-600 max-w-2xl mx-auto">
-              Help us improve BuyAni by sharing your feedback and rating your experience.
-            </p>
-          </div>
-        </header>
-
-        <RatingForm userId={user.id} />
+        <RateUsClient userId={user.id} />
 
         {/* Additional Info Section */}
         <div className="mt-12 max-w-2xl mx-auto">
