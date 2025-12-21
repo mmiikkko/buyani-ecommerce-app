@@ -1,6 +1,4 @@
 "use client";
-import Link from "next/link";
-import { useEffect, useState } from "react";
 import {
   Sidebar,
   SidebarContent,
@@ -12,6 +10,8 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
+import Link from "next/link";
+import { useEffect, useState } from "react";
 
 import {
   DropdownMenu,
@@ -21,20 +21,20 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 import {
+  CalendarSync,
+  ChevronUp,
   Home,
+  Inbox,
+  Package,
   ShoppingCart,
   Store,
-  Package,
-  Inbox,
-  ChevronUp,
   User2,
-  CalendarSync,
 } from "lucide-react";
 
 import { PremiumLoader } from "@/components/shared/premium-loader";
-import { usePathname } from "next/navigation";
 import { useLanguage } from "@/lib/i18n/context";
 import { cn } from "@/lib/utils";
+import { usePathname } from "next/navigation";
 
 export function AppSidebar() {
   const { t } = useLanguage();
@@ -49,7 +49,7 @@ export function AppSidebar() {
     { title: t("pos"), url: "/seller/POS", icon: Store },
     { title: t("products"), url: "/seller/products", icon: Package },
     { title: t("inbox"), url: "/seller/inbox", icon: Inbox },
-    { title: t("monthly-dues") || "Monthly Dues", url: "/seller/monthly-dues", icon: CalendarSync },
+    { title: t("monthly-dues") || "Monthly Rent", url: "/seller/monthly-dues", icon: CalendarSync },
   ];
 
   // Avoid SSR/client mismatch
