@@ -20,14 +20,18 @@ import {
 import {
   MoreHorizontal,
   FileText,
-  Calendar,
-  AlertCircle
+  CalendarSync,
+  AlertCircle,
+  Upload,
+  Download,
+  Eye
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import Image from "next/image";
+import { Button } from "@/components/ui/button";
 
 type BillingRecord = {
   id: string;
@@ -306,7 +310,7 @@ export default function MonthlyDuesPage() {
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-2 text-gray-600">
-                        <Calendar className="w-4 h-4 text-gray-400" />
+                        <CalendarSync className="w-4 h-4 text-gray-400" />
                         {new Date(billing.dueDate).toLocaleDateString()}
                       </div>
                     </TableCell>
