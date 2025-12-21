@@ -19,7 +19,7 @@ import { useForm } from "react-hook-form";
 import z from "zod";
 
 export const updateEmailSchema = z.object({
-  newEmail: z.email({ message: "Enter a valid email" }),
+  newEmail: z.string().email({ message: "Enter a valid email" }),
 });
 
 export type UpdateEmailValues = z.infer<typeof updateEmailSchema>;
