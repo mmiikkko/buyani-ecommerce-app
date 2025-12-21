@@ -3,71 +3,75 @@ import { db } from "@/server/drizzle";
 import { carouselImages } from "@/server/schema/auth-schema";
 import { eq } from "drizzle-orm";
 import { v4 as uuid } from "uuid";
+import { v2 as cloudinary } from 'cloudinary';
+import { env } from '@/lib/env';
 
-// GET all carousel images
-export async function GET() {
-  try {
-    const data = await db.select().from(carouselImages);
-    return NextResponse.json(data);
-  } catch (error) {
-    console.error("GET /api/carousel error:", error);
-    return NextResponse.json(
-      { error: "Failed to fetch images" },
-      { status: 500 }
-    );
-  }
-}
+// Add Cloudinary config at the top of the file
+cloudinary.config({
+  cloud_name: env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME,
+  api_key: env.CLOUDINARY_API_KEY,
+  api_secret: env.CLOUDINARY_API_SECRET,
+});
 
-// POST new image
+// POST new image with Cloudinary upload
 export async function POST(req: Request) {
   try {
-    const body = await req.json();
+    const formData = await req.formData();
+    const file = formData.get('image') as File;
+    const description = formData.get('description') as string;
 
-    if (!body.imageURL) {
+    if (!file) {
       return NextResponse.json(
-        { error: "imageURL is required" },
+        { error: "Image file is required" },
         { status: 400 }
       );
     }
 
-    await db.insert(carouselImages).values({
-      id: uuid(),
-      imageDescription: body.imageDescription || "",
-      imageURL: body.imageURL,
+    // Validate file
+    if (file.size > 10 * 1024 * 1024) {
+      return NextResponse.json(
+        { error: "Image must be under 10MB" },
+        { status: 400 }
+      );
+    }
+
+    // Upload to Cloudinary
+    const bytes = await file.arrayBuffer();
+    const buffer = Buffer.from(bytes);
+
+    const uploadResult = await new Promise((resolve, reject) => {
+      const uploadStream = cloudinary.uploader.upload_stream(
+        {
+          folder: 'carousel',
+          transformation: [
+            { width: 1400, height: 600, crop: 'limit' },
+            { quality: 'auto' },
+            { fetch_format: 'auto' },
+          ],
+          resource_type: 'image',
+        },
+        (error, result) => {
+          if (error) reject(error);
+          else resolve(result);
+        }
+      );
+      uploadStream.end(buffer);
     });
 
-    return NextResponse.json({ success: true });
+    const imageURL = (uploadResult as any).secure_url;
+
+    // Save to database
+    await db.insert(carouselImages).values({
+      id: uuid(),
+      imageDescription: description || "",
+      imageURL: imageURL,
+    });
+
+    return NextResponse.json({ success: true, imageURL });
   } catch (error) {
     console.error("POST /api/carousel error:", error);
     return NextResponse.json(
       { error: "Failed to save image" },
-      { status: 500 }
-    );
-  }
-}
-
-// DELETE image by ID
-export async function DELETE(req: Request) {
-  try {
-    const { searchParams } = new URL(req.url);
-    const id = searchParams.get("id");
-
-    if (!id) {
-      return NextResponse.json(
-        { error: "Missing image id" },
-        { status: 400 }
-      );
-    }
-
-    await db
-      .delete(carouselImages)
-      .where(eq(carouselImages.id, id));
-
-    return NextResponse.json({ success: true });
-  } catch (error) {
-    console.error("DELETE /api/carousel error:", error);
-    return NextResponse.json(
-      { error: "Failed to delete image" },
       { status: 500 }
     );
   }

@@ -57,6 +57,7 @@ export default function AccountSettingsPage() {
     const [saving, setSaving] = useState(false);
     const [userData, setUserData] = useState<UserData | null>(null);
     const [shopData, setShopData] = useState<ShopData | null>(null);
+    const [uploadingShopImage, setUploadingShopImage] = useState(false);
     
     // Profile form state
     const [profileForm, setProfileForm] = useState({
@@ -183,29 +184,50 @@ export default function AccountSettingsPage() {
       }
     };
 
-    const handleShopImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleShopImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
       const file = e.target.files?.[0];
       if (!file) return;
-
-      // Check file size (max 2MB)
-      if (file.size > 2 * 1024 * 1024) {
-        toast.error("Image size must be less than 2MB");
+    
+      // Validate file size (10MB)
+      if (file.size > 10 * 1024 * 1024) {
+        toast.error("Image must be under 10MB");
         return;
       }
-
-      // Check file type
+    
+      // Validate file type
       if (!file.type.startsWith("image/")) {
         toast.error("Please select an image file");
         return;
       }
-
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        const base64 = reader.result as string;
-        setShopImagePreview(base64);
-        setShopForm({ ...shopForm, imageURL: base64 });
-      };
-      reader.readAsDataURL(file);
+    
+      setUploadingShopImage(true);
+    
+      try {
+        const formData = new FormData();
+        formData.append('images', file);
+    
+        const response = await fetch('/api/sellers/upload-images', {
+          method: 'POST',
+          body: formData,
+        });
+    
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Upload failed');
+        }
+    
+        const { images } = await response.json();
+        
+        setShopImagePreview(images[0].url);
+        setShopForm({ ...shopForm, imageURL: images[0].url });
+        toast.success("Shop image uploaded successfully!");
+      } catch (error) {
+        console.error('Upload error:', error);
+        toast.error(error instanceof Error ? error.message : 'Failed to upload image');
+      } finally {
+        setUploadingShopImage(false);
+        e.target.value = '';
+      }
     };
 
     const handleShopUpdate = async () => {
@@ -469,15 +491,26 @@ export default function AccountSettingsPage() {
                           )}
                         </div>
                         <div className="flex-1 space-y-2">
-                          <Input
-                            id="shopImage"
-                            type="file"
-                            accept="image/*"
-                            onChange={handleShopImageUpload}
-                            className="h-10"
-                          />
+                          <div className="relative">
+                            <Input
+                              id="shopImage"
+                              type="file"
+                              accept="image/*"
+                              onChange={handleShopImageUpload}
+                              disabled={uploadingShopImage}
+                              className={`h-10 ${uploadingShopImage ? 'opacity-50' : ''}`}
+                            />
+                            {uploadingShopImage && (
+                              <div className="absolute inset-0 flex items-center justify-center bg-white/80 rounded">
+                                <div className="flex items-center gap-2 text-[#2E7D32] font-medium text-sm">
+                                  <Upload className="h-4 w-4 animate-bounce" />
+                                  <span>Uploading...</span>
+                                </div>
+                              </div>
+                            )}
+                          </div>
                           <p className="text-xs text-muted-foreground">
-                            Upload your store logo or banner image (max 2MB). Recommended: 400x400px for logo, 1200x400px for banner.
+                            Upload your store logo (max 10MB). Images stored in cloud. Recommended: 400x400px
                           </p>
                         </div>
                       </div>
