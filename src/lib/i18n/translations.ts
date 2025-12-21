@@ -19,10 +19,10 @@ export const translations = {
     "back-to-marketplace": "Bumalik sa Marketplace",
 
     // Welcome Modal
-    "welcome-title": "Maligayang pagdating sa Buyani!",
+    "welcome-title": "Maligayang pagdating sa BuyAni!",
     "welcome-description": "Ang inyong campus marketplace para sa lokal na produkto at gawa ng estudyante",
-    "what-is-buyani": "Ano ang Buyani?",
-    "what-is-buyani-desc": "Ang Buyani ay isang student-focused na e-commerce platform na nag-uugnay ng campus communities sa lokal na vendors, student entrepreneurs, at makers. Tuklasin ang mga natatanging produkto, suportahan ang inyong mga kapwa, at mamili mula sa pinagkakatiwalaang sellers sa isang lugar.",
+    "what-is-buyani": "Ano ang BuyAni?",
+    "what-is-buyani-desc": "Ang BuyAni ay isang student-focused na e-commerce platform na nag-uugnay ng campus communities sa lokal na vendors, student entrepreneurs, at makers. Tuklasin ang mga natatanging produkto, suportahan ang inyong mga kapwa, at mamili mula sa pinagkakatiwalaang sellers sa isang lugar.",
     "what-you-can-do": "Ano ang maaari mong gawin:",
     "shop-products": "Mamili ng Produkto",
     "shop-products-desc": "Mag-browse ng best sellers, mamili ayon sa kategorya, at maghanap ng natatanging items",
@@ -53,13 +53,13 @@ export const translations = {
     // Footer
     "footer-description": "Isang tahimik, campus-first marketplace na nag-uugnay ng CNSC students at lokal na makers. Tuklasin ang snacks, crafts, at essentials nang walang kalat.",
     "explore": "Tuklasin",
-    "about-buyani": "Tungkol sa Buyani",
+    "about-buyani": "Tungkol sa BuyAni",
     "how-it-works": "Paano ito gumagana",
     "rate-us": "I-rate kami",
     "stay-connected": "Manatiling konektado",
     "stay-connected-desc": "Kumuha ng maliliit na update sa bagong stalls, drops, at campus events.",
     "follow-us": "Sundan kami",
-    "copyright": "© 2025 Buyani · CNSC University Market Hub.",
+    "copyright": "© 2025 BuyAni · CNSC University Market Hub.",
     "trusted-marketplace": "Pinagkakatiwalaang campus marketplace",
 
     // Cart
@@ -87,7 +87,7 @@ export const translations = {
     // How It Works
     "getting-started-header": "Paano Magsimula",
     "how-it-works-title": "Paano ito gumagana",
-    "how-it-works-desc": "Mga simpleng hakbang upang magsimulang mamili sa Buyani. Tuklasin ang produkto, magdagdag sa cart, at mag-checkout nang ligtas.",
+    "how-it-works-desc": "Mga simpleng hakbang upang magsimulang mamili sa BuyAni. Tuklasin ang produkto, magdagdag sa cart, at mag-checkout nang ligtas.",
     "browse-search": "Mag-browse at Maghanap",
     "browse-search-desc": "Tuklasin ang aming malawak na seleksyon ng produkto mula sa lokal na sellers. Gamitin ang search bar upang makahanap ng partikular na items o mag-browse sa mga kategorya at shops.",
     "add-to-cart": "Magdagdag sa Cart",
@@ -426,10 +426,10 @@ export const translations = {
     "back-to-marketplace": "Back to Marketplace",
 
     // Welcome Modal
-    "welcome-title": "Welcome to Buyani!",
+    "welcome-title": "Welcome to BuyAni!",
     "welcome-description": "Your campus marketplace for local products and student-made goods",
-    "what-is-buyani": "What is Buyani?",
-    "what-is-buyani-desc": "Buyani is a student-focused e-commerce platform that connects campus communities with local vendors, student entrepreneurs, and makers. Discover unique products, support your peers, and shop from trusted sellers all in one place.",
+    "what-is-buyani": "What is BuyAni?",
+    "what-is-buyani-desc": "BuyAni is a student-focused e-commerce platform that connects campus communities with local vendors, student entrepreneurs, and makers. Discover unique products, support your peers, and shop from trusted sellers all in one place.",
     "what-you-can-do": "What you can do:",
     "shop-products": "Shop Products",
     "shop-products-desc": "Browse best sellers, shop by category, and find unique items",
@@ -460,13 +460,13 @@ export const translations = {
     // Footer
     "footer-description": "A calm, campus-first marketplace connecting CNSC students and local makers. Discover snacks, crafts, and essentials without the clutter.",
     "explore": "Explore",
-    "about-buyani": "About Buyani",
+    "about-buyani": "About BuyAni",
     "how-it-works": "How it works",
     "rate-us": "Rate us",
     "stay-connected": "Stay connected",
     "stay-connected-desc": "Get small updates on new stalls, drops, and campus events.",
     "follow-us": "Follow us",
-    "copyright": "© 2025 Buyani · CNSC University Market Hub.",
+    "copyright": "© 2025 BuyAni · CNSC University Market Hub.",
     "trusted-marketplace": "Trusted campus marketplace",
 
     // Cart
@@ -494,7 +494,7 @@ export const translations = {
     // How It Works
     "getting-started-header": "Getting Started",
     "how-it-works-title": "How it works",
-    "how-it-works-desc": "Simple steps to start shopping on Buyani. Discover products, add to cart, and checkout securely.",
+    "how-it-works-desc": "Simple steps to start shopping on BuyAni. Discover products, add to cart, and checkout securely.",
     "browse-search": "Browse & Search",
     "browse-search-desc": "Explore our wide selection of products from local sellers. Use the search bar to find specific items or browse through categories and shops.",
     "add-to-cart": "Add to Cart",
