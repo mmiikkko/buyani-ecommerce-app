@@ -19,7 +19,7 @@ import { z } from "zod";
 import { Button } from "@/components/ui/button";
 
 const forgotPasswordSchema = z.object({
-  email: z.email({ message: "Please enter a valid email" }),
+  email: z.string().email({ message: "Please enter a valid email" }),
 });
 
 type ForgotPasswordValues = z.infer<typeof forgotPasswordSchema>;
