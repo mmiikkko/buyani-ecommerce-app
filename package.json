@@ -2,8 +2,10 @@
   "name": "web",
   "version": "0.1.0",
   "private": true,
-  "zod": "3.24.1",
-  
+  "resolutions": {
+    "zod": "3.24.1",
+    "websocket": "^1.0.35"
+  },
   "scripts": {
     "dev": "next dev",
     "build": "next build",
