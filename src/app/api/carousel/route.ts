@@ -30,9 +30,33 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// POST new image with Cloudinary upload
+
+// POST new image with Cloudinary upload OR JSON URL
 export async function POST(request: NextRequest) {
   try {
+    const contentType = request.headers.get('content-type') || '';
+
+    // Handle JSON body (for URL uploads and Cloudinary URLs)
+    if (contentType.includes('application/json')) {
+      const body = await request.json();
+      
+      if (!body.imageURL) {
+        return NextResponse.json(
+          { error: "imageURL is required" },
+          { status: 400 }
+        );
+      }
+
+      await db.insert(carouselImages).values({
+        id: uuid(),
+        imageDescription: body.imageDescription || "",
+        imageURL: body.imageURL,
+      });
+
+      return NextResponse.json({ success: true, imageURL: body.imageURL });
+    }
+
+    // Handle FormData (for file uploads)
     const formData = await request.formData();
     const file = formData.get('image') as File;
     const description = formData.get('description') as string;
