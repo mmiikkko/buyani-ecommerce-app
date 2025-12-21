@@ -9,8 +9,9 @@ import { FrequentBought } from "./_components/cards-frequentbought";
 import { MonthlyDuesNotification } from "./_components/monthly-dues-notification";
 import { SellerNotificationOverlay } from "./_components/seller-notification-overlay";
 import { Order } from "@/types/orders";
-import { Store, Loader2 } from "lucide-react";
+import { Store } from "lucide-react";
 import { useLanguage } from "@/lib/i18n/context";
+import { PremiumLoader } from "@/components/shared/premium-loader";
 
 type DateRange = "7" | "30" | "90" | "365" | "all";
 
@@ -102,11 +103,8 @@ export default function SellerDashboard() {
       {/* Stats Cards */}
       <section className="w-full">
         {loading ? (
-          <div className="flex items-center justify-center py-12">
-            <div className="inline-flex items-center gap-2 text-muted-foreground">
-              <Loader2 className="h-5 w-5 animate-spin" />
-              <p>{t("loading-dashboard-stats")}</p>
-            </div>
+          <div className="py-12">
+            <PremiumLoader fullPage={false} text={t("loading-dashboard-stats")} />
           </div>
         ) : (
           <CardActivity

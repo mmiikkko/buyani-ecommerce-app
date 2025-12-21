@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/server/drizzle";
-import { sellerNotifications, tenantBilling, user } from "@/server/schema/auth-schema";
+import { sellerNotifications, tenantBilling, user, shop } from "@/server/schema/auth-schema";
 import { eq } from "drizzle-orm";
 import { getServerSession } from "@/server/session";
 import { v4 as uuidv4 } from "uuid";
@@ -31,6 +31,8 @@ export async function POST(req: NextRequest) {
 
         // Get billing details if billingId provided
         let title = "Payment Reminder";
+        let formattedMessage = message;
+
         if (billingId) {
             const billing = await db
                 .select()
@@ -39,7 +41,22 @@ export async function POST(req: NextRequest) {
                 .limit(1);
 
             if (billing.length > 0) {
-                title = `Payment Due: ${billing[0].billingMonth}`;
+                const b = billing[0];
+                title = `Payment Due: ${b.billingMonth}`;
+
+                // Fetch shop name separately
+                const shopData = await db
+                    .select({ name: shop.shopName })
+                    .from(shop)
+                    .where(eq(shop.sellerId, sellerId))
+                    .limit(1);
+
+                const shopName = shopData[0]?.name || "Your Shop";
+                const amount = Number(b.amountDue).toLocaleString('en-PH', { style: 'currency', currency: 'PHP' });
+                // Ensure date string handling safety
+                const date = new Date(String(b.dueDate)).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+
+                formattedMessage = `Subject: ${title}\nStore: ${shopName}\nDue Date: ${date}\nAmount Due: ${amount}\n\nNote from Admin:\n${message}`;
             }
         }
 
@@ -50,7 +67,7 @@ export async function POST(req: NextRequest) {
             sellerId,
             billingId: billingId || null,
             title,
-            message,
+            message: formattedMessage,
             type: "payment_reminder",
             isRead: false,
             sentBy: adminId,

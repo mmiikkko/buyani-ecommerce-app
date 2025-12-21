@@ -54,12 +54,12 @@ export default function RevenueReportsPage() {
     useEffect(() => {
         const fetchSellers = async () => {
             try {
-                const res = await fetch("/api/admin/shops");
+                const res = await fetch("/api/shops?status=all");
                 if (res.ok) {
                     const data = await res.json();
                     const sellerList = data.map((shop: any) => ({
                         id: shop.seller_id,
-                        name: shop.seller_name || "Unknown",
+                        name: shop.owner_name || "Unknown",
                         shopName: shop.shop_name
                     }));
                     setSellers(sellerList);
@@ -166,47 +166,57 @@ export default function RevenueReportsPage() {
             </div>
 
             {/* Filters */}
-            <Card>
-                <CardHeader>
-                    <CardTitle className="text-lg">Report Filters</CardTitle>
+            <Card className="border-emerald-100 shadow-sm overflow-hidden">
+                <div className="h-1 bg-emerald-600 w-full" />
+                <CardHeader className="pb-3 px-6 pt-5">
+                    <CardTitle className="text-lg font-semibold text-gray-800 flex items-center gap-2">
+                        <Store className="h-5 w-5 text-emerald-600" />
+                        Report Filters
+                    </CardTitle>
                 </CardHeader>
-                <CardContent>
-                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <CardContent className="px-6 pb-6 pt-0">
+                    <div className="grid grid-cols-1 md:grid-cols-12 gap-5 items-end">
                         {/* Start Date */}
-                        <div className="space-y-2">
-                            <label className="text-sm font-medium flex items-center gap-2">
-                                <Calendar className="h-4 w-4" />
+                        <div className="md:col-span-2 space-y-2">
+                            <label className="text-xs font-bold text-gray-500 uppercase tracking-wider flex items-center gap-2">
+                                <Calendar className="h-3.5 w-3.5 text-emerald-600" />
                                 Start Date
                             </label>
                             <Input
                                 type="date"
                                 value={startDate}
                                 onChange={(e) => setStartDate(e.target.value)}
+                                className="h-10 border-gray-200 focus:border-emerald-500 focus:ring-emerald-500 rounded-lg"
                             />
                         </div>
 
                         {/* End Date */}
-                        <div className="space-y-2">
-                            <label className="text-sm font-medium flex items-center gap-2">
-                                <Calendar className="h-4 w-4" />
+                        <div className="md:col-span-2 space-y-2">
+                            <label className="text-xs font-bold text-gray-500 uppercase tracking-wider flex items-center gap-2">
+                                <Calendar className="h-3.5 w-3.5 text-emerald-600" />
                                 End Date
                             </label>
                             <Input
                                 type="date"
                                 value={endDate}
                                 onChange={(e) => setEndDate(e.target.value)}
+                                className="h-10 border-gray-200 focus:border-emerald-500 focus:ring-emerald-500 rounded-lg"
                             />
                         </div>
 
                         {/* Seller Filter */}
-                        <div className="space-y-2">
-                            <label className="text-sm font-medium flex items-center gap-2">
-                                <Store className="h-4 w-4" />
+                        <div className="md:col-span-3 space-y-2">
+                            <label className="text-xs font-bold text-gray-500 uppercase tracking-wider flex items-center gap-2">
+                                <Store className="h-3.5 w-3.5 text-emerald-600" />
                                 Filter by Shop
                             </label>
                             <Select value={selectedSeller} onValueChange={setSelectedSeller}>
-                                <SelectTrigger>
-                                    <SelectValue placeholder="All Shops" />
+                                <SelectTrigger className="h-10 border-gray-200 focus:ring-emerald-500 rounded-lg w-full overflow-hidden">
+                                    <SelectValue>
+                                        {selectedSeller === "all"
+                                            ? "All Shops"
+                                            : sellers.find(s => s.id === selectedSeller)?.shopName || "Select Shop"}
+                                    </SelectValue>
                                 </SelectTrigger>
                                 <SelectContent>
                                     <SelectItem value="all">All Shops</SelectItem>
@@ -220,17 +230,20 @@ export default function RevenueReportsPage() {
                         </div>
 
                         {/* Export Buttons */}
-                        <div className="space-y-2">
-                            <label className="text-sm font-medium">Export Options</label>
+                        <div className="md:col-span-5 space-y-2">
+                            <label className="text-xs font-bold text-gray-500 uppercase tracking-wider flex items-center gap-2">
+                                <Download className="h-3.5 w-3.5 text-emerald-600" />
+                                Export Options
+                            </label>
                             <div className="flex gap-2">
                                 <Button
                                     onClick={handleExportExcel}
                                     disabled={!reportData || loading}
                                     variant="outline"
                                     size="sm"
-                                    className="flex-1"
+                                    className="h-10 flex-1 bg-white hover:bg-emerald-50 hover:text-emerald-700 border-gray-200 hover:border-emerald-200 transition-all"
                                 >
-                                    <FileSpreadsheet className="h-4 w-4 mr-1" />
+                                    <FileSpreadsheet className="h-4 w-4 mr-2 text-emerald-600" />
                                     Excel
                                 </Button>
                                 <Button
@@ -238,9 +251,9 @@ export default function RevenueReportsPage() {
                                     disabled={!reportData || loading}
                                     variant="outline"
                                     size="sm"
-                                    className="flex-1"
+                                    className="h-10 flex-1 bg-white hover:bg-emerald-50 hover:text-emerald-700 border-gray-200 hover:border-emerald-200 transition-all"
                                 >
-                                    <Download className="h-4 w-4 mr-1" />
+                                    <Download className="h-4 w-4 mr-2 text-emerald-600" />
                                     PDF
                                 </Button>
                                 <Button
@@ -248,9 +261,9 @@ export default function RevenueReportsPage() {
                                     disabled={!reportData || loading}
                                     variant="outline"
                                     size="sm"
-                                    className="flex-1"
+                                    className="h-10 flex-1 bg-white hover:bg-emerald-50 hover:text-emerald-700 border-gray-200 hover:border-emerald-200 transition-all"
                                 >
-                                    <Printer className="h-4 w-4 mr-1" />
+                                    <Printer className="h-4 w-4 mr-2 text-emerald-600" />
                                     Print
                                 </Button>
                             </div>

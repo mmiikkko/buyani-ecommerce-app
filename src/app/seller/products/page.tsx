@@ -60,7 +60,7 @@ export default function Products() {
   useEffect(() => {
     const interval = setInterval(() => {
       fetchProducts(false); // Silent refresh (no loading spinner)
-    }, 30000); // 30 seconds
+    }, 120000); // 120 seconds
 
     return () => clearInterval(interval);
   }, [fetchProducts]);

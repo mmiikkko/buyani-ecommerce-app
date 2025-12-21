@@ -7,125 +7,74 @@ import { USER_ROLES } from "@/server/schema/auth-schema";
 // GET /api/admin/stats - Get admin dashboard statistics
 export async function GET(req: NextRequest) {
   try {
-    // Total Revenue - refined to include COD and successful online/POS payments
     const successfulStatuses = ["paid", "completed", "succeeded", "captured"];
     const activeCODStatuses = ["pending", "confirmed", "accepted", "shipped", "delivered"];
-    const excludedStatuses = ["rejected", "cancelled"];
 
-    const allOrders = await db
-      .select({
-        total: orders.total,
-        paymentStatus: payments.status,
-        paymentMethod: payments.paymentMethod,
-      })
-      .from(orders)
-      .leftJoin(payments, eq(orders.id, payments.orderId));
-
-    const totalRevenue = allOrders.reduce((sum, order) => {
-      const status = order.paymentStatus?.toLowerCase();
-      const method = order.paymentMethod?.toLowerCase();
-
-      if (!status || excludedStatuses.includes(status)) return sum;
-
-      const isSuccessful = successfulStatuses.includes(status);
-      const isCODActive = method === "cod" && activeCODStatuses.includes(status);
-
-      if (isSuccessful || isCODActive) {
-        return sum + Number(order.total || 0);
-      }
-      return sum;
-    }, 0);
-
-    // Total Orders - count of all orders
-    const ordersResult = await db
-      .select({
-        count: sql<number>`COUNT(*)`,
-      })
-      .from(orders);
-
-    const totalOrders = Number(ordersResult[0]?.count || 0);
-
-    // Active Users - count of users with role 'customer' or 'seller'
-    const usersResult = await db
-      .select({
-        count: sql<number>`COUNT(*)`,
-      })
-      .from(user)
-      .where(
-        inArray(user.role, [USER_ROLES.CUSTOMER, USER_ROLES.SELLER])
-      );
-
-    const activeUsers = Number(usersResult[0]?.count || 0);
-
-    // Active Sellers - count of approved shops
-    const sellersResult = await db
-      .select({
-        count: sql<number>`COUNT(*)`,
-      })
-      .from(shop)
-      .where(eq(shop.status, "approved"));
-
-    const activeSellers = Number(sellersResult[0]?.count || 0);
-
-    // Monthly Revenue Breakdown for the last 6 months
-    const monthlyRevenue: { month: string; total: number }[] = [];
-    const now = new Date();
-
-    for (let i = 5; i >= 0; i--) {
-      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-      const monthYear = d.toLocaleString('en-US', { month: 'short', year: 'numeric' });
-      const monthStart = new Date(d.getFullYear(), d.getMonth(), 1);
-      const monthEnd = new Date(d.getFullYear(), d.getMonth() + 1, 0, 23, 59, 59, 999);
-
-      const monthOrders = await db
-        .select({
-          total: orders.total,
-          paymentStatus: payments.status,
-          paymentMethod: payments.paymentMethod,
-        })
+    // 1. Fetch Global Stats in Parallel
+    const [ordersCount, usersCount, sellersCount, revenueResult] = await Promise.all([
+      db.select({ count: sql<number>`COUNT(*)` }).from(orders),
+      db.select({ count: sql<number>`COUNT(*)` }).from(user).where(inArray(user.role, [USER_ROLES.CUSTOMER, USER_ROLES.SELLER])),
+      db.select({ count: sql<number>`COUNT(*)` }).from(shop).where(eq(shop.status, "approved")),
+      db.select({ total: sql<string>`SUM(CAST(${orders.total} AS DECIMAL(10,2)))` })
         .from(orders)
         .leftJoin(payments, eq(orders.id, payments.orderId))
         .where(
           and(
-            gte(orders.createdAt, monthStart),
-            lte(orders.createdAt, monthEnd)
+            sql`${orders.total} != '0' AND ${orders.total} IS NOT NULL`,
+            sql`(${payments.status} IN (${sql.join(successfulStatuses.map(s => sql`${s}`), sql`, `)}) 
+                OR (${payments.paymentMethod} = 'cod' AND ${payments.status} IN (${sql.join(activeCODStatuses.map(s => sql`${s}`), sql`, `)})))`
           )
-        );
+        )
+    ]);
 
-      const monthTotal = monthOrders.reduce((sum, order) => {
-        const status = order.paymentStatus?.toLowerCase();
-        const method = order.paymentMethod?.toLowerCase();
+    // 2. Fetch Monthly Revenue for last 6 months in ONE query
+    const sixMonthsAgo = new Date();
+    sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 5);
+    sixMonthsAgo.setDate(1);
+    sixMonthsAgo.setHours(0, 0, 0, 0);
 
-        if (!status) return sum;
+    const monthlyData = await db
+      .select({
+        month: sql<string>`DATE_FORMAT(${orders.createdAt}, '%Y-%m')`,
+        total: sql<string>`SUM(CAST(${orders.total} AS DECIMAL(10,2)))`,
+      })
+      .from(orders)
+      .leftJoin(payments, eq(orders.id, payments.orderId))
+      .where(
+        and(
+          gte(orders.createdAt, sixMonthsAgo),
+          sql`(${payments.status} IN (${sql.join(successfulStatuses.map(s => sql`${s}`), sql`, `)}) 
+              OR (${payments.paymentMethod} = 'cod' AND ${payments.status} IN (${sql.join(activeCODStatuses.map(s => sql`${s}`), sql`, `)})))`
+        )
+      )
+      .groupBy(sql`DATE_FORMAT(${orders.createdAt}, '%Y-%m')`)
+      .orderBy(sql`DATE_FORMAT(${orders.createdAt}, '%Y-%m')`);
 
-        const isSuccessful = successfulStatuses.includes(status);
-        const isCODActive = method === "cod" && activeCODStatuses.includes(status);
+    // Format monthly revenue for response (fill gaps if necessary, though unlikely for active apps)
+    const monthlyRevenue = [];
+    const now = new Date();
+    for (let i = 5; i >= 0; i--) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const key = d.toISOString().slice(0, 7); // YYYY-MM
+      const label = d.toLocaleString('en-US', { month: 'short', year: 'numeric' });
 
-        if (isSuccessful || isCODActive) {
-          return sum + Number(order.total || 0);
-        }
-        return sum;
-      }, 0);
-
+      const record = monthlyData.find(m => m.month === key);
       monthlyRevenue.push({
-        month: monthYear,
-        total: monthTotal,
+        month: label,
+        total: Number(record?.total || 0)
       });
     }
 
     return NextResponse.json({
-      totalRevenue,
-      totalOrders,
-      activeUsers,
-      activeSellers,
+      totalRevenue: Number(revenueResult[0]?.total || 0),
+      totalOrders: Number(ordersCount[0]?.count || 0),
+      activeUsers: Number(usersCount[0]?.count || 0),
+      activeSellers: Number(sellersCount[0]?.count || 0),
       monthlyRevenue,
     });
   } catch (error) {
     console.error("Error fetching admin stats:", error);
-    return NextResponse.json(
-      { error: "Failed to fetch admin stats" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Failed to fetch admin stats" }, { status: 500 });
   }
 }
 

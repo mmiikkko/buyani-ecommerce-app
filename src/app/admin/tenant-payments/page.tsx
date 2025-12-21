@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { CalendarSync, Search, Users, CheckCircle, XCircle, Clock, Bell, Filter } from "lucide-react";
+import { CalendarSync, Search, Users, CheckCircle, XCircle, Clock, Bell, Filter, ArrowUpDown, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -12,6 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { toast } from "sonner";
 
 // Types
+// Types
 type TenantBilling = {
   id: string;
   tenantId: string;
@@ -21,7 +22,7 @@ type TenantBilling = {
   billingMonth: string;
   amountDue: number;
   dueDate: string;
-  status: "unpaid" | "pending_verification" | "paid" | "rejected";
+  status: "unpaid" | "pending_verification" | "paid" | "rejected" | "pending";
 };
 
 type BillingStats = {
@@ -47,12 +48,21 @@ const fetchBillingStats = async (): Promise<BillingStats> => {
   return res.json();
 };
 
+const generateBilling = async () => {
+  try {
+    await fetch("/api/admin/generate-billing", { method: "POST" });
+  } catch (e) {
+    console.error("Auto-generation failed", e);
+  }
+};
+
 export default function TenantPaymentsPage() {
   const [billings, setBillings] = useState<TenantBilling[]>([]);
   const [stats, setStats] = useState<BillingStats | null>(null);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
-  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [statusFilter, setStatusFilter] = useState<string>("pending");
+  const [sortOrder, setSortOrder] = useState<string>("due_date_asc");
   const [notificationDialog, setNotificationDialog] = useState(false);
   const [selectedBilling, setSelectedBilling] = useState<TenantBilling | null>(null);
   const [notificationMessage, setNotificationMessage] = useState("");
@@ -63,6 +73,9 @@ export default function TenantPaymentsPage() {
     const loadData = async () => {
       try {
         setLoading(true);
+        // Silent generation first to ensure up-to-date data
+        await generateBilling();
+
         const [billingData, statsData] = await Promise.all([
           fetchTenantBilling(),
           fetchBillingStats(),
@@ -91,10 +104,32 @@ export default function TenantPaymentsPage() {
 
     const matchesStatus =
       statusFilter === "all" ||
-      (statusFilter === "paid" && billing.status === "paid") ||
-      (statusFilter === "pending" && (billing.status === "unpaid" || billing.status === "pending_verification"));
+      (statusFilter === "paid" && (billing.status?.toLowerCase() === "paid")) ||
+      (statusFilter === "pending" && (billing.status?.toLowerCase() === "unpaid" || billing.status?.toLowerCase() === "pending_verification" || billing.status?.toLowerCase() === "pending"));
 
     return matchesSearch && matchesStatus;
+  });
+
+  // Sorting
+  const sortedBillings = [...filteredBillings].sort((a, b) => {
+    switch (sortOrder) {
+      case "due_date_asc":
+        return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime();
+      case "due_date_desc":
+        return new Date(b.dueDate).getTime() - new Date(a.dueDate).getTime();
+      case "amount_desc":
+        return b.amountDue - a.amountDue;
+      case "amount_asc":
+        return a.amountDue - b.amountDue;
+      case "almost_due": {
+        // Sort by due date asc, but prioritize unpaid/pending
+        if (a.status === 'paid' && b.status !== 'paid') return 1;
+        if (a.status !== 'paid' && b.status === 'paid') return -1;
+        return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime();
+      }
+      default:
+        return 0;
+    }
   });
 
   // Handle notification button click
@@ -141,10 +176,33 @@ export default function TenantPaymentsPage() {
     }
   };
 
+  const getDueIn = (dueDate: string, status: string) => {
+    if (status === "paid" || status === "paid_late") return <span className="text-emerald-600 font-medium text-xs">Cleared</span>;
+    // "paid_late" isn't a standard status in my logic file but just in case
+
+    const due = new Date(dueDate);
+    const now = new Date();
+    // Compare dates roughly
+    const diffTime = due.getTime() - now.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+    if (diffDays < 0) {
+      return (
+        <span className="text-red-600 font-bold text-xs">
+          Overdue ({Math.abs(diffDays)}d)
+        </span>
+      );
+    }
+    if (diffDays === 0) return <span className="text-amber-600 font-bold text-xs">Due Today</span>;
+    if (diffDays <= 5) return <span className="text-amber-600 font-medium text-xs">{diffDays} days left</span>;
+
+    return <span className="text-gray-500 text-xs">{diffDays} days</span>;
+  };
+
   return (
     <section className="relative min-h-screen min-w-full overflow-hidden space-y-6 p-6">
       {/* Header */}
-      <div className="bg-gradient-to-r from-emerald-50 to-slate-50 rounded-xl p-6 border border-emerald-100 shadow-sm">
+      <div className="bg-gradient-to-r from-emerald-50 to-slate-50 rounded-xl p-6 border border-emerald-100 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="flex items-center gap-4">
           <div className="p-3 bg-emerald-600 rounded-lg shadow-md">
             <CalendarSync className="h-6 w-6 text-white" />
@@ -157,67 +215,69 @@ export default function TenantPaymentsPage() {
       </div>
 
       {/* Statistics Cards */}
-      {stats && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <Card className="bg-gradient-to-br from-blue-50 to-blue-100/50 border-blue-200 shadow-sm hover:shadow-md transition-shadow">
-            <CardHeader className="pb-3">
-              <div className="flex items-center justify-between">
-                <div className="p-2 bg-blue-600 rounded-lg">
-                  <Users className="h-6 w-6 text-white" />
+      {
+        stats && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <Card className="bg-gradient-to-br from-blue-50 to-blue-100/50 border-blue-200 shadow-sm hover:shadow-md transition-shadow">
+              <CardHeader className="pb-3">
+                <div className="flex items-center justify-between">
+                  <div className="p-2 bg-blue-600 rounded-lg">
+                    <Users className="h-6 w-6 text-white" />
+                  </div>
                 </div>
-              </div>
-            </CardHeader>
-            <CardContent className="pt-0">
-              <p className="text-xs text-gray-600 mb-1 font-medium">Total Tenants</p>
-              <p className="text-xl font-bold text-gray-800">{stats.totalTenants}</p>
-            </CardContent>
-          </Card>
+              </CardHeader>
+              <CardContent className="pt-0">
+                <p className="text-xs text-gray-600 mb-1 font-medium">Total Tenants</p>
+                <p className="text-xl font-bold text-gray-800">{stats.totalTenants}</p>
+              </CardContent>
+            </Card>
 
-          <Card className="bg-gradient-to-br from-green-50 to-green-100/50 border-green-200 shadow-sm hover:shadow-md transition-shadow">
-            <CardHeader className="pb-3">
-              <div className="flex items-center justify-between">
-                <div className="p-2 bg-green-600 rounded-lg">
-                  <CheckCircle className="h-6 w-6 text-white" />
+            <Card className="bg-gradient-to-br from-green-50 to-green-100/50 border-green-200 shadow-sm hover:shadow-md transition-shadow">
+              <CardHeader className="pb-3">
+                <div className="flex items-center justify-between">
+                  <div className="p-2 bg-green-600 rounded-lg">
+                    <CheckCircle className="h-6 w-6 text-white" />
+                  </div>
                 </div>
-              </div>
-            </CardHeader>
-            <CardContent className="pt-0">
-              <p className="text-xs text-gray-600 mb-1 font-medium">Paid</p>
-              <p className="text-xl font-bold text-gray-800">{stats.paid}</p>
-              <p className="text-xs text-gray-500 mt-1">₱{stats.totalPaid.toLocaleString()}</p>
-            </CardContent>
-          </Card>
+              </CardHeader>
+              <CardContent className="pt-0">
+                <p className="text-xs text-gray-600 mb-1 font-medium">Paid</p>
+                <p className="text-xl font-bold text-gray-800">{stats.paid}</p>
+                <p className="text-xs text-gray-500 mt-1">₱{stats.totalPaid.toLocaleString()}</p>
+              </CardContent>
+            </Card>
 
-          <Card className="bg-gradient-to-br from-red-50 to-red-100/50 border-red-200 shadow-sm hover:shadow-md transition-shadow">
-            <CardHeader className="pb-3">
-              <div className="flex items-center justify-between">
-                <div className="p-2 bg-red-600 rounded-lg">
-                  <XCircle className="h-6 w-6 text-white" />
+            <Card className="bg-gradient-to-br from-red-50 to-red-100/50 border-red-200 shadow-sm hover:shadow-md transition-shadow">
+              <CardHeader className="pb-3">
+                <div className="flex items-center justify-between">
+                  <div className="p-2 bg-red-600 rounded-lg">
+                    <XCircle className="h-6 w-6 text-white" />
+                  </div>
                 </div>
-              </div>
-            </CardHeader>
-            <CardContent className="pt-0">
-              <p className="text-xs text-gray-600 mb-1 font-medium">Unpaid</p>
-              <p className="text-xl font-bold text-gray-800">{stats.unpaid}</p>
-              <p className="text-xs text-gray-500 mt-1">₱{stats.totalUnpaid.toLocaleString()}</p>
-            </CardContent>
-          </Card>
+              </CardHeader>
+              <CardContent className="pt-0">
+                <p className="text-xs text-gray-600 mb-1 font-medium">Unpaid</p>
+                <p className="text-xl font-bold text-gray-800">{stats.unpaid}</p>
+                <p className="text-xs text-gray-500 mt-1">₱{stats.totalUnpaid.toLocaleString()}</p>
+              </CardContent>
+            </Card>
 
-          <Card className="bg-gradient-to-br from-yellow-50 to-yellow-100/50 border-yellow-200 shadow-sm hover:shadow-md transition-shadow">
-            <CardHeader className="pb-3">
-              <div className="flex items-center justify-between">
-                <div className="p-2 bg-yellow-600 rounded-lg">
-                  <Clock className="h-6 w-6 text-white" />
+            <Card className="bg-gradient-to-br from-yellow-50 to-yellow-100/50 border-yellow-200 shadow-sm hover:shadow-md transition-shadow">
+              <CardHeader className="pb-3">
+                <div className="flex items-center justify-between">
+                  <div className="p-2 bg-yellow-600 rounded-lg">
+                    <Clock className="h-6 w-6 text-white" />
+                  </div>
                 </div>
-              </div>
-            </CardHeader>
-            <CardContent className="pt-0">
-              <p className="text-xs text-gray-600 mb-1 font-medium">Pending Verification</p>
-              <p className="text-xl font-bold text-gray-800">{stats.pendingVerification}</p>
-            </CardContent>
-          </Card>
-        </div>
-      )}
+              </CardHeader>
+              <CardContent className="pt-0">
+                <p className="text-xs text-gray-600 mb-1 font-medium">Pending Verification</p>
+                <p className="text-xl font-bold text-gray-800">{stats.pendingVerification}</p>
+              </CardContent>
+            </Card>
+          </div>
+        )
+      }
 
       {/* Filter and Search Bar */}
       <div className="flex items-center gap-4 flex-wrap">
@@ -231,6 +291,22 @@ export default function TenantPaymentsPage() {
               <SelectItem value="all">All Statuses</SelectItem>
               <SelectItem value="paid">Paid</SelectItem>
               <SelectItem value="pending">Pending</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <ArrowUpDown className="h-5 w-5 text-gray-500" />
+          <Select value={sortOrder} onValueChange={setSortOrder}>
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="Sort by" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="due_date_asc">Due Date (Oldest First)</SelectItem>
+              <SelectItem value="due_date_desc">Due Date (Newest First)</SelectItem>
+              <SelectItem value="almost_due">Almost Due (Priority)</SelectItem>
+              <SelectItem value="amount_desc">Highest Amount</SelectItem>
+              <SelectItem value="amount_asc">Lowest Amount</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -256,6 +332,7 @@ export default function TenantPaymentsPage() {
               <TableHead>Billing Month</TableHead>
               <TableHead>Amount Due</TableHead>
               <TableHead>Due Date</TableHead>
+              <TableHead>Due In</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>Actions</TableHead>
             </TableRow>
@@ -274,7 +351,7 @@ export default function TenantPaymentsPage() {
                 </TableCell>
               </TableRow>
             ) : (
-              filteredBillings.map((billing) => (
+              sortedBillings.map((billing) => (
                 <TableRow key={billing.id}>
                   <TableCell>
                     <div>
@@ -288,6 +365,7 @@ export default function TenantPaymentsPage() {
                   <TableCell>{billing.billingMonth}</TableCell>
                   <TableCell>₱{billing.amountDue.toLocaleString()}</TableCell>
                   <TableCell>{new Date(billing.dueDate).toLocaleDateString()}</TableCell>
+                  <TableCell>{getDueIn(billing.dueDate, billing.status)}</TableCell>
                   <TableCell>
                     <span
                       className={`px-2 py-1 rounded-lg text-sm font-medium ${billing.status === "paid"
@@ -329,6 +407,42 @@ export default function TenantPaymentsPage() {
                       >
                         <Bell className="h-4 w-4" />
                       </Button>
+                      {(billing.status === "unpaid" || billing.status === "pending_verification") && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="h-8 text-xs bg-emerald-50 text-emerald-600 border-emerald-200 hover:bg-emerald-100 hover:text-emerald-700 ml-1"
+                          onClick={async () => {
+                            try {
+                              const res = await fetch("/api/admin/tenant-billing", {
+                                method: "PUT",
+                                headers: { "Content-Type": "application/json" },
+                                body: JSON.stringify({ billingId: billing.id, status: "paid" }),
+                              });
+
+                              if (res.ok) {
+                                toast.success("Marked as paid");
+                                // Refresh data
+                                const [billingData, statsData] = await Promise.all([
+                                  fetchTenantBilling(),
+                                  fetchBillingStats(),
+                                ]);
+                                setBillings(billingData);
+                                setStats(statsData);
+                              } else {
+                                toast.error("Failed to mark as paid");
+                              }
+                            } catch (err) {
+                              console.error(err);
+                              toast.error("Error updating status");
+                            }
+                          }}
+                          title="Mark as Paid"
+                        >
+                          <CheckCircle className="h-3 w-3 mr-1" />
+                          Mark Paid
+                        </Button>
+                      )}
                     </div>
                   </TableCell>
                 </TableRow>
@@ -385,6 +499,6 @@ export default function TenantPaymentsPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </section>
+    </section >
   );
 }

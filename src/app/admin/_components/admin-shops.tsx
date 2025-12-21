@@ -39,16 +39,16 @@ export function AdminShops() {
           const normalized = Array.isArray(fallbackData)
             ? fallbackData
             : Array.isArray((fallbackData as any)?.shops)
-            ? (fallbackData as any).shops
-            : [];
+              ? (fallbackData as any).shops
+              : [];
           setShops(normalized);
         } else {
           const data = await res.json();
           const normalized = Array.isArray(data)
             ? data
             : Array.isArray((data as any)?.shops)
-            ? (data as any).shops
-            : [];
+              ? (data as any).shops
+              : [];
           setShops(normalized);
         }
       } catch (error) {
@@ -60,8 +60,8 @@ export function AdminShops() {
             const normalized = Array.isArray(d)
               ? d
               : Array.isArray((d as any)?.shops)
-              ? (d as any).shops
-              : [];
+                ? (d as any).shops
+                : [];
             setShops(normalized);
           })
           .catch(console.error);
@@ -73,9 +73,9 @@ export function AdminShops() {
     fetchShops();
   }, []);
 
-  const approvedShops = shops.filter((s) => s.status === "approved");
-  const pendingShops = shops.filter((s) => s.status === "pending");
-  const suspendedShops = shops.filter((s) => s.status === "suspended");
+  const approvedShops = shops.filter((s) => s.status?.toLowerCase() === "approved");
+  const pendingShops = shops.filter((s) => s.status?.toLowerCase() === "pending");
+  const suspendedShops = shops.filter((s) => s.status?.toLowerCase() === "suspended");
 
   if (loading) {
     return (
@@ -122,8 +122,8 @@ export function AdminShops() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {approvedShops.map((shop) => (
-              <Card 
-                key={shop.id} 
+              <Card
+                key={shop.id}
                 className="rounded-xl overflow-hidden shadow-md hover:shadow-lg transition-all duration-300 border border-emerald-100 bg-gradient-to-br from-white to-emerald-50/30"
               >
                 <div className="h-40 w-full overflow-hidden relative">
@@ -194,8 +194,8 @@ export function AdminShops() {
                             const normalized = Array.isArray(refreshData)
                               ? refreshData
                               : Array.isArray((refreshData as any)?.shops)
-                              ? (refreshData as any).shops
-                              : [];
+                                ? (refreshData as any).shops
+                                : [];
                             setShops(normalized);
                             toast.success(`"${shop.shop_name}" is suspended`);
                           } else {
@@ -242,8 +242,8 @@ export function AdminShops() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {pendingShops.map((shop) => (
-              <Card 
-                key={shop.id} 
+              <Card
+                key={shop.id}
                 className="rounded-xl overflow-hidden shadow-md hover:shadow-lg transition-all duration-300 border border-amber-100 bg-gradient-to-br from-white to-amber-50/30"
               >
                 <div className="h-40 w-full overflow-hidden relative">
@@ -282,31 +282,33 @@ export function AdminShops() {
                     <Button
                       variant="outline"
                       className="flex-1 cursor-pointer bg-emerald-50 hover:bg-emerald-100 border-emerald-200 text-emerald-700"
-                      onClick={async () => {
-                        try {
-                          const res = await fetch(`/api/shops?id=${shop.id}`, {
-                            method: "PUT",
-                            headers: { "Content-Type": "application/json" },
-                            body: JSON.stringify({ status: "approved" }),
-                          });
+                      onClick={() => {
+                        toast.promise(
+                          async () => {
+                            const res = await fetch(`/api/shops?id=${shop.id}`, {
+                              method: "PUT",
+                              headers: { "Content-Type": "application/json" },
+                              body: JSON.stringify({ status: "approved" }),
+                            });
 
-                          if (res.ok) {
+                            if (!res.ok) throw new Error("Failed to approve");
+
                             const refreshRes = await fetch("/api/shops?status=all");
                             const refreshData = await refreshRes.json();
                             const normalized = Array.isArray(refreshData)
                               ? refreshData
                               : Array.isArray((refreshData as any)?.shops)
-                              ? (refreshData as any).shops
-                              : [];
+                                ? (refreshData as any).shops
+                                : [];
                             setShops(normalized);
-                            toast.success(`"${shop.shop_name}" is approved`);
-                          } else {
-                            toast.error(`Failed to approve "${shop.shop_name}"`);
+                            return `"${shop.shop_name}" approved`;
+                          },
+                          {
+                            loading: "Approving shop...",
+                            success: (msg) => msg,
+                            error: "Failed to approve shop",
                           }
-                        } catch (error) {
-                          console.error("Error approving shop:", error);
-                          toast.error(`Error approving "${shop.shop_name}"`);
-                        }
+                        );
                       }}
                     >
                       <Check className="h-4 w-4 mr-2" />
@@ -316,33 +318,35 @@ export function AdminShops() {
                     <Button
                       variant="destructive"
                       className="flex-1 text-white cursor-pointer shadow-sm hover:shadow-md transition-shadow"
-                      onClick={async () => {
-                        try {
-                          const res = await fetch(`/api/shops?id=${shop.id}`, {
-                            method: "DELETE",
-                          });
+                      onClick={() => {
+                        toast.promise(
+                          async () => {
+                            const res = await fetch(`/api/shops?id=${shop.id}`, {
+                              method: "DELETE",
+                            });
 
-                          if (res.ok) {
+                            if (!res.ok) throw new Error("Failed to reject");
+
                             const refreshRes = await fetch("/api/shops?status=all");
                             const refreshData = await refreshRes.json();
                             const normalized = Array.isArray(refreshData)
                               ? refreshData
                               : Array.isArray((refreshData as any)?.shops)
-                              ? (refreshData as any).shops
-                              : [];
+                                ? (refreshData as any).shops
+                                : [];
                             setShops(normalized);
-                            toast.success(`"${shop.shop_name}" is deleted`);
-                          } else {
-                            toast.error(`Failed to delete "${shop.shop_name}"`);
+                            return `"${shop.shop_name}" rejected`;
+                          },
+                          {
+                            loading: "Rejecting shop...",
+                            success: (msg) => msg,
+                            error: "Failed to reject shop",
                           }
-                        } catch (error) {
-                          console.error("Error deleting shop:", error);
-                          toast.error(`Error deleting "${shop.shop_name}"`);
-                        }
+                        );
                       }}
                     >
                       <Trash2 className="h-4 w-4 mr-2" />
-                      Delete
+                      Reject
                     </Button>
                   </div>
                 </CardContent>
@@ -376,8 +380,8 @@ export function AdminShops() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {suspendedShops.map((shop) => (
-              <Card 
-                key={shop.id} 
+              <Card
+                key={shop.id}
                 className="rounded-xl overflow-hidden shadow-md hover:shadow-lg transition-all duration-300 border border-red-100 bg-gradient-to-br from-white to-red-50/30"
               >
                 <div className="h-40 w-full overflow-hidden relative">
@@ -448,8 +452,8 @@ export function AdminShops() {
                             const normalized = Array.isArray(refreshData)
                               ? refreshData
                               : Array.isArray((refreshData as any)?.shops)
-                              ? (refreshData as any).shops
-                              : [];
+                                ? (refreshData as any).shops
+                                : [];
                             setShops(normalized);
                             toast.success(`"${shop.shop_name}" is unsuspended`);
                           } else {
@@ -473,19 +477,19 @@ export function AdminShops() {
       </div>
 
       {selectedShop && (
-      <AdminShopModal
-        open={modalOpen}
-        onClose={() => {
-          setModalOpen(false);
-          setSelectedShop(null);
-        }}
-        shop={{
-          ...selectedShop,
-          description: selectedShop.description ?? undefined,
-          image: selectedShop.image ?? undefined,
-        }}
-      />
-    )}
+        <AdminShopModal
+          open={modalOpen}
+          onClose={() => {
+            setModalOpen(false);
+            setSelectedShop(null);
+          }}
+          shop={{
+            ...selectedShop,
+            description: selectedShop.description ?? undefined,
+            image: selectedShop.image ?? undefined,
+          }}
+        />
+      )}
 
     </div>
   );

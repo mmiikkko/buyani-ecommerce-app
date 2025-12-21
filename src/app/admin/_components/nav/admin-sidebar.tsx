@@ -13,6 +13,8 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
+import { cn } from "@/lib/utils";
+import { PremiumLoader } from "@/components/shared/premium-loader";
 
 import {
   DropdownMenu,
@@ -36,7 +38,7 @@ import {
 
 import { authClient } from "@/server/auth-client";
 import { toast } from "sonner";
-import { Spinner } from "@/components/ui/spinner";
+import { AdminLoader } from "../admin-loader";
 import { usePathname } from "next/navigation";
 
 
@@ -81,6 +83,11 @@ export function AppSidebar() {
     setLoading(false);
   }, [pathname]);
 
+  const handleNavClick = (url: string) => {
+    if (pathname === url) return;
+    setLoading(true);
+  };
+
   async function handleSignOut() {
     toast.loading("Signing out...");
     setLoading(true);
@@ -100,11 +107,7 @@ export function AppSidebar() {
   return (
     <>
       {/* FULL PAGE OVERLAY SPINNER */}
-      {loading && (
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-white/70 backdrop-blur-sm">
-          <Spinner className="size-5" />
-        </div>
-      )}
+      {loading && <PremiumLoader text="Switching pages..." />}
 
       <Sidebar
         variant="floating"
@@ -115,20 +118,34 @@ export function AppSidebar() {
             <SidebarGroupLabel>BUYANI</SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
-                {items.map((item) => (
-                  <SidebarMenuItem key={item.title}>
-                    <SidebarMenuButton asChild>
-                      <Link
-                        href={item.url}
-                        onClick={() => setLoading(true)}
-                        className="flex items-center gap-2 hover:text-green-500"
-                      >
-                        <item.icon className="w-4 h-4" />
-                        <span>{item.title}</span>
-                      </Link>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                ))}
+                {items.map((item) => {
+                  const isActive = pathname === item.url;
+                  return (
+                    <SidebarMenuItem key={item.title}>
+                      <SidebarMenuButton asChild isActive={isActive}>
+                        <Link
+                          href={item.url}
+                          onClick={() => handleNavClick(item.url)}
+                          className={cn(
+                            "flex items-center gap-3 px-3 py-2 rounded-lg transition-all duration-200 group",
+                            isActive
+                              ? "bg-emerald-50 text-emerald-700 font-semibold shadow-sm border border-emerald-100/50"
+                              : "text-slate-600 hover:text-emerald-600 hover:bg-emerald-50/50"
+                          )}
+                        >
+                          <item.icon className={cn(
+                            "w-4 h-4 transition-colors",
+                            isActive ? "text-emerald-600" : "text-slate-400 group-hover:text-emerald-500"
+                          )} />
+                          <span>{item.title}</span>
+                          {isActive && (
+                            <div className="ml-auto w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)] animate-pulse-subtle" />
+                          )}
+                        </Link>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  );
+                })}
               </SidebarMenu>
             </SidebarGroupContent>
           </SidebarGroup>

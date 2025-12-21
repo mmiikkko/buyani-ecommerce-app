@@ -133,6 +133,8 @@ export async function getProductById(productId: string) {
       createdAt: products.createdAt,
       updatedAt: products.updatedAt,
       shopName: shop.shopName,
+      shopImage: shop.imageURL,
+      shopStatus: shop.status,
       categoryName: categories.categoryName,
     })
     .from(products)
@@ -225,7 +227,8 @@ export async function getProductById(productId: string) {
     createdAt: productRow.createdAt,
     updatedAt: productRow.updatedAt,
     shopName: productRow.shopName ?? null,
-    shopStatus: null,
+    shopImage: productRow.shopImage ?? null,
+    shopStatus: productRow.shopStatus ?? null,
     categoryName: productRow.categoryName ?? null,
     reviewCount: reviewCount,
     variations: variationsWithInventory,

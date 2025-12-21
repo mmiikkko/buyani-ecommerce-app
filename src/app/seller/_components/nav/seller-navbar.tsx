@@ -59,8 +59,9 @@ export default function ASNavbar({ children }: { children?: ReactNode }) {
         <div className="px-4 py-2">
           <Button
             onClick={() => navigateWithLoader("/")}
-            className="flex items-center space-x-1 bg-white text-[#2E7D32]
-                       border border-[#2E7D32] hover:bg-[#2E7D32] hover:text-white"
+            className="flex items-center space-x-2 bg-white text-[#2E7D32]
+                       border border-[#2E7D32] hover:bg-[#2E7D32] hover:text-white
+                       hover:scale-105 active:scale-95 transition-all duration-300"
           >
             <Store size={16} />
             <span>{t("back-to-marketplace")}</span>

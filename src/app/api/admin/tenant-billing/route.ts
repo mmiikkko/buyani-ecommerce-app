@@ -62,3 +62,43 @@ export async function GET(req: NextRequest) {
   }
 }
 
+// PUT /api/admin/tenant-billing - Update billing status (e.g. Mark as Paid)
+export async function PUT(req: NextRequest) {
+  try {
+    const session = await getServerSession();
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    // Check if user is admin
+    if (!session.user.role.includes(USER_ROLES.ADMIN)) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+
+    const body = await req.json();
+    const { billingId, status } = body;
+
+    if (!billingId) {
+      return NextResponse.json({ error: "Billing ID is required" }, { status: 400 });
+    }
+
+    // Default to 'paid' if just marking as paid, or use provided status
+    const newStatus = status || "paid";
+
+    await db
+      .update(tenantBilling)
+      .set({
+        status: newStatus,
+        updatedAt: new Date(),
+      })
+      .where(eq(tenantBilling.id, billingId));
+
+    return NextResponse.json({ success: true, status: newStatus });
+  } catch (error) {
+    console.error("Error updating tenant billing:", error);
+    return NextResponse.json(
+      { error: "Failed to update status" },
+      { status: 500 }
+    );
+  }
+}

@@ -48,6 +48,7 @@ export function AddProducts({ onAdd, onUpdate, productToEdit, onEditComplete }: 
 
   // VARIATIONS
   const [variations, setVariations] = useState<any[]>([]);
+  const [matrix, setMatrix] = useState<any[]>([]);
   const [newVarName, setNewVarName] = useState("");
   const [newVarValue, setNewVarValue] = useState("");
   const [activeVarIndex, setActiveVarIndex] = useState<number | null>(null);
@@ -117,8 +118,24 @@ export function AddProducts({ onAdd, onUpdate, productToEdit, onEditComplete }: 
         setShippingFee(productToEdit.shipping.shippingFee?.toString() || "");
       }
 
-      // Load variations
-      setVariations(productToEdit.variations || []);
+      // Load variations and matrix
+      const productVariations = productToEdit.variations || [];
+      setVariations(productVariations);
+
+      // If variations have nested 'combinations' or if we need to regenerate
+      // Actually, let's look at how variations are stored.
+      // In the new system, 'variations' will be the combinations themselves.
+      if (productVariations.length > 0 && (productVariations[0] as any).variationValue) {
+        // It's likely already a matrix-style array of combinations
+        setMatrix(productVariations.map((v: any) => ({
+          id: v.id,
+          name: v.variationName,
+          value: v.variationValue,
+          price: v.price?.toString() || "",
+          stock: v.quantityInStock?.toString() || "",
+          sku: v.SKU || "",
+        })));
+      }
     } else {
       if (isEditing) {
         // Only reset if we were editing and productToEdit is now null
@@ -126,6 +143,34 @@ export function AddProducts({ onAdd, onUpdate, productToEdit, onEditComplete }: 
       }
     }
   }, [productToEdit, isEditing]);
+
+  // Price display state for range
+  const [priceRange, setPriceRange] = useState("");
+
+  // Auto-calculate total stock and base price from matrix/variations
+  useEffect(() => {
+    if (matrix.length > 0) {
+      // Stock: Sum of all parts
+      const totalStock = matrix.reduce((sum, item) => sum + (Number(item.stock) || 0), 0);
+      setStock(totalStock.toString());
+
+      // Price: Starting price (minimum) and Range display
+      const prices = matrix.map(m => Number(m.price)).filter(p => !isNaN(p) && p > 0);
+      if (prices.length > 0) {
+        const minPrice = Math.min(...prices);
+        const maxPrice = Math.max(...prices);
+        setPrice(minPrice.toString());
+
+        if (minPrice === maxPrice) {
+          setPriceRange(minPrice.toString());
+        } else {
+          setPriceRange(`${minPrice} - ${maxPrice}`);
+        }
+      }
+    } else {
+      setPriceRange("");
+    }
+  }, [matrix]);
 
   /* --- Submit --- */
   const handleSubmit = async (isDraft: boolean = false) => {
@@ -219,7 +264,7 @@ export function AddProducts({ onAdd, onUpdate, productToEdit, onEditComplete }: 
         isAvailable: productStatus === "Available",
         createdAt: new Date(),
         updatedAt: new Date(),
-        variations: variations,
+        variations: matrix.length > 0 ? matrix : variations,
       };
 
       const wasEditing = isEditing;
@@ -345,7 +390,21 @@ export function AddProducts({ onAdd, onUpdate, productToEdit, onEditComplete }: 
             </div>
             <div className="space-y-2">
               <label className="block text-sm font-medium text-gray-700">Stock Quantity *</label>
-              <input type="number" placeholder="Enter stock quantity" value={stock} onChange={(e) => setStock(e.target.value)} className="w-full border rounded-md px-3 py-2" />
+              <div className="relative">
+                <input
+                  type="number"
+                  placeholder="Enter stock quantity"
+                  value={stock}
+                  onChange={(e) => setStock(e.target.value)}
+                  disabled={matrix.length > 0}
+                  className={`w-full border rounded-md px-3 py-2 ${matrix.length > 0 ? "bg-gray-50 text-gray-500 cursor-not-allowed font-bold" : ""}`}
+                />
+                {matrix.length > 0 && (
+                  <p className="text-[10px] text-[#2E7D32] font-bold mt-1 animate-pulse">
+                    Auto-calculated from variations total
+                  </p>
+                )}
+              </div>
             </div>
           </TabsContent>
 
@@ -433,115 +492,143 @@ export function AddProducts({ onAdd, onUpdate, productToEdit, onEditComplete }: 
           {/* VARIATIONS */}
           {/* VARIATIONS */}
           <TabsContent value="variations" className="mt-4 space-y-4">
-            <div className="border p-4 rounded-md space-y-4">
-              {isEditing ? (
-                <div className="bg-amber-50 border border-amber-200 text-amber-800 px-4 py-3 rounded-md text-sm">
-                  <strong>Note:</strong> Product variations cannot be modified after creation to ensure order history integrity. To change variations, please create a new product.
+            <div className="border p-6 rounded-xl space-y-6 bg-white shadow-sm">
+              <div className="flex items-center justify-between border-b pb-4">
+                <div>
+                  <h3 className="text-lg font-bold text-[#2E7D32]">Product Variations</h3>
+                  <p className="text-xs text-gray-500">Add specific variations (e.g. "Red Large", "Blue Medium") with their own stock levels.</p>
                 </div>
-              ) : (
-                <div className="flex items-end gap-2">
-                  <div className="space-y-2 flex-1">
-                    <label className="block text-sm font-medium text-gray-700">Add Variation Type (e.g. Size, Color)</label>
-                    <input
-                      type="text"
-                      placeholder="Enter variation name"
-                      value={newVarName}
-                      onChange={(e) => setNewVarName(e.target.value)}
-                      className="w-full border rounded-md px-3 py-2"
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter') {
-                          e.preventDefault();
-                          if (newVarName.trim()) {
-                            setVariations([...variations, { name: newVarName.trim(), values: [] }]);
-                            setNewVarName("");
-                          }
-                        }
-                      }}
-                    />
-                  </div>
+                {!isEditing && (
                   <button
                     onClick={() => {
-                      if (newVarName.trim()) {
-                        setVariations([...variations, { name: newVarName.trim(), values: [] }]);
-                        setNewVarName("");
-                      }
+                      setMatrix([...matrix, {
+                        name: "New Variation",
+                        value: JSON.stringify({ "Variation": "New Variation" }),
+                        price: price || "0",
+                        stock: "0",
+                        sku: ""
+                      }]);
                     }}
-                    className="px-4 py-2 bg-[#2E7D32] text-white rounded-md hover:bg-[#27632a]"
+                    className="flex items-center gap-2 px-4 py-2 bg-[#2E7D32] text-white rounded-lg hover:bg-[#27632a] transition-all active:scale-95 shadow-md shadow-emerald-500/20"
                     type="button"
                   >
                     <Plus className="h-4 w-4" />
+                    Add Variation
                   </button>
+                )}
+              </div>
+
+              {isEditing && (
+                <div className="bg-amber-50 border border-amber-200 text-amber-800 px-4 py-3 rounded-xl text-sm flex items-center gap-3">
+                  <span className="text-xl">⚠️</span>
+                  <p><strong>Note:</strong> Product variations are locked after creation to protect order history. To change them, please list a new product.</p>
                 </div>
               )}
 
-              {variations.length > 0 && (
-                <div className="space-y-4 mt-4">
-                  {variations.map((variation, vIndex) => (
-                    <div key={vIndex} className="bg-gray-50 p-3 rounded-md border text-black">
-                      <div className="flex justify-between items-center mb-2">
-                        <h4 className="font-semibold">{variation.name}</h4>
-                        {!isEditing && (
-                          <button
-                            onClick={() => setVariations(variations.filter((_: any, i: number) => i !== vIndex))}
-                            className="text-red-500 hover:text-red-700"
-                            type="button"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </button>
-                        )}
+              <div className="space-y-4">
+                {matrix.map((item, idx) => (
+                  <div key={idx} className="group relative border rounded-2xl p-4 bg-slate-50 transition-all hover:bg-white hover:shadow-lg hover:border-emerald-200">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                      {/* Name/Value Input */}
+                      <div className="space-y-2 md:col-span-1">
+                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-500">Variation Name</label>
+                        <input
+                          type="text"
+                          value={item.name}
+                          disabled={isEditing}
+                          placeholder="e.g. Red Small"
+                          onChange={(e) => {
+                            const newMatrix = [...matrix];
+                            newMatrix[idx].name = e.target.value;
+                            newMatrix[idx].value = JSON.stringify({ "Variation": e.target.value });
+                            setMatrix(newMatrix);
+                          }}
+                          className="w-full border-2 border-slate-100 rounded-xl px-3 py-2 text-sm font-bold focus:border-emerald-500 outline-none transition-all disabled:bg-slate-100 disabled:text-slate-500"
+                        />
                       </div>
 
-                      <div className="flex flex-wrap gap-2 mb-2">
-                        {variation.values.map((val: string, valIndex: number) => (
-                          <span key={valIndex} className="inline-flex items-center gap-1 px-2 py-1 bg-white border rounded-full text-sm">
-                            {val}
-                            {!isEditing && (
-                              <button
-                                onClick={() => {
-                                  const newVars = [...variations];
-                                  newVars[vIndex].values = newVars[vIndex].values.filter((_: any, i: number) => i !== valIndex);
-                                  setVariations(newVars);
-                                }}
-                                className="text-gray-500 hover:text-red-500"
-                                type="button"
-                              >
-                                <X className="h-3 w-3" />
-                              </button>
-                            )}
-                          </span>
-                        ))}
+                      {/* Price Input */}
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-500">Price (₱)</label>
+                        <input
+                          type="number"
+                          value={item.price}
+                          onChange={(e) => {
+                            const newMatrix = [...matrix];
+                            newMatrix[idx].price = e.target.value;
+                            setMatrix(newMatrix);
+                          }}
+                          className="w-full border-2 border-slate-100 rounded-xl px-3 py-2 text-sm font-bold focus:border-emerald-500 outline-none transition-all"
+                        />
                       </div>
 
-                      {!isEditing && (
+                      {/* Stock Input */}
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-500">Stock</label>
+                        <input
+                          type="number"
+                          value={item.stock}
+                          onChange={(e) => {
+                            const newMatrix = [...matrix];
+                            newMatrix[idx].stock = e.target.value;
+                            setMatrix(newMatrix);
+                          }}
+                          className="w-full border-2 border-slate-100 rounded-xl px-3 py-2 text-sm font-bold focus:border-emerald-500 outline-none transition-all"
+                        />
+                      </div>
+
+                      {/* SKU Input */}
+                      <div className="space-y-2 relative">
+                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-500">SKU</label>
                         <div className="flex items-center gap-2">
                           <input
                             type="text"
-                            placeholder={`Add ${variation.name} option`}
-                            className="flex-1 border rounded-md px-3 py-1 text-sm text-black"
-                            onKeyDown={(e) => {
-                              if (e.key === 'Enter') {
-                                e.preventDefault();
-                                const val = e.currentTarget.value.trim();
-                                if (val && !variation.values.includes(val)) {
-                                  const newVars = [...variations];
-                                  newVars[vIndex].values.push(val);
-                                  setVariations(newVars);
-                                  e.currentTarget.value = "";
-                                }
-                              }
+                            value={item.sku}
+                            placeholder="Optional"
+                            onChange={(e) => {
+                              const newMatrix = [...matrix];
+                              newMatrix[idx].sku = e.target.value;
+                              setMatrix(newMatrix);
                             }}
+                            className="w-full border-2 border-slate-100 rounded-xl px-3 py-2 text-sm font-bold focus:border-emerald-500 outline-none transition-all"
                           />
-                          <p className="text-xs text-muted-foreground">Press Enter to add</p>
+                          {!isEditing && (
+                            <button
+                              onClick={() => setMatrix(matrix.filter((_, i) => i !== idx))}
+                              className="ml-2 p-2 text-slate-400 hover:text-red-500 transition-colors cursor-pointer"
+                              title="Remove variation"
+                            >
+                              <Trash2 className="h-5 w-5" />
+                            </button>
+                          )}
                         </div>
-                      )}
+                      </div>
                     </div>
-                  ))}
-                </div>
-              )}
+                  </div>
+                ))}
 
-              {variations.length === 0 && !isEditing && (
-                <p className="text-sm text-gray-500 text-center py-4">No variations added. Add types like "Size" or "Color".</p>
-              )}
+                {matrix.length === 0 && (
+                  <div className="text-center py-10 rounded-2xl border-2 border-dashed border-slate-200">
+                    <p className="text-slate-400 text-sm">No variations added yet.</p>
+                    {!isEditing && (
+                      <button
+                        onClick={() => {
+                          setMatrix([{
+                            name: "Standard",
+                            value: JSON.stringify({ "Variation": "Standard" }),
+                            price: price || "0",
+                            stock: "0",
+                            sku: ""
+                          }]);
+                        }}
+                        className="mt-4 text-emerald-600 font-bold hover:underline cursor-pointer"
+                      >
+                        Add your first variation
+                      </button>
+                    )}
+                  </div>
+                )}
+              </div>
             </div>
           </TabsContent>
 
@@ -559,11 +646,24 @@ export function AddProducts({ onAdd, onUpdate, productToEdit, onEditComplete }: 
             </div>
           </TabsContent>
 
-          {/* PRICING */}
           <TabsContent value="pricing" className="mt-4 space-y-4">
             <div className="space-y-2">
               <label className="block text-sm font-medium text-gray-700">Price (₱) *</label>
-              <input type="number" placeholder="Enter product price" value={price} onChange={(e) => setPrice(e.target.value)} className="w-full border rounded-md px-3 py-2" />
+              <div className="relative">
+                <input
+                  type="text"
+                  placeholder="Enter product price"
+                  value={matrix.length > 0 ? priceRange : price}
+                  onChange={(e) => setPrice(e.target.value)}
+                  disabled={matrix.length > 0}
+                  className={`w-full border rounded-md px-3 py-2 ${matrix.length > 0 ? "bg-gray-50 text-[#2E7D32] cursor-not-allowed font-black" : ""}`}
+                />
+                {matrix.length > 0 && (
+                  <p className="text-[10px] text-[#2E7D32] font-bold mt-1 animate-pulse">
+                    Dynamic range: Automatically synced from variations
+                  </p>
+                )}
+              </div>
             </div>
             <div className="space-y-2">
               <label className="block text-sm font-medium text-gray-700">Product Status</label>

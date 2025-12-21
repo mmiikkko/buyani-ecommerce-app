@@ -1,17 +1,16 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
-import { Star, MessageSquare, User, Calendar, Loader2, ChevronDown, ArrowUpDown, Clock, Star as StarIcon } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { toast } from "sonner";
-import { Badge } from "@/components/ui/badge";
 import {
     DropdownMenu,
     DropdownMenuContent,
     DropdownMenuItem,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Button } from "@/components/ui/button";
+import { ArrowUpDown, Calendar, ChevronDown, Clock, Loader2, MessageSquare, Star, Star as StarIcon, User } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { toast } from "sonner";
 
 type PlatformRating = {
     id: string;
@@ -95,7 +94,7 @@ export default function AdminFeedbackPage() {
         <div className="space-y-6">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div className="flex flex-col gap-1">
-                    <h1 className="text-3xl font-bold tracking-tight text-slate-900">Platform Feedback</h1>
+                    <h1 className="text-3xl font-bold tracking-tight text-slate-900">Feedback Platform</h1>
                     <p className="text-slate-500">Monitor and analyze what users think about BuyAni.</p>
                 </div>
 

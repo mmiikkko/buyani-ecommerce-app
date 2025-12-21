@@ -2,31 +2,30 @@
 
 import { useState, useEffect } from "react";
 import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-} from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import {
-  CalendarSync,
-  Upload,
-  CheckCircle,
-  XCircle,
-  Clock,
-  Eye,
-  Download,
+  MoreHorizontal,
+  FileText,
+  Calendar,
+  AlertCircle
 } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import Image from "next/image";
 
@@ -187,31 +186,47 @@ export default function MonthlyDuesPage() {
     setUploadDialogOpen(true);
   };
 
+  const getDueIn = (dueDate: string, status: string) => {
+    if (status === "paid") return <Badge variant="outline" className="bg-emerald-50 text-emerald-600 border-emerald-200">Cleared</Badge>;
+
+    const due = new Date(dueDate);
+    const now = new Date();
+    // Reset hours to compare dates only roughly or keep precise
+    const diffTime = due.getTime() - now.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+    if (diffDays < 0) {
+      return (
+        <span className="flex items-center gap-1 text-red-600 font-bold">
+          <AlertCircle className="w-4 h-4" />
+          Overdue by {Math.abs(diffDays)} days
+        </span>
+      );
+    }
+    if (diffDays === 0) return <span className="text-amber-600 font-bold">Due Today</span>;
+    if (diffDays <= 5) return <span className="text-amber-600 font-medium">{diffDays} days left</span>;
+
+    return <span className="text-muted-foreground">{diffDays} days</span>;
+  };
+
   const getStatusBadge = (status: string) => {
-    const statusConfig = {
-      paid: { icon: CheckCircle, className: "bg-green-100 text-green-700", label: "Paid" },
-      unpaid: { icon: XCircle, className: "bg-red-100 text-red-700", label: "Unpaid" },
-      pending_verification: {
-        icon: Clock,
-        className: "bg-yellow-100 text-yellow-700",
-        label: "Pending Verification",
-      },
-      rejected: { icon: XCircle, className: "bg-red-100 text-red-700", label: "Rejected" },
+    const styles = {
+      paid: "bg-emerald-100 text-emerald-700 hover:bg-emerald-100/80 border-emdrald-200",
+      unpaid: "bg-red-100 text-red-700 hover:bg-red-100/80 border-red-200",
+      pending_verification: "bg-amber-100 text-amber-700 hover:bg-amber-100/80 border-amber-200",
+      rejected: "bg-red-100 text-red-700 hover:bg-red-100/80 border-red-200",
     };
 
-    const config = statusConfig[status as keyof typeof statusConfig] || {
-      icon: Clock,
-      className: "bg-gray-100 text-gray-700",
-      label: status,
-    };
+    // Normalize status
+    const normalized = status.toLowerCase() as keyof typeof styles;
+    const style = styles[normalized] || "bg-gray-100 text-gray-700";
 
-    const Icon = config.icon;
+    const label = status.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
 
     return (
-      <span className={`px-3 py-1 rounded-lg text-sm font-medium flex items-center gap-2 ${config.className}`}>
-        <Icon className="h-4 w-4" />
-        {config.label}
-      </span>
+      <Badge className={cn("border shadow-none", style)}>
+        {label}
+      </Badge>
     );
   };
 
@@ -253,108 +268,120 @@ export default function MonthlyDuesPage() {
       </div>
 
       {loading ? (
-        <div className="flex items-center justify-center py-12">
-          <p className="text-gray-500">Loading billing records...</p>
+        <div className="rounded-xl border border-dashed p-8 text-center animate-pulse">
+          <div className="h-8 w-48 bg-gray-100 rounded mx-auto mb-4" />
+          <div className="h-64 w-full bg-gray-50 rounded" />
         </div>
       ) : billings.length === 0 ? (
-        <Card>
-          <CardContent className="flex flex-col items-center justify-center py-12">
-            <CalendarSync className="h-12 w-12 text-gray-400 mb-4" />
-            <p className="text-gray-500">No billing records found</p>
-          </CardContent>
-        </Card>
+        <div className="flex flex-col items-center justify-center py-12 border rounded-xl bg-gray-50/50">
+          <CalendarSync className="h-12 w-12 text-gray-300 mb-4" />
+          <p className="text-gray-500 font-medium">No billing records found</p>
+        </div>
       ) : (
-        <div className="space-y-6">
-          {billings.map((billing) => (
-            <Card key={billing.id} className="shadow-md">
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <CardTitle className="text-xl">{billing.billingMonth}</CardTitle>
-                    <CardDescription>
-                      Due Date: {new Date(billing.dueDate).toLocaleDateString()}
-                    </CardDescription>
-                  </div>
-                  {getStatusBadge(billing.status)}
-                </div>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-gray-600">Amount Due</p>
-                    <p className="text-2xl font-bold text-[#2E7D32]">
-                      ₱{billing.amountDue.toLocaleString()}
-                    </p>
-                  </div>
-                </div>
-
-                {/* Payment History */}
-                {billing.payments && billing.payments.length > 0 && (
-                  <div className="border-t pt-4">
-                    <h3 className="font-semibold mb-3">Payment History</h3>
-                    <div className="space-y-3">
-                      {billing.payments.map((payment) => (
-                        <div
-                          key={payment.id}
-                          className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
-                        >
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2 mb-1">
-                              <p className="font-medium">Receipt #{payment.receiptNumber}</p>
-                              <span
-                                className={`px-2 py-1 rounded text-xs ${payment.verificationStatus === "verified"
-                                  ? "bg-green-100 text-green-700"
-                                  : payment.verificationStatus === "rejected"
-                                    ? "bg-red-100 text-red-700"
-                                    : "bg-yellow-100 text-yellow-700"
-                                  }`}
-                              >
-                                {payment.verificationStatus}
-                              </span>
-                            </div>
-                            <p className="text-sm text-gray-600">
-                              Amount: ₱{payment.amountPaid.toLocaleString()}
-                            </p>
-                            {payment.paymentMethod && (
-                              <p className="text-xs text-gray-500">
-                                Method: {payment.paymentMethod}
-                              </p>
-                            )}
-                            <p className="text-xs text-gray-500">
-                              Paid: {new Date(payment.paymentDate).toLocaleDateString()}
-                            </p>
-                          </div>
-                          <div className="flex gap-2">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleViewReceipt(payment.receiptUrl)}
-                            >
-                              <Eye className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => {
-                                const link = document.createElement("a");
-                                link.href = payment.receiptUrl;
-                                link.download = `receipt_${payment.receiptNumber}.${payment.receiptUrl.includes("pdf") ? "pdf" : "jpg"}`;
-                                document.body.appendChild(link);
-                                link.click();
-                                document.body.removeChild(link);
-                              }}
-                            >
-                              <Download className="h-4 w-4" />
-                            </Button>
-                          </div>
+        <div className="rounded-xl border bg-white shadow-sm overflow-hidden">
+          <Table>
+            <TableHeader className="bg-gray-50/50">
+              <TableRow>
+                <TableHead className="w-[150px]">Billing Month</TableHead>
+                <TableHead>Amount Due</TableHead>
+                <TableHead>Due Date</TableHead>
+                <TableHead>Due In</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Last Payment</TableHead>
+                <TableHead className="text-right">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {billings.map((billing) => {
+                const latestPayment = billing.payments?.[0]; // Assuming sorted by date desc from API or just taking first
+                return (
+                  <TableRow key={billing.id} className="group hover:bg-gray-50/50 transition-colors">
+                    <TableCell className="font-semibold text-gray-900">
+                      {billing.billingMonth}
+                    </TableCell>
+                    <TableCell>
+                      <span className="font-medium text-[#2E7D32]">
+                        ₱{billing.amountDue.toLocaleString()}
+                      </span>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-2 text-gray-600">
+                        <Calendar className="w-4 h-4 text-gray-400" />
+                        {new Date(billing.dueDate).toLocaleDateString()}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      {getDueIn(billing.dueDate, billing.status)}
+                    </TableCell>
+                    <TableCell>
+                      {getStatusBadge(billing.status)}
+                    </TableCell>
+                    <TableCell>
+                      {latestPayment ? (
+                        <div className="flex flex-col text-sm">
+                          <span className="font-medium">₱{latestPayment.amountPaid.toLocaleString()}</span>
+                          <span className="text-xs text-muted-foreground">{new Date(latestPayment.paymentDate).toLocaleDateString()}</span>
+                          {latestPayment.verificationStatus !== 'verified' && (
+                            <span className="text-[10px] text-amber-600 italic">Verifying...</span>
+                          )}
                         </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          ))}
+                      ) : (
+                        <span className="text-muted-foreground text-sm">-</span>
+                      )}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex items-center justify-end gap-2">
+                        {billing.status === 'unpaid' || billing.status === 'rejected' ? (
+                          <Button
+                            size="sm"
+                            className="h-8 bg-[#2E7D32] hover:bg-[#1b5e20]"
+                            onClick={() => openUploadDialog(billing)}
+                          >
+                            <Upload className="w-3.5 h-3.5 mr-1.5" />
+                            Pay
+                          </Button>
+                        ) : null}
+
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon" className="h-8 w-8">
+                              <MoreHorizontal className="w-4 h-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                            <DropdownMenuSeparator />
+                            {latestPayment && (
+                              <>
+                                <DropdownMenuItem onClick={() => handleViewReceipt(latestPayment.receiptUrl)}>
+                                  <Eye className="w-4 h-4 mr-2" /> View Receipt
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => {
+                                  const link = document.createElement("a");
+                                  link.href = latestPayment.receiptUrl;
+                                  link.download = `receipt_${latestPayment.receiptNumber}.${latestPayment.receiptUrl.includes("pdf") ? "pdf" : "jpg"}`;
+                                  document.body.appendChild(link);
+                                  link.click();
+                                  document.body.removeChild(link);
+                                }}>
+                                  <Download className="w-4 h-4 mr-2" /> Download Receipt
+                                </DropdownMenuItem>
+                              </>
+                            )}
+                            {billing.status === 'unpaid' && (
+                              <DropdownMenuItem onClick={() => openUploadDialog(billing)}>
+                                <Upload className="w-4 h-4 mr-2" /> Upload Payment
+                              </DropdownMenuItem>
+                            )}
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
+            </TableBody>
+          </Table>
         </div>
       )}
     </div>

@@ -23,6 +23,7 @@ export type Product = {
 
   // Additional fields from joins
   shopName?: string | null;
+  shopImage?: string | null;
   shopStatus?: string | null;
   categoryName?: string | null;
   reviewCount?: number;

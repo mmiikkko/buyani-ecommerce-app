@@ -5,6 +5,8 @@ import { CardActivity } from "./_components/admin-activity";
 import { PendingApprovals } from "./_components/admin-pending-approvals";
 import { RecentActivity } from "./_components/admin-recent-activity";
 
+import { PremiumLoader } from "@/components/shared/premium-loader";
+
 export default function AdminDashboard() {
   const [stats, setStats] = useState({
     totalRevenue: 0,
@@ -57,11 +59,8 @@ export default function AdminDashboard() {
       {/* Stats Cards Section */}
       <div className="rounded-xl border border-emerald-100 bg-white/80 backdrop-blur-sm shadow-md p-6">
         {loading ? (
-          <div className="flex items-center justify-center py-12">
-            <div className="inline-flex items-center gap-2 text-gray-600">
-              <Loader2 className="h-5 w-5 animate-spin" />
-              <p>Loading dashboard statistics...</p>
-            </div>
+          <div className="py-12">
+            <PremiumLoader fullPage={false} text="Syncing dashboard data..." />
           </div>
         ) : (
           <CardActivity

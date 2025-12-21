@@ -50,7 +50,7 @@ export type ProductPayload = {
   status?: string;
   stock?: number;
   images?: ImageInput[];
-  variations?: { name: string; values: string[] }[];
+  variations?: any[];
 };
 
 export type UpdatedProductPayload = {
@@ -62,7 +62,7 @@ export type UpdatedProductPayload = {
   status?: string;
   stock?: number;
   images?: ImageInput[];
-  variations?: { name: string; values: string[] }[];
+  variations?: any[];
 };
 
 // -------------------------------------------------------- //
@@ -77,6 +77,7 @@ export async function GET(req: NextRequest) {
 
     const sellerId = user.id;
 
+    // 1. Get Seller Shops
     const sellerShops = await db
       .select({ id: shop.id })
       .from(shop)
@@ -88,66 +89,62 @@ export async function GET(req: NextRequest) {
 
     const shopIds = sellerShops.map((s) => s.id);
 
-    // Get all products including removed ones (for restore functionality)
+    // 2. Fetch Products and their related data in parallel batches
     const productsList = await db
-      .select({
-        id: products.id,
-        shopId: products.shopId,
-        categoryId: products.categoryId,
-        productName: products.productName,
-        description: products.description,
-        rating: products.rating,
-        isAvailable: products.isAvailable,
-        status: products.status,
-        createdAt: products.createdAt,
-        updatedAt: products.updatedAt,
-      })
+      .select()
       .from(products)
       .where(inArray(products.shopId, shopIds));
 
     const productIds = productsList.map((p) => p.id);
+    if (productIds.length === 0) {
+      return NextResponse.json([]);
+    }
 
-    const images = productIds.length
-      ? await db
-        .select()
-        .from(productImages)
-        .where(inArray(productImages.productId, productIds))
-      : [];
-
-    const variations = productIds.length
-      ? await db
-        .select()
-        .from(productVariation)
-        .where(inArray(productVariation.productId, productIds))
-      : [];
-
-    const variationIds = variations.map(v => v.id);
-
-    const inventory = variationIds.length
-      ? await db
-        .select()
+    const [images, variations, inventories] = await Promise.all([
+      db.select().from(productImages).where(inArray(productImages.productId, productIds)),
+      db.select().from(productVariation).where(inArray(productVariation.productId, productIds)),
+      db.select({
+        id: productInventory.id,
+        variationId: productInventory.product_variation_id,
+        quantity: productInventory.quantityInStock
+      })
         .from(productInventory)
-        .where(inArray(productInventory.product_variation_id, variationIds))
-      : [];
+        .where(inArray(productInventory.product_variation_id,
+          db.select({ id: productVariation.id })
+            .from(productVariation)
+            .where(inArray(productVariation.productId, productIds))))
+    ]);
+
+    // Create lookup maps for performance (O(1) lookup during mapping)
+    const imagesMap = new Map();
+    images.forEach(img => {
+      if (!imagesMap.has(img.productId)) imagesMap.set(img.productId, []);
+      imagesMap.get(img.productId).push(img);
+    });
+
+    const variationsMap = new Map();
+    variations.forEach(v => {
+      if (!variationsMap.has(v.productId)) variationsMap.set(v.productId, []);
+      variationsMap.get(v.productId).push(v);
+    });
+
+    const inventoryMap = new Map();
+    inventories.forEach(inv => inventoryMap.set(inv.variationId, inv.quantity));
 
     const transformedProducts = productsList.map((product) => {
-      const productImagesList = images.filter((i) => i.productId === product.id);
-      const productVariations = variations.filter(v => v.productId === product.id);
+      const productImagesList = imagesMap.get(product.id) || [];
+      const productVariations = variationsMap.get(product.id) || [];
 
-      // Logic: Use first variation price, or range? Use first for now.
+      // Logic: Use first variation price, or range?
       const mainVariation = productVariations[0];
       const price = mainVariation ? Number(mainVariation.price) : 0;
 
-      // Calculate total stock from all variations
-      let totalStock = 0;
-      productVariations.forEach(v => {
-        const inv = inventory.find(i => i.product_variation_id === v.id);
-        if (inv) totalStock += (inv.quantityInStock || 0);
-      });
+      // Calculate total stock from all variations using the map
+      const totalStock = productVariations.reduce((sum: number, v: any) => sum + (inventoryMap.get(v.id) || 0), 0);
 
       const productImagesMapped = productImagesList
-        .filter((img) => typeof img.url === "string" && img.url.trim() !== "")
-        .map((img) => ({
+        .filter((img: any) => typeof img.url === "string" && img.url.trim() !== "")
+        .map((img: any) => ({
           id: img.id,
           product_id: img.productId,
           image_url: img.url,
@@ -174,8 +171,8 @@ export async function GET(req: NextRequest) {
     });
 
     const response = NextResponse.json(transformedProducts);
-    // Disable cache for seller dashboard to ensure immediate updates
-    response.headers.set('Cache-Control', 'no-store, max-age=0');
+    // Add short cache for dashboard to balance freshness and speed
+    response.headers.set('Cache-Control', 'public, s-maxage=5, stale-while-revalidate=30');
     return response;
   } catch (error) {
     console.error("[GET_PRODUCTS_ERROR]", error);
@@ -273,34 +270,61 @@ export async function POST(req: NextRequest) {
     };
 
     if (body.variations && body.variations.length > 0) {
-      const permutations = generatePermutations(body.variations);
+      // Check if we received a pre-calculated matrix or raw types/values
+      const isMatrix = typeof body.variations[0].value === 'string' && body.variations[0].stock !== undefined;
 
-      for (const perm of permutations) {
-        // Create name like "Size: S, Color: Red"
-        const name = Object.entries(perm).map(([k, v]) => `${k}: ${v}`).join(", ");
-        const value = JSON.stringify(perm);
-        const variationId = uuidv4();
+      if (isMatrix) {
+        for (const varItem of body.variations) {
+          const variationId = uuidv4();
+          await executeQuery(() => db.insert(productVariation).values({
+            id: variationId,
+            productId,
+            variationName: varItem.name,
+            variationType: "Combination",
+            variationValue: varItem.value,
+            price: String(varItem.price || body.price),
+            SKU: (varItem.sku || `${finalSku}-${varItem.name.replace(/[:\s,]+/g, '-')}`).substring(0, 255),
+          }));
 
-        await executeQuery(() => db.insert(productVariation).values({
-          id: variationId,
-          productId,
-          variationName: name,
-          variationType: "Combination",
-          variationValue: value,
-          price: String(body.price), // Inherit base price
-          SKU: `${finalSku}-${Object.values(perm).join("-")}`.substring(0, 255),
-        }));
+          if (varItem.stock !== undefined) {
+            await executeQuery(() =>
+              db.insert(productInventory).values({
+                id: uuidv4(),
+                product_variation_id: variationId,
+                quantityInStock: Number(varItem.stock),
+                itemsSold: 0,
+              })
+            );
+          }
+        }
+      } else {
+        // Legacy/Permutation fallback
+        const permutations = generatePermutations(body.variations);
+        for (const perm of permutations) {
+          const name = Object.entries(perm).map(([k, v]) => `${k}: ${v}`).join(", ");
+          const value = JSON.stringify(perm);
+          const variationId = uuidv4();
 
-        // Inventory for this variation
-        if (body.stock !== undefined) {
-          await executeQuery(() =>
-            db.insert(productInventory).values({
-              id: uuidv4(),
-              product_variation_id: variationId,
-              quantityInStock: body.stock, // Initially same stock for all? Or divide? Assuming same for now as placeholder
-              itemsSold: 0,
-            })
-          );
+          await executeQuery(() => db.insert(productVariation).values({
+            id: variationId,
+            productId,
+            variationName: name,
+            variationType: "Combination",
+            variationValue: value,
+            price: String(body.price),
+            SKU: `${finalSku}-${Object.values(perm).join("-")}`.substring(0, 255),
+          }));
+
+          if (body.stock !== undefined) {
+            await executeQuery(() =>
+              db.insert(productInventory).values({
+                id: uuidv4(),
+                product_variation_id: variationId,
+                quantityInStock: body.stock,
+                itemsSold: 0,
+              })
+            );
+          }
         }
       }
     } else {
@@ -438,18 +462,65 @@ export async function PUT(req: NextRequest) {
     // In `list-product.tsx`, we added Variations but NOT per-variation price (it inherits base).
     // So safe to update all variations with the new base price.
 
-    if (body.price !== undefined || body.SKU !== undefined) {
-      const varUpdates: Record<string, string> = {};
-      if (body.price !== undefined) varUpdates.price = String(body.price);
-      // SKU update is tricky. If we update base SKU, do we update all variation SKUs?
-      // For now, let's update Price only across all. SKU is usually per-variant.
-      // If Body has SKU, maybe we update the "Standard" variation SKU?
-      // Or if we have multiple, we might append to them?
-      // Let's Just update Price for now. SKU changes on existing variations might break things.
+    if (body.variations !== undefined && Array.isArray(body.variations)) {
+      // If variations are provided in PUT, we might be updating existing ones
+      const isMatrix = body.variations.length > 0 && typeof body.variations[0].value === 'string' && body.variations[0].stock !== undefined;
 
+      if (isMatrix) {
+        for (const varItem of body.variations) {
+          if (varItem.id) {
+            // Update existing variation
+            await executeQuery(() =>
+              db.update(productVariation)
+                .set({
+                  price: String(varItem.price || body.price),
+                  SKU: varItem.sku || undefined,
+                })
+                .where(eq(productVariation.id, varItem.id))
+            );
+
+            // Update inventory
+            await executeQuery(() =>
+              db.update(productInventory)
+                .set({ quantityInStock: Number(varItem.stock) })
+                .where(eq(productInventory.product_variation_id, varItem.id))
+            );
+          } else {
+            // New variation combination added during edit (if UI allows)
+            const variationId = uuidv4();
+            await executeQuery(() => db.insert(productVariation).values({
+              id: variationId,
+              productId,
+              variationName: varItem.name,
+              variationType: "Combination",
+              variationValue: varItem.value,
+              price: String(varItem.price || body.price),
+              SKU: (varItem.sku || `${existingProduct[0].productName}-${varItem.name.replace(/[:\s,]+/g, '-')}`).substring(0, 255),
+            }));
+
+            await executeQuery(() =>
+              db.insert(productInventory).values({
+                id: uuidv4(),
+                product_variation_id: variationId,
+                quantityInStock: Number(varItem.stock || 0),
+                itemsSold: 0,
+              })
+            );
+          }
+        }
+      } else if (body.price !== undefined) {
+        // Fallback: update all existing variations with base price if no matrix
+        await executeQuery(() =>
+          db.update(productVariation)
+            .set({ price: String(body.price) })
+            .where(eq(productVariation.productId, productId))
+        );
+      }
+    } else if (body.price !== undefined) {
+      // Only price provided, no variations array
       await executeQuery(() =>
         db.update(productVariation)
-          .set(varUpdates)
+          .set({ price: String(body.price) })
           .where(eq(productVariation.productId, productId))
       );
     }

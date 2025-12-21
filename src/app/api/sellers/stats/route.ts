@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/server/drizzle";
 import { orders, shop, payments, products, orderItems, productVariation } from "@/server/schema/auth-schema";
-import { eq, inArray, and, gte, lte } from "drizzle-orm";
+import { eq, inArray, and, gte, lte, sql } from "drizzle-orm";
 import { getAuthenticatedUser } from "@/lib/mobile-auth";
 
 // GET /api/sellers/stats - Get seller dashboard statistics
@@ -12,34 +12,30 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // Get date range from query params
     const { searchParams } = new URL(req.url);
-    const startDate = searchParams.get("startDate");
-    const endDate = searchParams.get("endDate");
-    const days = searchParams.get("days");
+    const startDateParam = searchParams.get("startDate");
+    const endDateParam = searchParams.get("endDate");
+    const daysParam = searchParams.get("days");
 
-    // Calculate date range
     let dateFilter: Date | null = null;
     let endDateFilter: Date | null = null;
 
-    if (startDate && endDate) {
-      // Custom date range
-      dateFilter = new Date(startDate);
-      endDateFilter = new Date(endDate);
-      endDateFilter.setHours(23, 59, 59, 999); // End of day
-    } else if (days) {
-      // Days filter (e.g., 7, 30, 90, 365)
-      const daysNum = parseInt(days, 10);
+    if (startDateParam && endDateParam) {
+      dateFilter = new Date(startDateParam);
+      endDateFilter = new Date(endDateParam);
+      endDateFilter.setHours(23, 59, 59, 999);
+    } else if (daysParam) {
+      const daysNum = parseInt(daysParam, 10);
       if (daysNum > 0) {
         dateFilter = new Date();
         dateFilter.setDate(dateFilter.getDate() - daysNum);
+        dateFilter.setHours(0, 0, 0, 0);
       }
     }
-    // If no date filter, show all time
 
     const sellerId = user.id;
 
-    // Get seller's shops
+    // 1. Get seller's shops
     const sellerShops = await db
       .select({ id: shop.id })
       .from(shop)
@@ -58,152 +54,90 @@ export async function GET(req: NextRequest) {
 
     const shopIds = sellerShops.map((s) => s.id);
 
-    // Get seller's products (including deleted ones for stats purposes)
-    const sellerProducts = await db
+    // 2. Fetch Aggregated Product Stats
+    const productStats = await db
       .select({
-        id: products.id,
         status: products.status,
-        isAvailable: products.isAvailable,
+        count: sql<number>`COUNT(*)`,
       })
       .from(products)
-      .where(inArray(products.shopId, shopIds));
+      .where(inArray(products.shopId, shopIds))
+      .groupBy(products.status);
 
-    // Count active products (all posted products, including out of stock)
-    const activeProducts = sellerProducts.filter(p => {
-      const status = (p.status || "").toString().trim().toLowerCase();
-      const isRemoved = status === "removed" || status === "deleted";
-      return !isRemoved;
-    }).length;
+    let activeProducts = 0;
+    let removedProducts = 0;
+    productStats.forEach(stat => {
+      const st = (stat.status || "").toString().trim().toLowerCase();
+      if (st === "removed" || st === "deleted") {
+        removedProducts += Number(stat.count);
+      } else {
+        activeProducts += Number(stat.count);
+      }
+    });
 
-    // Count strictly removed/deleted products
-    const removedProducts = sellerProducts.filter(p => {
-      const status = (p.status || "").toString().trim().toLowerCase();
-      const isRemoved = status === "removed" || status === "deleted";
-      return isRemoved;
-    }).length;
+    // 3. Fetch Aggregated Order/Sales Stats
+    const successfulStatuses = ["paid", "completed", "succeeded", "captured"];
+    const activeCODStatuses = ["pending", "confirmed", "accepted", "shipped", "delivered"];
+    const excludedStatuses = ["rejected", "cancelled"];
 
-    // Get orders for seller's products by joining orderItems with products
-    // This way, even if a product is deleted, we can still find orderItems
-    // by joining through products that belong to the seller's shops
-    let totalOrders = 0;
-    let pendingOrders = 0;
-    let totalSales = 0;
-
-    // Query orderItems by joining with products and orders to filter by shopId and date
-    // This ensures we get all orderItems for seller's products, even if products are later deleted
-    const orderItemsConditions = [inArray(products.shopId, shopIds)];
-    if (dateFilter) {
-      orderItemsConditions.push(gte(orders.createdAt, dateFilter));
-    }
-    if (endDateFilter) {
-      orderItemsConditions.push(lte(orders.createdAt, endDateFilter));
-    }
-
-    const orderItemsList = await db
+    // Build subquery to get all unique seller-relevant items within date range
+    const orderMetrics = await db
       .select({
-        orderId: orderItems.orderId,
-        productId: productVariation.productId,
+        orderId: orders.id,
+        itemSubtotal: orderItems.subtotal,
+        paymentStatus: payments.status,
+        paymentMethod: payments.paymentMethod,
       })
       .from(orderItems)
       .innerJoin(productVariation, eq(orderItems.product_variation_id, productVariation.id))
       .innerJoin(products, eq(productVariation.productId, products.id))
       .innerJoin(orders, eq(orderItems.orderId, orders.id))
-      .where(and(...orderItemsConditions));
-
-    if (orderItemsList.length > 0) {
-      const orderIds = [...new Set(orderItemsList.map((item) => item.orderId))];
-
-      // Total Orders
-      totalOrders = orderIds.length;
-
-      // Build date filter conditions
-      const dateConditions = [inArray(orders.id, orderIds)];
-      if (dateFilter) {
-        dateConditions.push(gte(orders.createdAt, dateFilter));
-      }
-      if (endDateFilter) {
-        dateConditions.push(lte(orders.createdAt, endDateFilter));
-      }
-
-      // Get orders with payments and order totals/subtotals
-      const ordersWithPayments = await db
-        .select({
-          orderId: orders.id,
-          itemSubtotal: orderItems.subtotal,
-          paymentMethod: payments.paymentMethod,
-          status: payments.status,
-          createdAt: orders.createdAt,
-        })
-        .from(orders)
-        .innerJoin(orderItems, eq(orders.id, orderItems.orderId))
-        .innerJoin(productVariation, eq(orderItems.product_variation_id, productVariation.id))
-        .innerJoin(products, eq(productVariation.productId, products.id))
-        .leftJoin(payments, eq(payments.orderId, orders.id))
-        .where(
-          and(
-            inArray(orders.id, orderIds),
-            inArray(products.shopId, shopIds), // Ensure we only count items for this seller's shops
-            dateFilter ? gte(orders.createdAt, dateFilter) : undefined as any,
-            endDateFilter ? lte(orders.createdAt, endDateFilter) : undefined as any
-          )
-        );
-
-      // Define successful and active statuses
-      const successfulStatuses = ["paid", "completed", "succeeded", "captured"];
-      const activeCODStatuses = ["pending", "confirmed", "accepted", "shipped", "delivered"];
-      const excludedStatuses = ["rejected", "cancelled"];
-
-      // Calculate total sales using item subtotals
-      totalSales = ordersWithPayments.reduce((sum, item) => {
-        const status = item.status?.toLowerCase();
-        const method = item.paymentMethod?.toLowerCase();
-
-        if (!status || excludedStatuses.includes(status)) {
-          return sum;
-        }
-
-        const isSuccessful = successfulStatuses.includes(status);
-        const isCODActive = method === "cod" && activeCODStatuses.includes(status);
-
-        if (isSuccessful || isCODActive) {
-          return sum + Number(item.itemSubtotal || 0);
-        }
-        return sum;
-      }, 0);
-
-      // Count unique orders that are NOT rejected or cancelled
-      const validOrders = new Set(
-        ordersWithPayments
-          .filter(item => {
-            const status = item.status?.toLowerCase();
-            return status && !excludedStatuses.includes(status);
-          })
-          .map(item => item.orderId)
+      .leftJoin(payments, eq(orders.id, payments.orderId))
+      .where(
+        and(
+          inArray(products.shopId, shopIds),
+          dateFilter ? gte(orders.createdAt, dateFilter) : undefined as any,
+          endDateFilter ? lte(orders.createdAt, endDateFilter) : undefined as any,
+          sql`${payments.status} NOT IN (${sql.join(excludedStatuses.map(s => sql`${s}`), sql`, `)}) OR ${payments.status} IS NULL`
+        )
       );
-      totalOrders = validOrders.size;
 
-      // Count pending orders (specifically those with "pending" status and NOT cancelled/rejected)
-      pendingOrders = new Set(
-        ordersWithPayments
-          .filter(item => item.status?.toLowerCase() === "pending")
-          .map(item => item.orderId)
-      ).size;
-    }
+    let totalSales = 0;
+    const uniqueOrders = new Set<string>();
+    const pendingOrderIds = new Set<string>();
 
-    return NextResponse.json({
+    orderMetrics.forEach(item => {
+      const status = (item.paymentStatus || "").toLowerCase();
+      const method = (item.paymentMethod || "").toLowerCase();
+
+      // Calculate Revenue
+      const isSuccessful = successfulStatuses.includes(status);
+      const isCODActive = method === "cod" && activeCODStatuses.includes(status);
+      if (isSuccessful || isCODActive) {
+        totalSales += Number(item.itemSubtotal || 0);
+      }
+
+      // Count Orders
+      uniqueOrders.add(item.orderId);
+      if (status === "pending") {
+        pendingOrderIds.add(item.orderId);
+      }
+    });
+
+    const response = NextResponse.json({
       totalSales,
-      totalOrders,
-      pendingOrders,
-      totalProducts: activeProducts, // Total Products now shows only active products
+      totalOrders: uniqueOrders.size,
+      pendingOrders: pendingOrderIds.size,
+      totalProducts: activeProducts,
       activeProducts,
       removedProducts,
     });
+    // Add short cache to balance freshness and speed
+    response.headers.set('Cache-Control', 'public, s-maxage=10, stale-while-revalidate=60');
+    return response;
   } catch (error: any) {
-    console.error("Error fetching seller stats:", error.message, error.stack);
-    return NextResponse.json(
-      { error: "Failed to fetch seller stats", message: error.message },
-      { status: 500 }
-    );
+    console.error("Error fetching seller stats:", error);
+    return NextResponse.json({ error: "Failed to fetch seller stats" }, { status: 500 });
   }
 }
 
