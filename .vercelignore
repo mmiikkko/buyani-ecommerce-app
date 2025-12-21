@@ -65,7 +65,6 @@ VERCEL_ENV_SETUP.md
 
 # Lock files (Vercel will use package.json)
 bun.lock
-package-lock.json
 yarn.lock
 pnpm-lock.yaml
 
