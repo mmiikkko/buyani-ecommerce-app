@@ -33,7 +33,7 @@ import { z } from "zod";
 import { useLanguage } from "@/lib/i18n/context";
 
 const signInSchema = z.object({
-  email: z.email({ message: "Please enter a valid email" }),
+  email: z.string().email({ message: "Please enter a valid email" }),
   password: z.string().min(1, { message: "Password is required" }),
   rememberMe: z.boolean().optional(),
 });
@@ -100,6 +100,7 @@ export function SignInForm() {
         setLoading(false);
       } else if (data?.url) {
         // Redirect to Google OAuth URL - don't set loading to false as we're redirecting
+        // eslint-disable-next-line react-hooks/immutability
         window.location.href = data.url;
       } else {
         setLoading(false);

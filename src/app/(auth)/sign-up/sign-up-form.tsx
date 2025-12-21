@@ -34,7 +34,7 @@ const signUpSchema = z
     name: z.string().min(1, { message: "Username is required" }),
     first_name: z.string().optional(),
     last_name: z.string().optional(),
-    email: z.email({ message: "Please enter a valid email" }),
+    email: z.string().email({ message: "Please enter a valid email" }),
     password: passwordSchema,
     passwordConfirmation: z
       .string()
