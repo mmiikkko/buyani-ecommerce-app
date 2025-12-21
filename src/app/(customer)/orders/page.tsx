@@ -213,13 +213,13 @@ export default function CustomerOrdersPage() {
   }
 
   return (
-    <main className="mx-auto max-w-6xl px-4 py-10 space-y-6">
+    <main className="mx-auto max-w-6xl px-3 py-4 sm:px-4 sm:py-10 space-y-4 sm:space-y-6">
       <div className="overflow-hidden rounded-2xl border bg-gradient-to-r from-emerald-600 via-emerald-500 to-emerald-400 text-white shadow-lg">
-        <div className="flex flex-col gap-3 px-6 py-5 sm:flex-row sm:items-center sm:justify-between">
-          <div className="space-y-1">
-            <p className="text-sm uppercase tracking-[0.18em] text-white/80">{t("orders")}</p>
-            <h1 className="text-2xl font-semibold">{t("my-orders")}</h1>
-            <p className="text-sm text-white/80">{t("track-packages")}</p>
+        <div className="flex flex-col gap-2 px-4 py-3 sm:px-6 sm:py-5 sm:flex-row sm:items-center sm:justify-between">
+          <div className="space-y-0.5 sm:space-y-1">
+            <p className="text-[10px] sm:text-sm uppercase tracking-[0.18em] text-white/80">{t("orders")}</p>
+            <h1 className="text-lg sm:text-2xl font-semibold">{t("my-orders")}</h1>
+            <p className="text-xs sm:text-sm text-white/80">{t("track-packages")}</p>
           </div>
           <Button
             variant="secondary"
@@ -235,7 +235,7 @@ export default function CustomerOrdersPage() {
       </div>
 
       <Tabs value={statusFilter} onValueChange={setStatusFilter} className="space-y-4">
-        <TabsList className="flex w-full flex-wrap gap-2 bg-white">
+        <TabsList className="flex w-full flex-wrap h-auto gap-2 bg-white p-1">
           {STATUS_TABS.map((tab) => (
             <TabsTrigger key={tab.value} value={tab.value} className="flex items-center gap-2">
               <span>{tab.label}</span>
@@ -248,7 +248,7 @@ export default function CustomerOrdersPage() {
 
         <TabsContent value={statusFilter} className="space-y-4">
           {grouped.length === 0 ? (
-            <Card className="border-dashed">
+            <Card className="border-dashed mt-6">
               <CardContent className="flex flex-col items-center gap-3 py-10 text-center">
                 <div className="flex h-14 w-14 items-center justify-center rounded-full bg-emerald-50 text-emerald-600">
                   <ShoppingBag className="h-7 w-7" />
@@ -266,7 +266,7 @@ export default function CustomerOrdersPage() {
               </CardContent>
             </Card>
           ) : filtered.length === 0 ? (
-            <Card className="border-dashed">
+            <Card className="border-dashed mt-6">
               <CardContent className="flex flex-col items-center gap-3 py-10 text-center">
                 <div className="flex h-12 w-12 items-center justify-center rounded-full bg-slate-100 text-slate-500">
                   <AlertCircle className="h-6 w-6" />
@@ -284,29 +284,26 @@ export default function CustomerOrdersPage() {
                   key={order.id || order.orderId}
                   className="border border-emerald-100/60 shadow-sm hover:shadow-md transition-shadow"
                 >
-                  <CardHeader className="flex flex-row items-start justify-between gap-2">
+                  <CardHeader className="flex flex-row items-start justify-between gap-2 p-3 sm:p-6">
                     <div className="space-y-1">
-                      <CardTitle className="text-base flex items-center gap-2">
-                        <span className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-emerald-50 text-emerald-700">
-                          <Package className="h-4 w-4" />
+                      <CardTitle className="text-sm sm:text-base flex items-center gap-2">
+                        <span className="inline-flex h-7 w-7 sm:h-9 sm:w-9 items-center justify-center rounded-full bg-emerald-50 text-emerald-700">
+                          <Package className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                         </span>
                         {t("order")} #{getShortOrderId(order.id || order.orderId)}
                       </CardTitle>
-                      <p className="text-xs text-muted-foreground">
+                      <p className="text-[10px] sm:text-xs text-muted-foreground pl-9 sm:pl-11">
                         {t("placed-on")} {new Date(order.createdAt).toLocaleString()}
                       </p>
                     </div>
                   </CardHeader>
-                  <CardContent className="space-y-3">
+                  <CardContent className="space-y-3 p-3 pt-0 sm:p-6 sm:pt-0">
                     {order.items?.length ? (
                       <div className="space-y-2">
                         {order.items.map((item, idx) => (
-                          <div
-                            key={idx}
-                            className="flex items-center gap-3 rounded-lg border bg-slate-50/60 p-3"
-                          >
+                          <div key={idx} className="flex items-center gap-2 sm:gap-3 rounded-lg border bg-slate-50/60 p-2 sm:p-3">
                             {item.productImage ? (
-                              <div className="relative h-16 w-16 flex-shrink-0 overflow-hidden rounded-lg border border-slate-200 bg-white">
+                              <div className="relative h-12 w-12 sm:h-16 sm:w-16 flex-shrink-0 overflow-hidden rounded-lg border border-slate-200 bg-white">
                                 <Image
                                   src={item.productImage}
                                   alt={item.productName || "Product"}
@@ -316,8 +313,8 @@ export default function CustomerOrdersPage() {
                                 />
                               </div>
                             ) : (
-                              <div className="flex h-16 w-16 flex-shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-slate-100">
-                                <Package className="h-6 w-6 text-slate-400" />
+                              <div className="flex h-12 w-12 sm:h-16 sm:w-16 flex-shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-slate-100">
+                                <Package className="h-5 w-5 sm:h-6 sm:w-6 text-slate-400" />
                               </div>
                             )}
                             <div className="flex-1 min-w-0">

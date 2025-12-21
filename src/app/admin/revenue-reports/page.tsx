@@ -436,7 +436,7 @@ export default function RevenueReportsPage() {
                                     </div>
                                     <div className="space-y-1">
                                         <p className="text-[10px] text-slate-500 uppercase font-bold">Total Monthly Sales</p>
-                                        <p className="text-sm font-bold text-emerald-600">PE {reportData.grandTotalMonthly.toLocaleString()}</p>
+                                        <p className="text-sm font-bold text-emerald-600">₱ {reportData.grandTotalMonthly.toLocaleString()}</p>
                                     </div>
                                 </div>
                             </div>

@@ -13,19 +13,22 @@ export function PromoBanner() {
   return (
     <div className="relative w-full overflow-hidden bg-gradient-to-r from-emerald-500 via-teal-500 to-amber-500 text-white shadow-md">
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(255,255,255,0.16),transparent_45%),radial-gradient(circle_at_80%_0%,rgba(255,255,255,0.18),transparent_40%),radial-gradient(circle_at_50%_100%,rgba(255,255,255,0.12),transparent_40%)]" />
-      <div className="mx-auto flex max-w-7xl flex-col gap-3 px-4 py-5 sm:px-6 sm:flex-row sm:items-center sm:justify-between lg:px-8 relative">
+      <div className="mx-auto flex max-w-7xl flex-col gap-2 px-4 py-3 sm:px-6 sm:py-5 sm:flex-row sm:items-center sm:justify-between lg:px-8 relative">
         <div className="flex items-center gap-3 text-sm sm:text-base font-semibold drop-shadow-sm">
           <Megaphone className="w-5 h-5 sm:w-6 sm:h-6" />
           <span>Shop campus favorites & locally crafted products — all in one place!</span>
           <Sparkles className="w-5 h-5 sm:w-6 sm:h-6" />
         </div>
-        <div className="flex flex-wrap gap-2">
-          {badges.map((badge) => {
+        <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
+          {badges.map((badge, index) => {
             const Icon = badge.icon;
+            const isLast = index === 2;
             return (
               <span
                 key={badge.text}
-                className="inline-flex items-center gap-2 rounded-full bg-white/18 px-3.5 py-1.5 text-xs font-semibold shadow-sm backdrop-blur"
+                className={`inline-flex items-center gap-2 rounded-full bg-white/18 px-3.5 py-1.5 text-xs font-semibold shadow-sm backdrop-blur 
+                  ${isLast ? 'col-span-2 mx-auto w-fit sm:col-span-1 sm:mx-0 sm:w-auto' : ''}
+                `}
               >
                 <span
                   className={`inline-flex h-7 w-7 items-center justify-center rounded-full bg-gradient-to-br ${badge.color} text-white`}

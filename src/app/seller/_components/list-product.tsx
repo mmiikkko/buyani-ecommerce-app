@@ -125,16 +125,32 @@ export function AddProducts({ onAdd, onUpdate, productToEdit, onEditComplete }: 
       // If variations have nested 'combinations' or if we need to regenerate
       // Actually, let's look at how variations are stored.
       // In the new system, 'variations' will be the combinations themselves.
-      if (productVariations.length > 0 && (productVariations[0] as any).variationValue) {
-        // It's likely already a matrix-style array of combinations
+      // In the new system, 'variations' will be the combinations themselves.
+      // API returns: { id, name, value, price, stock, sku, isStandard }
+      // We check if we have matrix data.
+      // CRITICAL: We skip populating matrix if it's a "Standard" variation (Simple Product),
+      // so the user can use the main Stock input.
+      const hasVariations = productVariations.length > 0;
+      const isStandard = hasVariations && (
+        productVariations[0].name === "Standard" ||
+        productVariations[0].isStandard === true ||
+        (productVariations[0] as any).value === "Standard" ||
+        (productVariations[0] as any).variationValue === "Standard"
+      );
+
+      if (hasVariations && !isStandard) {
+        // It's a real matrix product
         setMatrix(productVariations.map((v: any) => ({
           id: v.id,
-          name: v.variationName,
-          value: v.variationValue,
+          name: v.name || v.variationName, // Handle both API formats
+          value: v.value || v.variationValue,
           price: v.price?.toString() || "",
-          stock: v.quantityInStock?.toString() || "",
-          sku: v.SKU || "",
+          stock: v.stock?.toString() || (v.quantityInStock?.toString()) || "",
+          sku: v.sku || v.SKU || "",
         })));
+      } else {
+        // Simple product or empty - ensure matrix is empty so simple inputs work
+        setMatrix([]);
       }
     } else {
       if (isEditing) {
@@ -264,7 +280,7 @@ export function AddProducts({ onAdd, onUpdate, productToEdit, onEditComplete }: 
         isAvailable: productStatus === "Available",
         createdAt: new Date(),
         updatedAt: new Date(),
-        variations: matrix.length > 0 ? matrix : variations,
+        variations: matrix.length > 0 ? matrix : [],
       };
 
       const wasEditing = isEditing;
