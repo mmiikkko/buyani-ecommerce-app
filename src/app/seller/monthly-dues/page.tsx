@@ -44,6 +44,7 @@ type BillingRecord = {
     amountPaid: number;
     receiptUrl: string;
     paymentDate: string;
+    paymentMethod?: string;
     verificationStatus: string;
     createdAt: string;
   }>;
@@ -60,24 +61,45 @@ export default function MonthlyDuesPage() {
   const [receiptFile, setReceiptFile] = useState<File | null>(null);
   const [receiptNumber, setReceiptNumber] = useState("");
   const [amountPaid, setAmountPaid] = useState("");
+  const [paymentMethod, setPaymentMethod] = useState("Cash");
   const [receiptPreview, setReceiptPreview] = useState<string | null>(null);
 
   useEffect(() => {
     fetchBillings();
+
+    // Auto-refresh every 30 seconds
+    const interval = setInterval(() => {
+      fetchBillings();
+    }, 30000);
+
+    return () => clearInterval(interval);
   }, []);
 
   const fetchBillings = async () => {
     try {
       setLoading(true);
       const res = await fetch("/api/seller/monthly-dues");
-      if (!res.ok) {
-        throw new Error("Failed to fetch monthly dues");
+
+      if (res.status === 401) {
+        toast.error("Please log in to view monthly dues");
+        return;
       }
+
+      if (res.status === 403) {
+        toast.error("Access denied. Seller account required.");
+        return;
+      }
+
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData.error || "Failed to fetch monthly dues");
+      }
+
       const data = await res.json();
       setBillings(data.billings || []);
     } catch (error) {
       console.error("Error fetching billings:", error);
-      toast.error("Failed to load monthly dues");
+      toast.error(error instanceof Error ? error.message : "Failed to load monthly dues");
     } finally {
       setLoading(false);
     }
@@ -126,6 +148,7 @@ export default function MonthlyDuesPage() {
       formData.append("receipt", receiptFile);
       formData.append("receiptNumber", receiptNumber);
       formData.append("amountPaid", amountPaid);
+      formData.append("paymentMethod", paymentMethod);
 
       const res = await fetch("/api/seller/monthly-dues/upload", {
         method: "POST",
@@ -153,6 +176,7 @@ export default function MonthlyDuesPage() {
     setReceiptFile(null);
     setReceiptNumber("");
     setAmountPaid("");
+    setPaymentMethod("Cash");
     setReceiptPreview(null);
     setSelectedBilling(null);
   };
@@ -220,7 +244,7 @@ export default function MonthlyDuesPage() {
             <CalendarSync className="h-6 w-6 text-[#2E7D32]" />
           </div>
           <div>
-            <h1 className="text-3xl font-bold text-[#2E7D32]">Monthly Dues</h1>
+            <h1 className="text-3xl font-bold text-[#2E7D32]">Monthly Rent</h1>
             <p className="text-muted-foreground mt-1">
               Manage your monthly payments and billing records
             </p>
@@ -262,96 +286,6 @@ export default function MonthlyDuesPage() {
                       ₱{billing.amountDue.toLocaleString()}
                     </p>
                   </div>
-                  {billing.status === "unpaid" && (
-                    <Dialog open={uploadDialogOpen && selectedBilling?.id === billing.id} onOpenChange={(open) => {
-                      setUploadDialogOpen(open);
-                      if (!open) resetUploadForm();
-                    }}>
-                      <DialogTrigger asChild>
-                        <Button
-                          onClick={() => openUploadDialog(billing)}
-                          className="bg-[#2E7D32] hover:bg-[#2E7D32]/90"
-                        >
-                          <Upload className="h-4 w-4 mr-2" />
-                          Upload Payment
-                        </Button>
-                      </DialogTrigger>
-                      <DialogContent className="max-w-2xl">
-                        <DialogHeader>
-                          <DialogTitle>Upload Payment Receipt</DialogTitle>
-                        </DialogHeader>
-                        <div className="space-y-4">
-                          <div>
-                            <Label>Billing Month</Label>
-                            <p className="text-sm text-gray-600">{billing.billingMonth}</p>
-                          </div>
-                          <div>
-                            <Label>Amount Due</Label>
-                            <p className="text-sm text-gray-600">₱{billing.amountDue.toLocaleString()}</p>
-                          </div>
-                          <div>
-                            <Label htmlFor="receiptNumber">Receipt Number *</Label>
-                            <Input
-                              id="receiptNumber"
-                              value={receiptNumber}
-                              onChange={(e) => setReceiptNumber(e.target.value)}
-                              placeholder="Enter receipt number"
-                              required
-                            />
-                          </div>
-                          <div>
-                            <Label htmlFor="amountPaid">Amount Paid *</Label>
-                            <Input
-                              id="amountPaid"
-                              type="number"
-                              value={amountPaid}
-                              onChange={(e) => setAmountPaid(e.target.value)}
-                              placeholder="Enter amount paid"
-                              required
-                            />
-                          </div>
-                          <div>
-                            <Label htmlFor="receipt">Payment Receipt *</Label>
-                            <Input
-                              id="receipt"
-                              type="file"
-                              accept="image/*,application/pdf"
-                              onChange={handleFileSelect}
-                              required
-                            />
-                            {receiptPreview && (
-                              <div className="mt-2 relative w-full h-48 rounded-lg overflow-hidden border">
-                                <Image
-                                  src={receiptPreview}
-                                  alt="Receipt preview"
-                                  fill
-                                  className="object-contain"
-                                />
-                              </div>
-                            )}
-                          </div>
-                          <div className="flex gap-2 justify-end">
-                            <Button
-                              variant="outline"
-                              onClick={() => {
-                                setUploadDialogOpen(false);
-                                resetUploadForm();
-                              }}
-                            >
-                              Cancel
-                            </Button>
-                            <Button
-                              onClick={handleUpload}
-                              disabled={uploading || !receiptFile || !receiptNumber || !amountPaid}
-                              className="bg-[#2E7D32] hover:bg-[#2E7D32]/90"
-                            >
-                              {uploading ? "Uploading..." : "Upload Receipt"}
-                            </Button>
-                          </div>
-                        </div>
-                      </DialogContent>
-                    </Dialog>
-                  )}
                 </div>
 
                 {/* Payment History */}
@@ -368,13 +302,12 @@ export default function MonthlyDuesPage() {
                             <div className="flex items-center gap-2 mb-1">
                               <p className="font-medium">Receipt #{payment.receiptNumber}</p>
                               <span
-                                className={`px-2 py-1 rounded text-xs ${
-                                  payment.verificationStatus === "verified"
-                                    ? "bg-green-100 text-green-700"
-                                    : payment.verificationStatus === "rejected"
+                                className={`px-2 py-1 rounded text-xs ${payment.verificationStatus === "verified"
+                                  ? "bg-green-100 text-green-700"
+                                  : payment.verificationStatus === "rejected"
                                     ? "bg-red-100 text-red-700"
                                     : "bg-yellow-100 text-yellow-700"
-                                }`}
+                                  }`}
                               >
                                 {payment.verificationStatus}
                               </span>
@@ -382,6 +315,11 @@ export default function MonthlyDuesPage() {
                             <p className="text-sm text-gray-600">
                               Amount: ₱{payment.amountPaid.toLocaleString()}
                             </p>
+                            {payment.paymentMethod && (
+                              <p className="text-xs text-gray-500">
+                                Method: {payment.paymentMethod}
+                              </p>
+                            )}
                             <p className="text-xs text-gray-500">
                               Paid: {new Date(payment.paymentDate).toLocaleDateString()}
                             </p>

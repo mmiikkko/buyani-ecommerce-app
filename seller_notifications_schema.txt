@@ -1,0 +1,18 @@
+// Add to auth-schema.ts
+
+export const sellerNotifications = mysqlTable("seller_notifications", {
+  id: varchar("id", { length: 36 }).primaryKey(),
+  sellerId: varchar("seller_id", { length: 36 })
+    .notNull()
+    .references(() => user.id, { onDelete: "cascade" }),
+  billingId: varchar("billing_id", { length: 36 })
+    .references(() => tenantBilling.id, { onDelete: "set null" }),
+  title: varchar("title", { length: 255 }).notNull(),
+  message: text("message").notNull(),
+  type: varchar("type", { length: 50 }).default("payment_reminder").notNull(), // payment_reminder, general, urgent
+  isRead: boolean("is_read").default(false).notNull(),
+  sentBy: varchar("sent_by", { length: 36 })
+    .references(() => user.id, { onDelete: "set null" }), // Admin who sent it
+  createdAt: timestamp("created_at", { fsp: 3 }).defaultNow().notNull(),
+  readAt: timestamp("read_at", { fsp: 3 }),
+});

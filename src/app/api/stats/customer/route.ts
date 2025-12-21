@@ -15,8 +15,8 @@ export async function GET(req: NextRequest) {
       .leftJoin(shop, eq(products.shopId, shop.id))
       .where(
         and(
-          eq(products.isAvailable, true),
           eq(shop.status, "approved"),
+          // Exclude strictly inactive/deleted products
           sql`${products.status} != 'Deleted' AND ${products.status} != 'Removed'`
         )
       );

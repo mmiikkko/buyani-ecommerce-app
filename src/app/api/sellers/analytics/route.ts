@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/server/drizzle";
 import { getServerSession } from "@/server/session";
 import { eq, inArray, sql, and, gte, lte } from "drizzle-orm";
-import { orders, orderItems, products, shop, payments } from "@/server/schema/auth-schema";
+import { orders, orderItems, products, shop, payments, productVariation } from "@/server/schema/auth-schema";
 
 export async function GET(req: NextRequest) {
   try {
@@ -20,7 +20,7 @@ export async function GET(req: NextRequest) {
     // Calculate date range
     let dateFilter: Date | null = null;
     let endDateFilter: Date | null = null;
-    
+
     if (startDate && endDate) {
       // Custom date range
       dateFilter = new Date(startDate);
@@ -84,19 +84,21 @@ export async function GET(req: NextRequest) {
     const orderItemsList = await db
       .select({
         orderId: orderItems.orderId,
-        productId: orderItems.productId,
+        productId: productVariation.productId,
         quantity: orderItems.quantity,
+        subtotal: orderItems.subtotal,
         createdAt: orders.createdAt,
         productName: products.productName,
         paymentStatus: payments.status,
       })
       .from(orderItems)
+      .innerJoin(productVariation, eq(orderItems.product_variation_id, productVariation.id))
       .innerJoin(orders, eq(orderItems.orderId, orders.id))
-      .innerJoin(products, eq(orderItems.productId, products.id))
+      .innerJoin(products, eq(productVariation.productId, products.id))
       .leftJoin(payments, eq(payments.orderId, orders.id))
       .where(
         and(
-          inArray(orderItems.productId, productIds),
+          inArray(productVariation.productId, productIds),
           ...dateConditions
         )
       );
@@ -107,8 +109,8 @@ export async function GET(req: NextRequest) {
     );
 
     // Generate chart data - group by day
-    const chartDataMap = new Map<string, number>();
-    
+    const chartDataMap = new Map<string, { quantity: number; revenue: number }>();
+
     // Determine number of days to show
     let daysToShow = 30; // default
     if (startDate && endDateFilter) {
@@ -117,33 +119,40 @@ export async function GET(req: NextRequest) {
     } else if (days) {
       daysToShow = parseInt(days, 10);
     }
-    
+
     // Initialize all days with 0
     const endDateForInit = endDateFilter || new Date();
     for (let i = 0; i < daysToShow; i++) {
       const date = new Date(endDateForInit);
       date.setDate(date.getDate() - i);
       const dateKey = date.toISOString().split('T')[0];
-      chartDataMap.set(dateKey, 0);
+      chartDataMap.set(dateKey, { quantity: 0, revenue: 0 });
     }
 
     // Aggregate quantities by day
     validOrderItems.forEach((item) => {
       if (item.createdAt) {
         const dateKey = new Date(item.createdAt).toISOString().split('T')[0];
-        const currentTotal = chartDataMap.get(dateKey) || 0;
-        chartDataMap.set(dateKey, currentTotal + Number(item.quantity || 0));
+        const currentData = chartDataMap.get(dateKey) || { quantity: 0, revenue: 0 };
+        chartDataMap.set(dateKey, {
+          quantity: currentData.quantity + Number(item.quantity || 0),
+          revenue: currentData.revenue + Number(item.subtotal || 0),
+        });
       }
     });
 
     // Convert to array format for chart (most recent first)
     const chart = Array.from(chartDataMap.entries())
-      .map(([day, total]) => ({ day, total }))
+      .map(([day, data]) => ({
+        day,
+        total: data.quantity, // Keep 'total' for backward compatibility or rename
+        revenue: data.revenue
+      }))
       .sort((a, b) => new Date(a.day).getTime() - new Date(b.day).getTime());
 
     // Find top selling product
     const productSalesMap = new Map<string, { productName: string; totalSold: number }>();
-    
+
     validOrderItems.forEach((item) => {
       if (item.productName && item.productId) {
         const existing = productSalesMap.get(item.productId);

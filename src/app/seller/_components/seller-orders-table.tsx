@@ -16,16 +16,24 @@ import { toast } from "sonner";
 import { useLanguage } from "@/lib/i18n/context";
 import { OrderDetailsModal } from "./order-details-modal";
 
+function getShortOrderId(id: string) {
+  if (!id) return "N/A";
+  if (id.startsWith("HUB-")) return id;
+  return `HUB-${id.substring(0, 4).toUpperCase()}`;
+}
+
 export function OrdersTabsTable({
   ordersData,
   filter,
   search,
+  sort,
   onStatusUpdate,
   onRefresh,
 }: {
   ordersData: Order[];
   filter: string;
   search: string;
+  sort: string;
   onStatusUpdate?: (orderId: string, newStatus: string) => void;
   onRefresh?: () => void;
 }) {
@@ -35,6 +43,7 @@ export function OrdersTabsTable({
         orders={ordersData}
         filter={filter}
         search={search}
+        sort={sort}
         onStatusUpdate={onStatusUpdate}
         onRefresh={onRefresh}
       />
@@ -46,12 +55,14 @@ function OrdersTable({
   orders,
   filter,
   search,
+  sort,
   onStatusUpdate,
   onRefresh,
 }: {
   orders: Order[];
   filter: string;
   search: string;
+  sort: string;
   onStatusUpdate?: (orderId: string, newStatus: string) => void;
   onRefresh?: () => void;
 }) {
@@ -75,7 +86,7 @@ function OrdersTable({
       }
 
       toast.success(status === "accepted" ? t("order-accepted-success") : t("order-rejected-success"));
-      
+
       // Call the parent's status update handler if provided
       if (onStatusUpdate) {
         onStatusUpdate(orderId, status === "accepted" ? "confirmed" : "rejected");
@@ -124,29 +135,57 @@ function OrdersTable({
   };
 
   const filteredOrders = useMemo(() => {
-    return (orders ?? []).filter((order) => {
-      const firstItem = order.items?.[0];
-      const productName = firstItem?.productId ?? firstItem?.productName ?? "Unknown";
-      const customer = order.buyerName ?? order.buyerId ?? "Unknown";
+    return (orders ?? [])
+      .filter((order) => {
+        const firstItem = order.items?.[0];
+        const productName = firstItem?.productName || firstItem?.productId || "Unknown";
+        const customer = order.buyerName ?? order.buyerId ?? "Unknown";
 
-      // no real status in type, skipping filter unless you manage a temp status in frontend
-      if (filter !== "all") return true;
-
-      if (search.trim() !== "") {
-        const s = search.toLowerCase();
-        const orderId = (order.orderId || order.id || "").toLowerCase();
-        if (
-          !orderId.includes(s) &&
-          !customer.toLowerCase().includes(s) &&
-          !productName.toLowerCase().includes(s)
-        ) {
-          return false;
+        // 🟢 Status/Type Filtering
+        if (filter === "walk-in") {
+          if (order.type !== "walk-in") return false;
+        } else if (filter === "delivered") {
+          if (order.type === "walk-in") return false;
+          const orderStatus = order.status?.toLowerCase() || order.payment?.status?.toLowerCase() || "";
+          if (orderStatus !== "delivered" && orderStatus !== "completed" && orderStatus !== "complete") return false;
+        } else if (filter !== "all") {
+          // Normal status filtering
+          const orderStatus = order.status?.toLowerCase() || order.payment?.status?.toLowerCase() || "";
+          if (orderStatus !== filter) return false;
         }
-      }
 
-      return true;
-    });
-  }, [orders, filter, search]);
+        // 🟢 Search Filtering
+        if (search.trim() !== "") {
+          const s = search.toLowerCase();
+          const orderId = (order.orderId || order.id || "").toLowerCase();
+          if (
+            !orderId.includes(s) &&
+            !customer.toLowerCase().includes(s) &&
+            !productName.toLowerCase().includes(s)
+          ) {
+            return false;
+          }
+        }
+
+        return true;
+      })
+      .sort((a, b) => {
+        // 🟢 Sorting Logic
+        if (sort === "date-desc") {
+          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+        }
+        if (sort === "date-asc") {
+          return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+        }
+        if (sort === "amount-desc") {
+          return Number(b.total ?? 0) - Number(a.total ?? 0);
+        }
+        if (sort === "amount-asc") {
+          return Number(a.total ?? 0) - Number(b.total ?? 0);
+        }
+        return 0;
+      });
+  }, [orders, filter, search, sort]);
 
   const pageCount = Math.max(1, Math.ceil(filteredOrders.length / rowsPerPage));
 
@@ -194,7 +233,7 @@ function OrdersTable({
 
               return (
                 <TableRow key={orderId}>
-                  <TableCell className="font-medium">{orderId}</TableCell>
+                  <TableCell className="font-medium">{getShortOrderId(orderId)}</TableCell>
 
                   <TableCell>
                     <div className="flex flex-col">
@@ -205,28 +244,36 @@ function OrdersTable({
                     </div>
                   </TableCell>
 
-                  <TableCell>{productName}</TableCell>
+                  <TableCell>{firstItem?.productName || firstItem?.productId || "Product"}</TableCell>
 
                   <TableCell>{firstItem?.quantity ?? 0}</TableCell>
 
                   <TableCell>{order.total ?? 0}</TableCell>
 
                   <TableCell className="flex gap-2 items-center">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => {
-                      setSelectedOrder(order);
-                      setDetailsOpen(true);
-                    }}
-                  >
-                    <Eye className="h-4 w-4" />
-                  </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => {
+                        setSelectedOrder(order);
+                        setDetailsOpen(true);
+                      }}
+                    >
+                      <Eye className="h-4 w-4" />
+                    </Button>
 
                   </TableCell>
 
                   <TableCell>
                     {(() => {
+                      if (order.type === "walk-in") {
+                        return (
+                          <div className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-purple-100 text-purple-700 border border-purple-200">
+                            Walk-in Transaction
+                          </div>
+                        );
+                      }
+
                       const orderStatus = order.status?.toLowerCase() || order.payment?.status?.toLowerCase() || "";
                       const isAccepted = orderStatus === "confirmed" || orderStatus === "accepted";
                       const isRejected = orderStatus === "rejected";

@@ -1,76 +1,123 @@
 import { db } from "@/server/drizzle";
-import { products, productImages, productInventory, shop, user, categories, reviews, orders, orderItems } from "@/server/schema/auth-schema";
-import { eq, sql } from "drizzle-orm";
+import { products, productImages, productInventory, productVariation, shop, user, categories, reviews, orders, orderItems } from "@/server/schema/auth-schema";
+import { eq, sql, inArray } from "drizzle-orm";
 import { NextRequest, NextResponse } from "next/server";
 import { v4 as uuid } from "uuid";
 
 export async function getProducts(userId: string) {
-  return db
+  // 1. Get products
+  const productRows = await db
     .select({
       id: products.id,
       name: products.productName,
-      price: products.price,
       description: products.description,
-      stock: productInventory.quantityInStock,
-      images: productImages.url,
     })
     .from(products)
     .leftJoin(shop, eq(products.shopId, shop.id))
-    .leftJoin(user, eq(shop.sellerId, user.id))
-    .leftJoin(productInventory, eq(productInventory.productId, products.id))
-    .leftJoin(productImages, eq(productImages.productId, products.id))
-    .where(eq(shop.sellerId, userId)); 
+    .where(eq(shop.sellerId, userId));
+
+  if (productRows.length === 0) return [];
+
+  const productIds = productRows.map(p => p.id);
+
+  // 2. Get variations for these products
+  const variations = await db
+    .select()
+    .from(productVariation)
+    .where(inArray(productVariation.productId, productIds));
+
+  const varIds = variations.map(v => v.id);
+
+  // 3. Get inventory
+  const inventories = varIds.length > 0
+    ? await db.select().from(productInventory).where(inArray(productInventory.product_variation_id, varIds))
+    : [];
+
+  // 4. Get images
+  const images = await db
+    .select()
+    .from(productImages)
+    .where(inArray(productImages.productId, productIds));
+
+  // 5. Combine data
+  return productRows.map(p => {
+    const pVars = variations.filter(v => v.productId === p.id);
+    const mainVar = pVars[0];
+    const pImages = images.filter(img => img.productId === p.id);
+
+    let totalStock = 0;
+    pVars.forEach(v => {
+      const inv = inventories.find(i => i.product_variation_id === v.id);
+      if (inv) totalStock += (inv.quantityInStock || 0);
+    });
+
+    return {
+      ...p,
+      price: mainVar ? Number(mainVar.price) : 0,
+      stock: totalStock,
+      images: pImages.map(img => img.url).filter(Boolean)[0] || null, // Keeping simple return format for this function if expected
+    };
+  });
 }
 
 export async function addProducts(req: NextRequest) {
+  try {
     const body = await req.json();
     const { sellerId, shopId, productName, SKU, price, categoryId, description, images, quantityInStock } = body;
-  
+
     if (!sellerId || !shopId || !productName || !price) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
     }
-  
-    try {
-      const productId = uuid();
-  
-      // Insert product
-      await db.insert(products).values({
-        id: productId,
-        shopId,
-        categoryId,
-        productName,
-        SKU,
-        price,
-        description,
-      });
-  
-      // Insert inventory
-      if (quantityInStock !== undefined) {
-        await db.insert(productInventory).values({
-          id: uuid(),
-          productId,
-          quantityInStock,
-          itemsSold: 0,
-        });
-      }
-  
-      // Insert images
-      if (images && Array.isArray(images)) {
-        const imageRows = images.map((url: string) => ({
-          id: uuid(),
-          productId,
-          url,
-        }));
+
+    const productId = uuid();
+
+    // 1. Insert product
+    await db.insert(products).values({
+      id: productId,
+      shopId,
+      categoryId,
+      productName,
+      description,
+    });
+
+    // 2. Create a default variation
+    const variationId = uuid();
+    await db.insert(productVariation).values({
+      id: variationId,
+      productId: productId,
+      variationName: "Standard",
+      variationType: "Standard",
+      variationValue: "Standard",
+      price: String(price),
+      SKU: SKU || `PRD-${Date.now()}`,
+    });
+
+    // 3. Create initial inventory
+    await db.insert(productInventory).values({
+      id: uuid(),
+      product_variation_id: variationId,
+      quantityInStock: quantityInStock ?? 0,
+      itemsSold: 0,
+    });
+
+    // 4. Insert images
+    if (images && Array.isArray(images)) {
+      const imageRows = images.map((url: string) => ({
+        id: uuid(),
+        productId,
+        url,
+      }));
+      if (imageRows.length > 0) {
         await db.insert(productImages).values(imageRows);
       }
-  
-      return NextResponse.json({ message: "Product added", productId });
-    } catch (err) {
-      console.error(err);
-      return NextResponse.json({ error: "Failed to add product" }, { status: 500 });
     }
-    
+
+    return NextResponse.json({ message: "Product added", productId });
+  } catch (err: any) {
+    console.error("Error in addProducts (query):", err);
+    return NextResponse.json({ error: "Failed to add product", message: err.message }, { status: 500 });
   }
+}
 
 export async function getProductById(productId: string) {
   const [productRow] = await db
@@ -79,21 +126,16 @@ export async function getProductById(productId: string) {
       shopId: products.shopId,
       categoryId: products.categoryId,
       productName: products.productName,
-      SKU: products.SKU,
       description: products.description,
-      price: products.price,
       rating: products.rating,
       isAvailable: products.isAvailable,
       status: products.status,
       createdAt: products.createdAt,
       updatedAt: products.updatedAt,
-      stock: productInventory.quantityInStock,
-      itemsSold: productInventory.itemsSold,
       shopName: shop.shopName,
       categoryName: categories.categoryName,
     })
     .from(products)
-    .leftJoin(productInventory, eq(productInventory.productId, products.id))
     .leftJoin(shop, eq(products.shopId, shop.id))
     .leftJoin(categories, eq(products.categoryId, categories.id))
     .where(eq(products.id, productId))
@@ -112,17 +154,47 @@ export async function getProductById(productId: string) {
     .from(productImages)
     .where(eq(productImages.productId, productId));
 
+  // Get variations and inventory for this product
+  const variations = await db
+    .select()
+    .from(productVariation)
+    .where(eq(productVariation.productId, productId));
+
+  const varIds = variations.map(v => v.id);
+  const inventories = varIds.length > 0
+    ? await db.select().from(productInventory).where(inArray(productInventory.product_variation_id, varIds))
+    : [];
+
+  // Group inventory by variation
+  const variationsWithInventory = variations.map(v => {
+    const inv = inventories.find(i => i.product_variation_id === v.id);
+    return {
+      ...v,
+      quantityInStock: inv?.quantityInStock || 0,
+    };
+  });
+
+  // Calculate total stock and items sold
+  let totalStock = 0;
+  let totalItemsSold = 0;
+  inventories.forEach(inv => {
+    totalStock += (inv.quantityInStock || 0);
+    totalItemsSold += (inv.itemsSold || 0);
+  });
+
   // Get review statistics for this product
-  // Join: reviews -> orders -> order_items -> products
-  const reviewStats = await db
-    .select({
-      averageRating: sql<number>`COALESCE(AVG(${reviews.rating}), 0)`.as('averageRating'),
-      reviewCount: sql<number>`COUNT(${reviews.id})`.as('reviewCount'),
-    })
-    .from(reviews)
-    .innerJoin(orders, eq(reviews.orderId, orders.id))
-    .innerJoin(orderItems, eq(orders.id, orderItems.orderId))
-    .where(eq(orderItems.productId, productId));
+  // Join: reviews -> orders -> order_items -> product_variation
+  const reviewStats = varIds.length > 0
+    ? await db
+      .select({
+        averageRating: sql<number>`COALESCE(AVG(${reviews.rating}), 0)`.as('averageRating'),
+        reviewCount: sql<number>`COUNT(${reviews.id})`.as('reviewCount'),
+      })
+      .from(reviews)
+      .innerJoin(orders, eq(reviews.orderId, orders.id))
+      .innerJoin(orderItems, eq(orders.id, orderItems.orderId))
+      .where(inArray(orderItems.product_variation_id, varIds))
+    : [];
 
   const stats = reviewStats[0];
   const averageRating = stats?.averageRating ? Number(stats.averageRating) : 0;
@@ -136,25 +208,26 @@ export async function getProductById(productId: string) {
     shopId: productRow.shopId,
     categoryId: productRow.categoryId,
     productName: productRow.productName,
-    SKU: productRow.SKU ?? "",
+    SKU: variations[0]?.SKU ?? "",
     description: productRow.description ?? null,
-    price: productRow.price !== null ? Number(productRow.price) : undefined,
+    price: variations[0]?.price !== null ? Number(variations[0]?.price) : 0,
     rating: finalRating,
     isAvailable: productRow.isAvailable ?? true,
     status: productRow.status ?? "Available",
-    stock: productRow.stock ?? 0,
-    itemsSold: productRow.itemsSold ?? null,
+    stock: totalStock,
+    itemsSold: totalItemsSold,
     images: imageRows.map((image) => ({
       id: image.id,
       product_id: image.productId,
-      image_url: image.url ?? "", // ✅ string
+      image_url: image.url ?? "",
       is_primary: false,
-    })),    
+    })),
     createdAt: productRow.createdAt,
     updatedAt: productRow.updatedAt,
     shopName: productRow.shopName ?? null,
-    shopStatus: null, // TODO: Add shop.status column to database or query separately
+    shopStatus: null,
     categoryName: productRow.categoryName ?? null,
     reviewCount: reviewCount,
+    variations: variationsWithInventory,
   };
 }

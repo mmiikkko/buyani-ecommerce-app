@@ -28,7 +28,12 @@ export function OrderDetailsModal({ open, onOpenChange, order }: Props) {
       <DialogContent className="max-w-2xl">
         <DialogHeader>
           <DialogTitle>
-            {"order-details"} — {order.orderId}
+            Order Details — {(() => {
+              const id = order.orderId || order.id || "";
+              if (!id) return "N/A";
+              if (id.startsWith("HUB-")) return id;
+              return `HUB-${id.substring(0, 4).toUpperCase()}`;
+            })()}
           </DialogTitle>
         </DialogHeader>
 
@@ -51,7 +56,7 @@ export function OrderDetailsModal({ open, onOpenChange, order }: Props) {
 
         {/* Order Items */}
         <div className="space-y-3 max-h-[350px] overflow-y-auto">
-          {order.items.map((item) => (
+          {(order.items || []).map((item) => (
             <div
               key={`${order.orderId}-${item.productId}`}
               className="flex gap-4 border rounded-lg p-3"
@@ -61,7 +66,7 @@ export function OrderDetailsModal({ open, onOpenChange, order }: Props) {
                 {item.productImage ? (
                   <Image
                     src={item.productImage}
-                    alt={item.productName || item.product?.productName || "Product image"}
+                    alt={item.productName || "Product image"}
                     fill
                     className="object-cover"
                   />
@@ -74,7 +79,7 @@ export function OrderDetailsModal({ open, onOpenChange, order }: Props) {
 
               {/* Product Info */}
               <div className="flex-1 space-y-1">
-                <p className="font-medium">{item.productName || item.product?.productName || "Unknown Product"}</p>
+                <p className="font-medium">{item.productName || "Unknown Product"}</p>
 
                 <p className="text-sm text-muted-foreground">
                   {t("quantity")}: {item.quantity}

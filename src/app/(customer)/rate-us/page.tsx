@@ -1,6 +1,7 @@
 import { getServerSession } from "@/server/session";
 import { redirect } from "next/navigation";
 import { RatingForm } from "../_components/rating-form";
+import { BackButton } from "./_components/back-button";
 
 export default async function RateBuyani() {
   const session = await getServerSession();
@@ -13,6 +14,8 @@ export default async function RateBuyani() {
   return (
     <main className="relative min-h-screen bg-gradient-to-b from-emerald-50 via-slate-50 to-amber-50">
       <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
+        <BackButton />
+
         <header className="flex flex-col gap-2 text-center mb-12">
           <div className="space-y-2">
             <h1 className="text-3xl font-semibold tracking-tight text-slate-900 sm:text-4xl">

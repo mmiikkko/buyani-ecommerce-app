@@ -6,6 +6,8 @@ import { CardActivity } from "./_components/cards-activity";
 import { RecentOrders } from "./_components/cards-recentorders";
 import { ChartAreaIcons } from "./_components/cards-chart";
 import { FrequentBought } from "./_components/cards-frequentbought";
+import { MonthlyDuesNotification } from "./_components/monthly-dues-notification";
+import { SellerNotificationOverlay } from "./_components/seller-notification-overlay";
 import { Order } from "@/types/orders";
 import { Store, Loader2 } from "lucide-react";
 import { useLanguage } from "@/lib/i18n/context";
@@ -90,6 +92,12 @@ export default function SellerDashboard() {
           </div>
         </div>
       </div>
+
+      {/* Monthly Dues Notification */}
+      <MonthlyDuesNotification />
+
+      {/* Admin Notification Overlay */}
+      <SellerNotificationOverlay />
 
       {/* Stats Cards */}
       <section className="w-full">

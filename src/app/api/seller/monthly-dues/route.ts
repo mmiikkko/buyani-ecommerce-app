@@ -1,9 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/server/drizzle";
-import { tentantBilling, tenantPayments, user } from "@/server/schema/auth-schema";
+import { tenantBilling, tenantPayments, user } from "@/server/schema/auth-schema";
 import { eq, desc } from "drizzle-orm";
 import { getServerSession } from "@/server/session";
-import { USER_ROLES } from "@/server/schema/auth-schema";
 
 // GET /api/seller/monthly-dues - Get seller's billing records and payment history
 export async function GET(req: NextRequest) {
@@ -13,19 +12,14 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // Check if user is seller
-    if (!session.user.role.includes(USER_ROLES.SELLER)) {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    }
-
     const sellerId = session.user.id;
 
     // Get all billing records for this seller
     const billingRecords = await db
       .select()
-      .from(tentantBilling)
-      .where(eq(tentantBilling.tenantId, sellerId))
-      .orderBy(desc(tentantBilling.createdAt));
+      .from(tenantBilling)
+      .where(eq(tenantBilling.tenantId, sellerId))
+      .orderBy(desc(tenantBilling.createdAt));
 
     // Get all payment records for this seller's billings
     const billingIds = billingRecords.map((b) => b.id);

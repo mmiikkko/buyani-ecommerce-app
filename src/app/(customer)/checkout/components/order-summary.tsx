@@ -12,6 +12,7 @@ type CartItem = {
   image: string | null;
   shopId?: string | null;
   shopName?: string | null;
+  productVariationId: string;
 };
 
 interface OrderSummaryProps {

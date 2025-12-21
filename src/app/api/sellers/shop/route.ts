@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/server/drizzle";
-import { shop, user } from "@/server/schema/auth-schema";
+import { shop, user as userTable } from "@/server/schema/auth-schema";
 import { eq } from "drizzle-orm";
 import { getAuthenticatedUser } from "@/lib/mobile-auth";
 
@@ -17,8 +17,8 @@ export async function GET(req: NextRequest) {
     // Get user data
     const userData = await db
       .select()
-      .from(user)
-      .where(eq(user.id, sellerId))
+      .from(userTable)
+      .where(eq(userTable.id, sellerId))
       .limit(1);
 
     if (userData.length === 0) {
@@ -94,7 +94,7 @@ export async function PUT(req: NextRequest) {
         .from(shop)
         .where(eq(shop.shopName, body.shopName))
         .limit(1);
-      
+
       if (existingShop.length > 0 && existingShop[0].id !== shopData[0].id) {
         return NextResponse.json(
           { error: "Shop name is already taken" },

@@ -87,8 +87,8 @@ export const addresses = mysqlTable("addresses", {
   id: varchar("id", { length: 36 }).primaryKey(),
 
   userId: varchar("user_id", { length: 36 })
-   .notNull()
-   .references(() => user.id, { onDelete: "cascade" }),
+    .notNull()
+    .references(() => user.id, { onDelete: "cascade" }),
 
   receipientName: varchar("receipient_name", { length: 255 }).notNull(),
   street: varchar("street", { length: 255 }),
@@ -101,7 +101,7 @@ export const addresses = mysqlTable("addresses", {
 
   addedAt: timestamp("added_at", { fsp: 3 }).defaultNow().notNull(),
   modifiedAt: timestamp("modified_at", { fsp: 3 }).defaultNow().notNull(),
-    //.$onUpdate(() => new Date())
+  //.$onUpdate(() => new Date())
 });
 
 export const shop = mysqlTable("shop", {
@@ -192,16 +192,16 @@ export const productInventory = mysqlTable("product_inventory", {
 export const productImages = mysqlTable("product_images", {
   id: varchar("id", { length: 36 }).primaryKey(),
   productId: varchar("product_id", { length: 36 })
-  .notNull()
-  .references(() => products.id, { onDelete: "cascade" }),
+    .notNull()
+    .references(() => products.id, { onDelete: "cascade" }),
   url: longtext("url"),
 });
 
 export const productVariationImages = mysqlTable("product_variation_images", {
   id: varchar("id", { length: 36 }).primaryKey(),
   variationId: varchar("variation_id", { length: 36 })
-  .notNull()
-  .references(() => productVariation.id, { onDelete: "cascade" }),
+    .notNull()
+    .references(() => productVariation.id, { onDelete: "cascade" }),
   url: longtext("url"),
 });
 
@@ -217,6 +217,8 @@ export const orders = mysqlTable("orders", {
     .references(() => addresses.id, { onDelete: "set null" }),
 
   total: decimal("total", { precision: 10, scale: 2 }),
+  orderType: varchar("order_type", { length: 50 }).default("online"),
+  customerName: varchar("customer_name", { length: 255 }),
 
   createdAt: timestamp("created_at", { fsp: 3 }).defaultNow().notNull(),
   updatedAt: timestamp("updated_at", { fsp: 3 })
@@ -242,11 +244,11 @@ export const orderItems = mysqlTable(
   },
 
   //(table) => ({
-    //Prevent duplicate product rows in the same order
-    //orderProductUnique: unique("order_product_unique").on(
-    //table.orderId,
-    //table.productVariationId
-    //),
+  //Prevent duplicate product rows in the same order
+  //orderProductUnique: unique("order_product_unique").on(
+  //table.orderId,
+  //table.productVariationId
+  //),
   //})
 );
 
@@ -259,7 +261,7 @@ export const shippingInfo = mysqlTable("shipping_info", {
   status: varchar("status", { length: 50 }),
   trackingInfo: varchar("tracking_info", { length: 255 }).notNull(),
   shippingFee: decimal("shipping_fee", { precision: 10, scale: 2 }),
-  weight : decimal("weight_l", { precision: 10, scale: 2 }),
+  weight: decimal("weight_l", { precision: 10, scale: 2 }),
   height: decimal("height", { precision: 10, scale: 2 }),
   width: decimal("width", { precision: 10, scale: 2 }),
   length: decimal("length", { precision: 10, scale: 2 }),
@@ -316,42 +318,42 @@ export const carts = mysqlTable("carts", {
 
   createdAt: timestamp("created_at", { fsp: 3 }).defaultNow().notNull(),
   modifiedAt: timestamp("modified_at", { fsp: 3 }).defaultNow().notNull(),
-    //.$onUpdate(() => new Date()),
+  //.$onUpdate(() => new Date()),
 },
   //(table) => ({
-    //buyerUnique: unique("buyer_unique").on(table.buyerId),
+  //buyerUnique: unique("buyer_unique").on(table.buyerId),
   //})
 );
-  
 
-  export const cartItems = mysqlTable(
-    "cart_items",
-    {
-      id: varchar("id", { length: 36 }).primaryKey(),
-  
-      cartId: varchar("cart_id", { length: 36 })
-        .notNull()
-        .references(() => carts.id, { onDelete: "cascade" }),
-  
-        productVariationId: varchar("product_variation_id", { length: 36 })
-        .notNull()
-        .references(() => productVariation.id, { onDelete: "cascade" }),
-  
-      quantity: int("quantity").notNull().default(1),
-  
-      addedAt: timestamp("added_at", { fsp: 3 }).defaultNow().notNull(),
-      modifiedAt: timestamp("modified_at", { fsp: 3 }).$onUpdate(() => new Date()),
-    },
-  
-    //(table) => ({
-      // Prevents duplicate products in the same cart
-      //uniqueCartItem: unique("unique_cart_item").on(
-        //table.cartId,
-        //table.productVariationId
-      //),
-    //})
-  );
-  
+
+export const cartItems = mysqlTable(
+  "cart_items",
+  {
+    id: varchar("id", { length: 36 }).primaryKey(),
+
+    cartId: varchar("cart_id", { length: 36 })
+      .notNull()
+      .references(() => carts.id, { onDelete: "cascade" }),
+
+    productVariationId: varchar("product_variation_id", { length: 36 })
+      .notNull()
+      .references(() => productVariation.id, { onDelete: "cascade" }),
+
+    quantity: int("quantity").notNull().default(1),
+
+    addedAt: timestamp("added_at", { fsp: 3 }).defaultNow().notNull(),
+    modifiedAt: timestamp("modified_at", { fsp: 3 }).$onUpdate(() => new Date()),
+  },
+
+  //(table) => ({
+  // Prevents duplicate products in the same cart
+  //uniqueCartItem: unique("unique_cart_item").on(
+  //table.cartId,
+  //table.productVariationId
+  //),
+  //})
+);
+
 export const reviews = mysqlTable("reviews", {
   id: varchar("id", { length: 36 }).primaryKey(),
 
@@ -369,54 +371,54 @@ export const reviews = mysqlTable("reviews", {
   updatedAt: timestamp("updated_at", { fsp: 3 })
     .$onUpdate(() => new Date()),
 },
-//(table) => ({
+  //(table) => ({
   //reviewUnique: unique("review_unique").on(table.orderId, table.buyerId),
-//})
+  //})
 );
 
 export const conversations = mysqlTable("conversations", {
   id: varchar("id", { length: 36 }).primaryKey(),
-  
+
   customerId: varchar("customer_id", { length: 36 })
     .notNull()
     .references(() => user.id, { onDelete: "cascade" }),
-  
+
   sellerId: varchar("seller_id", { length: 36 })
     .notNull()
     .references(() => user.id, { onDelete: "cascade" }),
-  
+
   productId: varchar("product_id", { length: 36 })
     .references(() => products.id, { onDelete: "set null" }),
-  
+
   lastMessageAt: timestamp("last_message_at", { fsp: 3 }).defaultNow(),
   createdAt: timestamp("created_at", { fsp: 3 }).defaultNow().notNull(),
   updatedAt: timestamp("updated_at", { fsp: 3 })
     .$onUpdate(() => new Date())
     .notNull(),
 },
-//(table) => ({
+  //(table) => ({
   //uniqueConversation: unique("unique_conversation").on(
-    //table.customerId,
-    //table.sellerId,
-    //table.productId
+  //table.customerId,
+  //table.sellerId,
+  //table.productId
   //),
-//})
+  //})
 );
 
 export const messages = mysqlTable("messages", {
   id: varchar("id", { length: 36 }).primaryKey(),
-  
+
   conversationId: varchar("conversation_id", { length: 36 })
     .notNull()
     .references(() => conversations.id, { onDelete: "cascade" }),
-  
+
   senderId: varchar("sender_id", { length: 36 })
     .notNull()
     .references(() => user.id, { onDelete: "cascade" }),
-  
+
   content: text("content").notNull(),
   isRead: boolean("is_read").default(false).notNull(),
-  
+
   createdAt: timestamp("created_at", { fsp: 3 }).defaultNow().notNull(),
   updatedAt: timestamp("updated_at", { fsp: 3 })
     .$onUpdate(() => new Date())
@@ -503,6 +505,39 @@ export const applicationDocuments = mysqlTable("application_documents", {
     .references(() => sellerApplications.id, { onDelete: "cascade" }),
   documentType: varchar("document_type", { length: 100 }).notNull(),
   documentURL: longtext("document_url").notNull(),
-  uploadedAt: timestamp("uploaded_at", { fsp: 3 }).defaultNow().notNull(),
   verified: boolean("verified").default(false).notNull(),
 })
+
+export const shopReviews = mysqlTable("shop_reviews", {
+  id: varchar("id", { length: 36 }).primaryKey(),
+  shopId: varchar("shop_id", { length: 36 })
+    .notNull()
+    .references(() => shop.id, { onDelete: "cascade" }),
+  buyerId: varchar("buyer_id", { length: 36 })
+    .notNull()
+    .references(() => user.id, { onDelete: "cascade" }),
+  orderId: varchar("order_id", { length: 36 })
+    .references(() => orders.id, { onDelete: "set null" }),
+  rating: int("rating").notNull(),
+  comment: text("comment"),
+  createdAt: timestamp("created_at", { fsp: 3 }).defaultNow(),
+  updatedAt: timestamp("updated_at", { fsp: 3 }).$onUpdate(() => new Date()),
+});
+
+export const sellerNotifications = mysqlTable("seller_notifications", {
+  id: varchar("id", { length: 36 }).primaryKey(),
+  sellerId: varchar("seller_id", { length: 36 })
+    .notNull()
+    .references(() => user.id, { onDelete: "cascade" }),
+  billingId: varchar("billing_id", { length: 36 })
+    .references(() => tenantBilling.id, { onDelete: "set null" }),
+  title: varchar("title", { length: 255 }).notNull(),
+  message: text("message").notNull(),
+  type: varchar("type", { length: 50 }).default("payment_reminder").notNull(),
+  isRead: boolean("is_read").default(false).notNull(),
+  sentBy: varchar("sent_by", { length: 36 })
+    .references(() => user.id, { onDelete: "set null" }),
+  createdAt: timestamp("created_at", { fsp: 3 }).defaultNow().notNull(),
+  readAt: timestamp("read_at", { fsp: 3 }),
+});
+

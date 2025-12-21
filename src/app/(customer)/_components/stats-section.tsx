@@ -5,17 +5,17 @@ import { ShoppingBag, Store, Users, Star } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useLanguage } from "@/lib/i18n/context";
 
-export function   StatsSection() {
+export function StatsSection() {
   const [counts, setCounts] = useState({ products: 0, shops: 0, users: 0, rating: 0 });
   const { t } = useLanguage();
-  
+
   const fetchStats = async () => {
     try {
       const [statsRes, ratingRes] = await Promise.all([
         fetch("/api/stats/customer").then(res => res.json()).catch(() => ({ products: 0, shops: 0, users: 0 })),
         fetch("/api/ratings/average").then(res => res.json()).then(data => ({ average: data.average || 0 })).catch(() => ({ average: 0 })),
       ]);
-      
+
       setCounts({
         products: statsRes.products || 0,
         shops: statsRes.shops || 0,
@@ -30,40 +30,40 @@ export function   StatsSection() {
   useEffect(() => {
     // Initial fetch
     fetchStats();
-    
+
     // Silent refresh every 30 seconds
     const interval = setInterval(() => {
       fetchStats();
     }, 30000);
-    
+
     return () => clearInterval(interval);
   }, []);
 
   const stats = [
     {
       icon: ShoppingBag,
-      value: counts.products > 0 ? `${counts.products}+` : "500+",
+      value: `${counts.products}+`,
       label: t("products-available"),
       color: "from-emerald-500 to-emerald-600",
       bgColor: "bg-emerald-50",
     },
     {
       icon: Store,
-      value: counts.shops > 0 ? `${counts.shops}+` : "50+",
+      value: `${counts.shops}+`,
       label: t("active-shops"),
       color: "from-blue-500 to-blue-600",
       bgColor: "bg-blue-50",
     },
     {
       icon: Users,
-      value: counts.users > 0 ? `${counts.users}+` : "1000+",
+      value: `${counts.users}+`,
       label: t("customers"),
       color: "from-purple-500 to-purple-600",
       bgColor: "bg-purple-50",
     },
     {
       icon: Star,
-      value: counts.rating > 0 ? counts.rating.toFixed(1) : "4.8",
+      value: counts.rating.toFixed(1),
       label: t("average-rating"),
       color: "from-amber-500 to-amber-600",
       bgColor: "bg-amber-50",

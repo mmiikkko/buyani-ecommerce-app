@@ -18,6 +18,7 @@ type CartItem = {
   image: string | null;
   shopId?: string | null;
   shopName?: string | null;
+  productVariationId: string;
 };
 
 type AddressData = {
@@ -235,7 +236,7 @@ export function ReviewStep({
       {/* Order Items */}
       <Card>
         <CardHeader>
-            <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <ShoppingBag className="h-5 w-5 text-emerald-600" />
               <CardTitle>{t("order-items")} ({cartItems.length})</CardTitle>
@@ -295,8 +296,8 @@ export function ReviewStep({
           onClick={handlePlaceOrder}
           disabled={isProcessing || !address || !paymentMethod}
           className={`flex-1 ${paymentMethod === "cod"
-              ? "bg-emerald-600 hover:bg-emerald-700"
-              : "bg-orange-500 hover:bg-orange-600"
+            ? "bg-emerald-600 hover:bg-emerald-700"
+            : "bg-orange-500 hover:bg-orange-600"
             }`}
         >
           {isProcessing

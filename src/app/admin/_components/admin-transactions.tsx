@@ -55,12 +55,25 @@ export function AdminTransactions() {
   const getTransactionTypeColor = (type: string | null) => {
     if (!type) return "bg-gray-500";
     const t = type.toLowerCase();
-    if (t === "instore" || t.includes("instore")) return "bg-emerald-600";
+    if (t === "walk-in" || t.includes("walk-in") || t === "instore" || t.includes("instore")) return "bg-emerald-600";
     if (t === "online" || t.includes("online")) return "bg-blue-600";
     if (t.includes("payment") || t.includes("purchase")) return "bg-emerald-600";
     if (t.includes("refund")) return "bg-amber-600";
     if (t.includes("cancel")) return "bg-red-600";
     return "bg-gray-600";
+  };
+
+  const formatTransactionType = (type: string | null) => {
+    if (!type) return "N/A";
+    const t = type.toLowerCase();
+    if (t === "walk-in" || t.includes("walk-in") || t === "instore" || t.includes("instore")) return "Walk-In";
+    if (t === "online" || t.includes("online")) return "Online";
+    return type;
+  };
+
+  const generateShortId = (id: string, prefix: string = "TXN") => {
+    if (id.startsWith(`${prefix}-`)) return id;
+    return `${prefix}-${id.substring(0, 4).toUpperCase()}`;
   };
 
   return (
@@ -147,12 +160,12 @@ export function AdminTransactions() {
 
               <TableBody>
                 {filtered.map((t, index) => (
-                  <TableRow 
-                    key={t.id} 
+                  <TableRow
+                    key={t.id}
                     className={`hover:bg-gray-50 transition-colors ${index % 2 === 0 ? "bg-white" : "bg-gray-50/50"}`}
                   >
-                    <TableCell className="font-medium text-gray-800 font-mono text-xs break-all max-w-[200px]">
-                      {t.id.slice(0, 8)}...
+                    <TableCell className="font-medium text-gray-800 font-mono text-sm">
+                      {generateShortId(t.id, "TXN")}
                     </TableCell>
                     <TableCell className="text-gray-700 text-sm">
                       <div className="flex flex-col">
@@ -167,7 +180,7 @@ export function AdminTransactions() {
                     <TableCell className="text-gray-700 text-sm">
                       <div className="flex flex-col">
                         <span className="font-medium text-gray-800">
-                          Order #{t.orderId.slice(0, 8)}...
+                          {generateShortId(t.orderId, "HUB")}
                         </span>
                         {t.orderTotal && (
                           <span className="text-xs text-emerald-600 font-semibold">
@@ -178,7 +191,7 @@ export function AdminTransactions() {
                     </TableCell>
                     <TableCell>
                       <Badge className={`${getTransactionTypeColor(t.transactionType)} text-white border-0`}>
-                        {t.transactionType || "N/A"}
+                        {formatTransactionType(t.transactionType)}
                       </Badge>
                     </TableCell>
                     <TableCell className="max-w-[250px] truncate text-gray-600 text-sm">

@@ -78,12 +78,11 @@ export const getServerSession = cache(async () => {
       error?.cause?.code === "ECONNRESET" ||
       error?.cause?.code === "PROTOCOL_CONNECTION_LOST" ||
       error?.cause?.code === "ETIMEDOUT" ||
-      error?.cause?.errno === -4077 || // ECONNRESET errno on Windows
-      error?.message?.includes("ECONNRESET") ||
-      error?.message?.includes("Connection lost") ||
-      error?.message?.includes("Failed query");
+      error?.cause?.errno === -4077 ||
+      error?.message?.toLowerCase()?.includes("econnreset") ||
+      error?.message?.toLowerCase()?.includes("connection lost") ||
+      error?.message?.toLowerCase()?.includes("failed query");
 
-    // Only log unexpected non-connection issues; otherwise stay silent
     if (!isConnectionError && error?.message) {
       console.warn("Session error:", error.message);
     }

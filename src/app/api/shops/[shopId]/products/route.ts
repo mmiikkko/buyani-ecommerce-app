@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/server/drizzle';
-import { products, productImages, productInventory, shop } from '@/server/schema/auth-schema';
-import { eq, and, inArray, sql } from 'drizzle-orm';
+import { products, productImages, productInventory, productVariation, shop, reviews, orderItems, categories } from '@/server/schema/auth-schema';
+import { eq, and, inArray, sql, avg } from 'drizzle-orm';
 
 // GET /api/shops/[shopId]/products - Get products for a specific shop
 export async function GET(
@@ -13,7 +13,11 @@ export async function GET(
 
     // Verify shop exists and is approved
     const shopData = await db
-      .select()
+      .select({
+        id: shop.id,
+        status: shop.status,
+        shopName: shop.shopName,
+      })
       .from(shop)
       .where(eq(shop.id, shopId))
       .limit(1);
@@ -38,23 +42,19 @@ export async function GET(
         id: products.id,
         shopId: products.shopId,
         categoryId: products.categoryId,
+        categoryName: categories.categoryName,
         productName: products.productName,
-        SKU: products.SKU,
         description: products.description,
-        price: products.price,
         rating: products.rating,
         isAvailable: products.isAvailable,
         status: products.status,
         createdAt: products.createdAt,
         updatedAt: products.updatedAt,
-        stock: productInventory.quantityInStock,
-        itemsSold: productInventory.itemsSold,
-        shopName: shop.shopName,
-        shopStatus: shop.status,
+        shopName: sql<string>`${shopData[0].shopName}`,
+        shopStatus: sql<string>`${shopData[0].status}`,
       })
       .from(products)
-      .leftJoin(productInventory, eq(productInventory.productId, products.id))
-      .leftJoin(shop, eq(products.shopId, shop.id))
+      .leftJoin(categories, eq(products.categoryId, categories.id))
       .where(and(
         eq(products.shopId, shopId),
         eq(products.isAvailable, true),
@@ -62,13 +62,46 @@ export async function GET(
         sql`${products.status} != 'Deleted' AND ${products.status} != 'Removed'`
       ));
 
-    // Get all images for products
     const productIds = productList.map(p => p.id);
+
+    // Fetch average ratings for these products from order reviews
+    const productRatings = productIds.length > 0
+      ? await db
+        .select({
+          productId: productVariation.productId,
+          avgRating: avg(reviews.rating),
+        })
+        .from(reviews)
+        .innerJoin(orderItems, eq(reviews.orderId, orderItems.orderId))
+        .innerJoin(productVariation, eq(orderItems.product_variation_id, productVariation.id))
+        .where(inArray(productVariation.productId, productIds))
+        .groupBy(productVariation.productId)
+      : [];
+
+    // Fetch Images
     const allImages = productIds.length > 0
       ? await db
-          .select()
-          .from(productImages)
-          .where(inArray(productImages.productId, productIds))
+        .select()
+        .from(productImages)
+        .where(inArray(productImages.productId, productIds))
+      : [];
+
+    // Fetch Variations
+    const allVariations = productIds.length > 0
+      ? await db
+        .select()
+        .from(productVariation)
+        .where(inArray(productVariation.productId, productIds))
+      : [];
+
+    const variationIds = allVariations.map(v => v.id);
+
+    // Fetch Inventory
+    const allInventory = variationIds.length > 0
+      ? await db
+        .select()
+        .from(productInventory)
+        .where(inArray(productInventory.product_variation_id, variationIds))
       : [];
 
     // Group images by productId
@@ -80,9 +113,21 @@ export async function GET(
       imagesByProduct.get(img.productId)!.push(img);
     }
 
-    // Combine products with their images
+    // Combine products with their images, variants, and inventory data
     const productsWithImages = productList.map((product) => {
       const productImagesList = imagesByProduct.get(product.id) || [];
+      const pVariations = allVariations.filter(v => v.productId === product.id);
+      const mainVar = pVariations[0];
+      const price = mainVar ? Number(mainVar.price) : 0;
+
+      let stock = 0;
+      pVariations.forEach(v => {
+        const inv = allInventory.find(i => i.product_variation_id === v.id);
+        if (inv) stock += (inv.quantityInStock || 0);
+      });
+
+      const avgRating = productRatings.find(r => r.productId === product.id)?.avgRating;
+
       return {
         ...product,
         images: productImagesList
@@ -93,8 +138,10 @@ export async function GET(
             image_url: [img.url!],
             is_primary: false,
           })),
-        price: product.price ? Number(product.price) : undefined,
-        stock: product.stock ?? 0,
+        price,
+        SKU: mainVar?.SKU || undefined,
+        stock,
+        rating: avgRating ? Number(avgRating) : 0,
       };
     });
 
@@ -107,4 +154,3 @@ export async function GET(
     );
   }
 }
-

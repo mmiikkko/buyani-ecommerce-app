@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/server/drizzle";
-import { orders, shop, payments, products, orderItems } from "@/server/schema/auth-schema";
-import { eq, inArray, sql, and, gte, lte } from "drizzle-orm";
+import { orders, shop, payments, products, orderItems, productVariation } from "@/server/schema/auth-schema";
+import { eq, inArray, and, gte, lte } from "drizzle-orm";
 import { getAuthenticatedUser } from "@/lib/mobile-auth";
 
 // GET /api/sellers/stats - Get seller dashboard statistics
@@ -21,7 +21,7 @@ export async function GET(req: NextRequest) {
     // Calculate date range
     let dateFilter: Date | null = null;
     let endDateFilter: Date | null = null;
-    
+
     if (startDate && endDate) {
       // Custom date range
       dateFilter = new Date(startDate);
@@ -60,7 +60,7 @@ export async function GET(req: NextRequest) {
 
     // Get seller's products (including deleted ones for stats purposes)
     const sellerProducts = await db
-      .select({ 
+      .select({
         id: products.id,
         status: products.status,
         isAvailable: products.isAvailable,
@@ -68,17 +68,17 @@ export async function GET(req: NextRequest) {
       .from(products)
       .where(inArray(products.shopId, shopIds));
 
-    // Count active products (not removed)
+    // Count active products (all posted products, including out of stock)
     const activeProducts = sellerProducts.filter(p => {
       const status = (p.status || "").toString().trim().toLowerCase();
-      const isRemoved = status === "removed" || status === "deleted" || (!p.isAvailable && !status);
+      const isRemoved = status === "removed" || status === "deleted";
       return !isRemoved;
     }).length;
 
-    // Count removed products
+    // Count strictly removed/deleted products
     const removedProducts = sellerProducts.filter(p => {
       const status = (p.status || "").toString().trim().toLowerCase();
-      const isRemoved = status === "removed" || status === "deleted" || (!p.isAvailable && !status);
+      const isRemoved = status === "removed" || status === "deleted";
       return isRemoved;
     }).length;
 
@@ -100,12 +100,13 @@ export async function GET(req: NextRequest) {
     }
 
     const orderItemsList = await db
-      .select({ 
+      .select({
         orderId: orderItems.orderId,
-        productId: orderItems.productId,
+        productId: productVariation.productId,
       })
       .from(orderItems)
-      .innerJoin(products, eq(orderItems.productId, products.id))
+      .innerJoin(productVariation, eq(orderItems.product_variation_id, productVariation.id))
+      .innerJoin(products, eq(productVariation.productId, products.id))
       .innerJoin(orders, eq(orderItems.orderId, orders.id))
       .where(and(...orderItemsConditions));
 
@@ -147,7 +148,7 @@ export async function GET(req: NextRequest) {
         if (orderStatus === "rejected") {
           return sum;
         }
-        
+
         // Use order total as the primary source (seller's revenue from the order)
         // paymentReceived might be different (e.g., includes change for cash payments)
         const amount = order.orderTotal ? Number(order.orderTotal) : 0;
@@ -168,10 +169,10 @@ export async function GET(req: NextRequest) {
       activeProducts,
       removedProducts,
     });
-  } catch (error) {
-    console.error("Error fetching seller stats:", error);
+  } catch (error: any) {
+    console.error("Error fetching seller stats:", error.message, error.stack);
     return NextResponse.json(
-      { error: "Failed to fetch seller stats" },
+      { error: "Failed to fetch seller stats", message: error.message },
       { status: 500 }
     );
   }

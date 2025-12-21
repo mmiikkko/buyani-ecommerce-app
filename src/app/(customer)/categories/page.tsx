@@ -35,30 +35,52 @@ export default function CategoriesPage() {
   const [loadingProducts, setLoadingProducts] = useState(false);
 
   useEffect(() => {
-    async function fetchCategories() {
+    let intervalId: NodeJS.Timeout;
+
+    async function fetchCategories(isSilent = false) {
+      if (!isSilent) setLoading(true);
       try {
         const res = await fetch("/api/categories?withCounts=true");
         if (!res.ok) return;
 
         const data = await res.json();
         setCategories(data);
-
-        if (categoryId) {
-          setSelectedCategoryId(categoryId);
-          fetchProductsByCategory(categoryId);
-        }
       } catch (err) {
         console.error(err);
       } finally {
-        setLoading(false);
+        if (!isSilent) setLoading(false);
       }
     }
 
+    // Initial fetch
     fetchCategories();
-  }, [categoryId]);
 
-  const fetchProductsByCategory = async (id: string) => {
-    setLoadingProducts(true);
+    // Set up silent refresh interval (10 seconds)
+    intervalId = setInterval(() => {
+      fetchCategories(true);
+      // Also refresh products for selected category if one exists
+      if (selectedCategoryId) {
+        fetchProductsByCategory(selectedCategoryId, true);
+      }
+    }, 10000);
+
+    // Refresh on focus
+    const onFocus = () => {
+      fetchCategories(true);
+      if (selectedCategoryId) {
+        fetchProductsByCategory(selectedCategoryId, true);
+      }
+    };
+    window.addEventListener('focus', onFocus);
+
+    return () => {
+      clearInterval(intervalId);
+      window.removeEventListener('focus', onFocus);
+    };
+  }, [categoryId, selectedCategoryId]);
+
+  const fetchProductsByCategory = async (id: string, isSilent = false) => {
+    if (!isSilent) setLoadingProducts(true);
     try {
       const res = await fetch(`/api/products?categoryId=${id}`);
       if (res.ok) {
@@ -67,7 +89,7 @@ export default function CategoriesPage() {
     } catch (err) {
       console.error(err);
     } finally {
-      setLoadingProducts(false);
+      if (!isSilent) setLoadingProducts(false);
     }
   };
 
@@ -118,9 +140,8 @@ export default function CategoriesPage() {
                     <AnimatedCategoryButton delay={index * 50}>
                       <button
                         onClick={() => handleCategoryClick(category.id)}
-                        className={`w-full rounded-2xl text-left ${
-                          isSelected ? "ring-2 ring-emerald-500" : ""
-                        }`}
+                        className={`w-full rounded-2xl text-left ${isSelected ? "ring-2 ring-emerald-500" : ""
+                          }`}
                       >
                         <div className="flex justify-between items-center bg-white p-4 rounded-2xl shadow">
                           <p className={`font-semibold ${color.nameClassName}`}>

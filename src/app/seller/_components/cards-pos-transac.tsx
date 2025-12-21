@@ -32,6 +32,7 @@ export function CardsPosTransac({ cartItems, onUpdateCart }: CardsPosTransacProp
   const [collapsed, setCollapsed] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState("Cash");
   const [paymentReceived, setPaymentReceived] = useState("");
+  const [customerName, setCustomerName] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
 
   const removeItem = (id: string) => {
@@ -84,6 +85,7 @@ export function CardsPosTransac({ cartItems, onUpdateCart }: CardsPosTransacProp
           paymentMethod: paymentMethod.toLowerCase(),
           paymentReceived: paymentMethod === "Cash" ? Number(paymentReceived) : subtotal,
           change: paymentMethod === "Cash" ? change : 0,
+          customerName: customerName.trim() || "Walk-in Customer",
         }),
       });
 
@@ -93,10 +95,11 @@ export function CardsPosTransac({ cartItems, onUpdateCart }: CardsPosTransacProp
       }
 
       toast.success(t("sale-completed-success"));
-      
+
       // Clear cart and reset
       onUpdateCart([]);
       setPaymentReceived("");
+      setCustomerName("");
       setPaymentMethod("Cash");
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : t("failed-complete-sale");
@@ -180,6 +183,18 @@ export function CardsPosTransac({ cartItems, onUpdateCart }: CardsPosTransacProp
           <div className="flex justify-between pt-2 border-t">
             <span className="font-medium">{t("total")}:</span>
             <span className="font-semibold">₱{subtotal.toFixed(2)}</span>
+          </div>
+
+          {/* CUSTOMER NAME INPUT */}
+          <div className="flex flex-col gap-2">
+            <label className="text-sm font-medium">Customer Name</label>
+            <Input
+              type="text"
+              placeholder="Enter customer name (optional)"
+              value={customerName}
+              onChange={(e) => setCustomerName(e.target.value)}
+              maxLength={255}
+            />
           </div>
 
           {/* PAYMENT METHOD DROPDOWN MENU */}

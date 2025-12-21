@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/server/drizzle";
-import { tentantBilling, user, shop } from "@/server/schema/auth-schema";
+import { tenantBilling, user, shop } from "@/server/schema/auth-schema";
 import { eq, sql } from "drizzle-orm";
 import { getServerSession } from "@/server/session";
 import { USER_ROLES } from "@/server/schema/auth-schema";
@@ -21,22 +21,22 @@ export async function GET(req: NextRequest) {
     // Get all tenant billing records with seller and shop info
     const billingRecords = await db
       .select({
-        id: tentantBilling.id,
-        tenantId: tentantBilling.tenantId,
-        billingMonth: tentantBilling.billingMonth,
-        amountDue: tentantBilling.amountDue,
-        dueDate: tentantBilling.dueDate,
-        status: tentantBilling.status,
-        createdAt: tentantBilling.createdAt,
-        updatedAt: tentantBilling.updatedAt,
+        id: tenantBilling.id,
+        tenantId: tenantBilling.tenantId,
+        billingMonth: tenantBilling.billingMonth,
+        amountDue: tenantBilling.amountDue,
+        dueDate: tenantBilling.dueDate,
+        status: tenantBilling.status,
+        createdAt: tenantBilling.createdAt,
+        updatedAt: tenantBilling.updatedAt,
         tenantName: user.name,
         tenantEmail: user.email,
         shopName: shop.shopName,
       })
-      .from(tentantBilling)
-      .leftJoin(user, eq(tentantBilling.tenantId, user.id))
-      .leftJoin(shop, eq(shop.sellerId, tentantBilling.tenantId))
-      .orderBy(sql`${tentantBilling.createdAt} DESC`);
+      .from(tenantBilling)
+      .leftJoin(user, eq(tenantBilling.tenantId, user.id))
+      .leftJoin(shop, eq(shop.sellerId, tenantBilling.tenantId))
+      .orderBy(sql`${tenantBilling.createdAt} DESC`);
 
     const formattedRecords = billingRecords.map((record) => ({
       id: record.id,

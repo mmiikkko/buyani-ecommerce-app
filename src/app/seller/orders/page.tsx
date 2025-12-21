@@ -18,6 +18,7 @@ export default function Orders() {
   const [error, setError] = useState<string | null>(null);
   const [filter, setFilter] = useState<string>("all");
   const [search, setSearch] = useState<string>("");
+  const [sort, setSort] = useState<string>("date-desc");
 
   // Fetch orders from API
   const fetchOrders = useCallback(async (showLoading = true) => {
@@ -28,16 +29,16 @@ export default function Orders() {
         setRefreshing(true);
       }
       setError(null);
-      
+
       const res = await fetch("/api/sellers/orders");
-      
+
       if (!res.ok) {
         if (res.status === 401) {
           throw new Error(t("unauthorized-login"));
         }
         throw new Error(t("failed-fetch-orders"));
       }
-      
+
       const data: Order[] = await res.json();
       setOrders(data);
     } catch (err) {
@@ -54,6 +55,12 @@ export default function Orders() {
 
   useEffect(() => {
     fetchOrders(true);
+
+    const interval = setInterval(() => {
+      fetchOrders(false);
+    }, 10000);
+
+    return () => clearInterval(interval);
   }, [fetchOrders]);
 
   // Handle order status update
@@ -71,7 +78,7 @@ export default function Orders() {
       }
 
       toast.success(t("order-status-success"));
-      
+
       // Refetch orders to get the latest data
       await fetchOrders(false);
     } catch (err) {
@@ -107,7 +114,7 @@ export default function Orders() {
         <div className="flex flex-row justify-between">
           <div className="flex flex-col">
             <h1 className="text-xl mb-1 font-bold text-[#2E7D32]">Orders</h1>
-            <p>Manage your online and in-store orders</p>
+            <p>Manage your online and walk-in orders</p>
           </div>
         </div>
         <div className="flex items-center justify-center py-12">
@@ -143,15 +150,19 @@ export default function Orders() {
           {t("refresh")}
         </Button>
       </div>
-      
+
       <SellerOrdersSearchbar
+        currentFilter={filter}
         onFilterChange={setFilter}
+        currentSort={sort}
+        onSortChange={setSort}
         onSearchChange={setSearch}
       />
-      <OrdersTabsTable 
+      <OrdersTabsTable
         ordersData={orders}
         filter={filter}
         search={search}
+        sort={sort}
         onStatusUpdate={handleOrderStatusUpdate}
         onRefresh={() => fetchOrders(false)}
       />

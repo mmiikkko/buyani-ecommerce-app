@@ -1,6 +1,6 @@
 import { NextRequest } from 'next/server';
 import { db } from '@/server/drizzle';
-import { carts, cartItems, products, productImages } from '@/server/schema/auth-schema';
+import { carts, cartItems, products, productImages, productVariation } from '@/server/schema/auth-schema';
 import { eq, and, inArray } from 'drizzle-orm';
 import { getServerSession } from '@/server/session';
 import { v4 as uuidv4 } from 'uuid';
@@ -78,30 +78,34 @@ export async function GET(req: NextRequest) {
       });
     }
 
-    // Get cart items with product information
+    // Get cart items with product and variation information
     const items = await db
       .select({
         id: cartItems.id,
-        productId: cartItems.productId,
+        productVariationId: cartItems.productVariationId,
+        productId: productVariation.productId,
         quantity: cartItems.quantity,
         productName: products.productName,
-        price: products.price,
+        price: productVariation.price,
         description: products.description,
+        variationName: productVariation.variationName,
+        variationValue: productVariation.variationValue,
       })
       .from(cartItems)
-      .leftJoin(products, eq(cartItems.productId, products.id))
+      .leftJoin(productVariation, eq(cartItems.productVariationId, productVariation.id))
+      .leftJoin(products, eq(productVariation.productId, products.id))
       .where(eq(cartItems.cartId, cartId));
 
     // Get product images
     const productIds = [...new Set(items.map((i) => i.productId).filter(Boolean))] as string[];
     const images = productIds.length > 0
       ? await db
-          .select({
-            productId: productImages.productId,
-            url: productImages.url,
-          })
-          .from(productImages)
-          .where(inArray(productImages.productId, productIds))
+        .select({
+          productId: productImages.productId,
+          url: productImages.url,
+        })
+        .from(productImages)
+        .where(inArray(productImages.productId, productIds))
       : [];
 
     // Create image map
@@ -112,15 +116,17 @@ export async function GET(req: NextRequest) {
       }
     }
 
-    // Combine items with images
     const cartItemsWithImages = items.map((item) => ({
       id: item.id,
       productId: item.productId,
+      productVariationId: item.productVariationId,
       quantity: item.quantity,
       productName: item.productName,
       price: item.price ? parseFloat(String(item.price)) : 0,
       description: item.description || null,
-      image: item.productId ? imageMap.get(item.productId) || null : null,
+      variationName: item.variationName,
+      variationValue: item.variationValue,
+      image: item.productId ? imageMap.get(item.productId) : null,
     }));
 
     return corsResponse(cartItemsWithImages);
@@ -140,10 +146,10 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { productId, quantity = 1 } = body;
+    const { productVariationId, quantity = 1 } = body;
 
-    if (!productId) {
-      return corsResponse({ error: 'Product ID is required' }, 400);
+    if (!productVariationId) {
+      return corsResponse({ error: 'Product Variation ID is required' }, 400);
     }
 
     // Get or create cart
@@ -171,7 +177,7 @@ export async function POST(req: NextRequest) {
       .where(
         and(
           eq(cartItems.cartId, cartId),
-          eq(cartItems.productId, productId)
+          eq(cartItems.productVariationId, productVariationId)
         )
       )
       .limit(1);
@@ -187,10 +193,11 @@ export async function POST(req: NextRequest) {
       await db.insert(cartItems).values({
         id: uuidv4(),
         cartId,
-        productId,
+        productVariationId,
         quantity,
       });
     }
+    console.log(`Cart: Item added/updated for cart ${cartId}`);
 
     return corsResponse({ success: true, message: 'Item added to cart' });
   } catch (error) {

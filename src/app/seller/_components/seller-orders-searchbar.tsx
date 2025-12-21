@@ -12,12 +12,18 @@ import { Filter, ChevronDown, Check } from "lucide-react";
 import { useLanguage } from "@/lib/i18n/context";
 
 type SellerOrdersSearchbarProps = {
+  currentFilter: string;
   onFilterChange: (value: string) => void;
+  currentSort: string;
+  onSortChange: (value: string) => void;
   onSearchChange: (value: string) => void;
 };
 
 export function SellerOrdersSearchbar({
+  currentFilter,
   onFilterChange,
+  currentSort,
+  onSortChange,
   onSearchChange,
 }: SellerOrdersSearchbarProps) {
   const { t } = useLanguage();
@@ -35,30 +41,96 @@ export function SellerOrdersSearchbar({
       {/* Filter Dropdown */}
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="outline" className="flex items-center gap-2 text-[#717182]">
-            <Filter className="h-4 w-4" /> {t("filter")} <ChevronDown className="h-4 w-4" />
+          <Button variant="outline" className="flex items-center gap-2 text-[#717182] min-w-[140px] justify-between">
+            <div className="flex items-center gap-2">
+              <Filter className="h-4 w-4" />
+              <span>
+                {currentFilter === "all" ? t("all") :
+                  currentFilter === "pending" ? t("order-status-pending") :
+                    currentFilter === "confirmed" ? t("accepted") :
+                      currentFilter === "cancelled" ? t("cancelled") :
+                        currentFilter === "shipped" ? t("shipped") :
+                          currentFilter === "delivered" ? t("delivered") :
+                            currentFilter === "walk-in" ? t("walk-in") :
+                              t("filter")}
+              </span>
+            </div>
+            <ChevronDown className="h-4 w-4 opacity-50" />
           </Button>
         </DropdownMenuTrigger>
 
-        <DropdownMenuContent side="bottom" align="start" sideOffset={8} className="z-[9999]">
-          <DropdownMenuItem onClick={() => onFilterChange("all")}>
-            <Check className="mr-2 h-4 w-4 text-[#2E7D32]" /> {t("all")}
+        <DropdownMenuContent side="bottom" align="start" sideOffset={8} className="z-[9999] min-w-[140px]">
+          <DropdownMenuItem onClick={() => onFilterChange("all")} className="flex items-center justify-between">
+            <span>{t("all")}</span>
+            {currentFilter === "all" && <Check className="h-4 w-4 text-[#2E7D32]" />}
           </DropdownMenuItem>
 
-          <DropdownMenuItem onClick={() => onFilterChange("pending")}>
-            {t("order-status-pending")}
+          <DropdownMenuItem onClick={() => onFilterChange("pending")} className="flex items-center justify-between">
+            <span>{t("order-status-pending")}</span>
+            {currentFilter === "pending" && <Check className="h-4 w-4 text-[#2E7D32]" />}
           </DropdownMenuItem>
 
-          <DropdownMenuItem onClick={() => onFilterChange("confirmed")}>
-            {t("completed")}
+          <DropdownMenuItem onClick={() => onFilterChange("confirmed")} className="flex items-center justify-between">
+            <span>{t("accepted")}</span>
+            {currentFilter === "confirmed" && <Check className="h-4 w-4 text-[#2E7D32]" />}
           </DropdownMenuItem>
 
-          <DropdownMenuItem onClick={() => onFilterChange("cancelled")}>
-            {t("cancelled")}
+          <DropdownMenuItem onClick={() => onFilterChange("shipped")} className="flex items-center justify-between">
+            <span>{t("shipped")}</span>
+            {currentFilter === "shipped" && <Check className="h-4 w-4 text-[#2E7D32]" />}
           </DropdownMenuItem>
 
-          <DropdownMenuItem onClick={() => onFilterChange("shipped")}>
-            {t("shipped")}
+          <DropdownMenuItem onClick={() => onFilterChange("delivered")} className="flex items-center justify-between">
+            <span>{t("delivered")}</span>
+            {currentFilter === "delivered" && <Check className="h-4 w-4 text-[#2E7D32]" />}
+          </DropdownMenuItem>
+
+          <DropdownMenuItem onClick={() => onFilterChange("cancelled")} className="flex items-center justify-between">
+            <span>{t("cancelled")}</span>
+            {currentFilter === "cancelled" && <Check className="h-4 w-4 text-[#2E7D32]" />}
+          </DropdownMenuItem>
+
+          <DropdownMenuItem onClick={() => onFilterChange("walk-in")} className="flex items-center justify-between">
+            <span>{t("walk-in")}</span>
+            {currentFilter === "walk-in" && <Check className="h-4 w-4 text-[#2E7D32]" />}
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+
+      {/* Sort Dropdown */}
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button variant="outline" className="flex items-center gap-2 text-[#717182] min-w-[160px] justify-between">
+            <div className="flex items-center gap-2">
+              <Filter className="h-4 w-4 rotate-90" />
+              <span>
+                {currentSort === "date-desc" ? t("date-newest") :
+                  currentSort === "date-asc" ? t("date-oldest") :
+                    currentSort === "amount-desc" ? t("amount-highest") :
+                      currentSort === "amount-lowest" ? t("amount-lowest") :
+                        t("sort")}
+              </span>
+            </div>
+            <ChevronDown className="h-4 w-4 opacity-50" />
+          </Button>
+        </DropdownMenuTrigger>
+
+        <DropdownMenuContent side="bottom" align="end" sideOffset={8} className="z-[9999] min-w-[160px]">
+          <DropdownMenuItem onClick={() => onSortChange("date-desc")} className="flex items-center justify-between">
+            <span>{t("date-newest")}</span>
+            {currentSort === "date-desc" && <Check className="h-4 w-4 text-[#2E7D32]" />}
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => onSortChange("date-asc")} className="flex items-center justify-between">
+            <span>{t("date-oldest")}</span>
+            {currentSort === "date-asc" && <Check className="h-4 w-4 text-[#2E7D32]" />}
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => onSortChange("amount-desc")} className="flex items-center justify-between">
+            <span>{t("amount-highest")}</span>
+            {currentSort === "amount-desc" && <Check className="h-4 w-4 text-[#2E7D32]" />}
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => onSortChange("amount-lowest")} className="flex items-center justify-between">
+            <span>{t("amount-lowest")}</span>
+            {currentSort === "amount-lowest" && <Check className="h-4 w-4 text-[#2E7D32]" />}
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>

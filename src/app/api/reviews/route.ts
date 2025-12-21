@@ -1,9 +1,6 @@
 import { NextResponse } from "next/server";
 import { db } from '@/server/drizzle';
-import { reviews } from '@/server/schema/auth-schema';
-import { orderItems } from '@/server/schema/auth-schema';
-import { orders } from '@/server/schema/auth-schema';
-import { user } from '@/server/schema/auth-schema';
+import { reviews, orderItems, orders, user, productVariation } from '@/server/schema/auth-schema';
 import { eq, inArray, and } from "drizzle-orm";
 import { getServerSession } from '@/server/session';
 import { v4 as uuidv4 } from 'uuid';
@@ -29,7 +26,8 @@ export async function GET(req: Request) {
         orderId: orderItems.orderId,
       })
       .from(orderItems)
-      .where(eq(orderItems.productId, productId));
+      .innerJoin(productVariation, eq(orderItems.product_variation_id, productVariation.id))
+      .where(eq(productVariation.productId, productId));
 
     const orderIds = [...new Set(relatedOrderItems.map((o) => o.orderId))];
 
@@ -136,10 +134,10 @@ export async function POST(req: Request) {
         })
         .where(eq(reviews.id, existingReview[0].id));
 
-      return NextResponse.json({ 
-        success: true, 
+      return NextResponse.json({
+        success: true,
         message: "Review updated successfully",
-        reviewId: existingReview[0].id 
+        reviewId: existingReview[0].id
       });
     }
 
@@ -155,10 +153,10 @@ export async function POST(req: Request) {
       updatedAt: new Date(),
     });
 
-    return NextResponse.json({ 
-      success: true, 
+    return NextResponse.json({
+      success: true,
       message: "Review submitted successfully",
-      reviewId 
+      reviewId
     });
   } catch (err) {
     console.error("Error creating review:", err);

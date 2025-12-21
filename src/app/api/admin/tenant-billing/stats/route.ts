@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/server/drizzle";
-import { tentantBilling, user } from "@/server/schema/auth-schema";
+import { tenantBilling, user } from "@/server/schema/auth-schema";
 import { eq, sql } from "drizzle-orm";
 import { getServerSession } from "@/server/session";
 import { USER_ROLES } from "@/server/schema/auth-schema";
@@ -13,29 +13,24 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // Check if user is admin
-    if (!session.user.role.includes(USER_ROLES.ADMIN)) {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    }
-
     // Get total tenants (users with seller role)
-    const totalTenantsResult = await db
+    const totalSellers = await db
       .select({
-        count: sql<number>`COUNT(DISTINCT ${tentantBilling.tenantId})`,
+        count: sql<number>`COUNT(DISTINCT ${tenantBilling.tenantId})`,
       })
-      .from(tentantBilling);
+      .from(tenantBilling);
 
-    const totalTenants = Number(totalTenantsResult[0]?.count || 0);
+    const totalTenants = Number(totalSellers[0]?.count || 0);
 
     // Get billing statistics by status
-    const statsResult = await db
+    const statusStats = await db
       .select({
-        status: tentantBilling.status,
+        status: tenantBilling.status,
         count: sql<number>`COUNT(*)`,
-        totalAmount: sql<number>`COALESCE(SUM(${tentantBilling.amountDue}), 0)`,
+        totalAmount: sql<number>`COALESCE(SUM(${tenantBilling.amountDue}), 0)`,
       })
-      .from(tentantBilling)
-      .groupBy(tentantBilling.status);
+      .from(tenantBilling)
+      .groupBy(tenantBilling.status);
 
     let paid = 0;
     let unpaid = 0;
@@ -44,7 +39,7 @@ export async function GET(req: NextRequest) {
     let totalPaid = 0;
     let totalUnpaid = 0;
 
-    statsResult.forEach((stat) => {
+    statusStats.forEach((stat) => {
       const count = Number(stat.count || 0);
       const amount = Number(stat.totalAmount || 0);
 
@@ -66,7 +61,7 @@ export async function GET(req: NextRequest) {
       .select({
         count: sql<number>`COUNT(*)`,
       })
-      .from(tentantBilling);
+      .from(tenantBilling);
 
     const totalRecords = Number(totalRecordsResult[0]?.count || 0);
 

@@ -11,6 +11,15 @@ import { ShoppingCart, CheckCircle2, XCircle, Clock, Truck } from "lucide-react"
 import { Badge } from "@/components/ui/badge";
 import type { Order } from "@/types/orders";
 import { useLanguage } from "@/lib/i18n/context";
+import { OrderDetailsModal } from "./order-details-modal";
+import { Eye } from "lucide-react";
+import { Button } from "@/components/ui/button";
+
+function getShortOrderId(id: string) {
+  if (!id) return "N/A";
+  if (id.startsWith("HUB-")) return id;
+  return `HUB-${id.substring(0, 4).toUpperCase()}`;
+}
 
 /**
  * Adapter: backend Order -> RecentOrder shape
@@ -31,20 +40,23 @@ type BackendOrder = {
   }[];
 };
 
-function adaptOrdersToRecent(raw: BackendOrder[]): Order[] {
+function adaptOrdersToRecent(raw: any[]): Order[] {
   return raw.map((o) => ({
-    orderId: String(o.id),
-    buyerId: o.buyerId,
+    orderId: String(o.id || o.orderId),
+    id: String(o.id),
+    buyerId: o.buyerId || "",
     addressId: o.addressId ?? null,
-    total: Number(o.total ?? 0),
+    total: Number(o.total ?? o.amount ?? 0),
     createdAt: o.createdAt
       ? new Date(o.createdAt).toISOString()
       : new Date().toISOString(),
     shopName:
-      o.items?.[0]?.product?.productName ??
+      o.shopName ||
+      o.items?.[0]?.product?.productName ||
       "Your Shop",
-    items: [],
+    items: o.items || [],
     status: o.status?.toLowerCase() || "pending",
+    type: o.type || "online",
   }));
 }
 
@@ -52,12 +64,15 @@ type RecentOrdersProps = {
   orders: Order[];
 };
 
-export function RecentOrders({ orders }: RecentOrdersProps)  {
+export function RecentOrders({ orders }: RecentOrdersProps) {
   const { t } = useLanguage();
   const [recentOrders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(false);
   const [initialLoading, setInitialLoading] = useState(true);
   const hasInitialFetched = useRef(false);
+  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+  const [detailsOpen, setDetailsOpen] = useState(false);
+
 
   const fetchOrders = useCallback(async (showLoading = false) => {
     try {
@@ -120,6 +135,7 @@ export function RecentOrders({ orders }: RecentOrdersProps)  {
       const normalizedOrders = orders.map(order => ({
         ...order,
         orderId: order.orderId || (order as any).id || "",
+        items: order.items || [],
       }));
       const recent = normalizedOrders
         .sort(
@@ -139,7 +155,7 @@ export function RecentOrders({ orders }: RecentOrdersProps)  {
       }
       fetchOrders(isInitial);
     }
-    
+
     // Refresh orders silently every 10 seconds (less frequent for better performance)
     const interval = setInterval(() => {
       if (!orders || orders.length === 0) {
@@ -186,7 +202,7 @@ export function RecentOrders({ orders }: RecentOrdersProps)  {
           </div>
         )}
 
-        {recentOrders.map((order) => {
+        {recentOrders.map((order, index) => {
           const status = order.status?.toLowerCase() || "pending";
           const isAccepted = status === "confirmed" || status === "accepted";
           const isRejected = status === "rejected";
@@ -220,54 +236,99 @@ export function RecentOrders({ orders }: RecentOrdersProps)  {
             bgColor = "bg-gradient-to-r from-blue-50/50 to-transparent border-blue-100 hover:border-blue-200";
             textColor = "text-blue-600";
           } else if (isAccepted) {
-            statusLabel = t("accepted");
-            statusIcon = CheckCircle2;
             statusColor = "bg-emerald-100 text-emerald-700 border-emerald-300";
             bgColor = "bg-gradient-to-r from-emerald-50/50 to-transparent border-emerald-100 hover:border-emerald-200";
             textColor = "text-[#2E7D32]";
           }
 
+          if (order.type === "walk-in") {
+            statusLabel = "Walk-in Transaction";
+            statusColor = "bg-purple-100 text-purple-700 border-purple-300";
+            bgColor = "bg-gradient-to-r from-purple-50/50 to-transparent border-purple-100 hover:border-purple-200";
+            textColor = "text-purple-600";
+          }
+
           const StatusIcon = statusIcon;
 
           const orderId = order.id || order.orderId || "";
-          
+          const firstImage = order.items?.[0]?.productImage;
+
           return (
             <div
-              key={orderId}
-              className={`flex justify-between items-center p-4 rounded-xl hover:shadow-md transition-all duration-200 border ${bgColor}`}
+              key={`${orderId}-${index}`}
+              className={`flex items-center p-4 rounded-xl hover:shadow-md transition-all duration-200 border ${bgColor} gap-4`}
             >
-              <div className="flex flex-col gap-2 flex-1">
-                <div className="flex items-center gap-2">
-                  <span className="font-semibold text-slate-900">
-                    {t("order")} #{orderId ? orderId.slice(0, 8) : "N/A"}...
+              {/* Action Button - Left */}
+              <div className="shrink-0 mr-1">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setSelectedOrder(order);
+                    setDetailsOpen(true);
+                  }}
+                  className="text-[#2E7D32] border-[#2E7D32] hover:bg-[#2E7D32] hover:text-white transition-all font-medium min-w-[70px]"
+                >
+                  {t("view")}
+                </Button>
+              </div>
+
+              {/* Product Image */}
+              <div className="h-12 w-12 rounded-lg bg-white border border-slate-200 shrink-0 overflow-hidden relative shadow-sm">
+                {firstImage ? (
+                  <img
+                    src={firstImage}
+                    alt="Product"
+                    className="h-full w-full object-cover"
+                  />
+                ) : (
+                  <div className="flex items-center justify-center h-full w-full bg-slate-50">
+                    <ShoppingCart className="h-5 w-5 text-slate-300" />
+                  </div>
+                )}
+              </div>
+
+              {/* Order Info - Center */}
+              <div className="flex flex-col gap-1 flex-1 min-w-0">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="font-semibold text-slate-900 truncate">
+                    #{getShortOrderId(orderId)}
                   </span>
                   <Badge
                     variant="outline"
-                    className={`text-xs font-semibold ${statusColor}`}
+                    className={`text-[10px] h-5 font-semibold px-2 ${statusColor} whitespace-nowrap`}
                   >
                     <StatusIcon className="h-3 w-3 mr-1" />
                     {statusLabel}
                   </Badge>
                 </div>
-                <p className="text-sm text-muted-foreground">
-                  {order.shopName} • {new Date(order.createdAt).toLocaleDateString("en-US", {
+                <p className="text-xs text-muted-foreground truncate opacity-80">
+                  {order.shopName || "Store"} • {new Date(order.createdAt).toLocaleDateString("en-US", {
                     month: "short",
-                    day: "numeric",
-                    year: "numeric"
+                    day: "numeric"
                   })}
                 </p>
               </div>
 
-              <span className={`font-bold text-lg ${textColor}`}>
-                ₱{(order.total ?? 0).toLocaleString("en-US", {
-                  minimumFractionDigits: 2,
-                  maximumFractionDigits: 2,
-                })}
-              </span>
+              {/* Amount - Right */}
+              <div className="text-right shrink-0 ml-2">
+                <span className={`font-bold text-base ${textColor}`}>
+                  ₱{(order.total ?? 0).toLocaleString("en-US", {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2,
+                  })}
+                </span>
+              </div>
             </div>
           );
         })}
       </CardContent>
-    </Card>
+
+      <OrderDetailsModal
+        open={detailsOpen}
+        onOpenChange={setDetailsOpen}
+        order={selectedOrder}
+      />
+    </Card >
   );
 }

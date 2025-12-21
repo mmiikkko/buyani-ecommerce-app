@@ -24,4 +24,5 @@ export type Order = {
   payment?: Payment | null;           // payment information
   paymentMethod?: string;  // payment method
   transactions?: string;     // transaction information
+  type?: "online" | "walk-in"; // transaction type
 };

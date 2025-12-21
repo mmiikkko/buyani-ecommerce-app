@@ -20,7 +20,7 @@ export default function ProductsPage() {
   const searchQuery = searchParams.get("search") || "";
   const sortParam = searchParams.get("sort") || "";
   const { t } = useLanguage();
-  
+
   const [allProducts, setAllProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
@@ -40,60 +40,49 @@ export default function ProductsPage() {
   }, [sortParam]);
 
   useEffect(() => {
-    async function fetchData() {
+    let intervalId: NodeJS.Timeout;
+
+    async function fetchData(isSilent = false) {
+      if (!isSilent) setLoading(true);
       try {
-        // Fetch products and categories in parallel
         const [productsRes, categoriesRes] = await Promise.all([
           fetch("/api/products"),
           fetch("/api/categories?withCounts=true")
         ]);
 
-        // Handle products
         if (productsRes.ok) {
           const productsData = await productsRes.json();
           if (Array.isArray(productsData)) {
-            // Debug: Check if categoryName exists
-            if (productsData.length > 0) {
-              const sample = productsData[0];
-              console.log('Sample product:', {
-                name: sample.productName,
-                categoryName: sample.categoryName,
-                categoryId: sample.categoryId,
-                hasCategoryName: !!sample.categoryName
-              });
-              // Log all unique category names found
-              const uniqueCategories = [...new Set(productsData.map((p: Product) => p.categoryName).filter(Boolean))];
-              console.log('Unique category names in products:', uniqueCategories);
-            }
             setAllProducts(productsData);
-          } else {
-            console.error("Expected array but got:", productsData);
-            setAllProducts([]);
           }
-        } else {
-          console.error("Failed to fetch products");
-          setAllProducts([]);
         }
 
-        // Handle categories - show ALL categories
         if (categoriesRes.ok) {
           const categoriesData = await categoriesRes.json();
-          console.log('Categories fetched:', categoriesData.map((c: Category) => c.categoryName));
           setCategories(categoriesData);
-        } else {
-          console.error("Failed to fetch categories");
-          setCategories([]);
         }
       } catch (error) {
         console.error("Error fetching data:", error);
-        setAllProducts([]);
-        setCategories([]);
       } finally {
-        setLoading(false);
+        if (!isSilent) setLoading(false);
       }
     }
 
+    // Initial fetch
     fetchData();
+
+    // Set up silent refresh interval (10 seconds)
+    intervalId = setInterval(() => {
+      fetchData(true);
+    }, 10000);
+
+    // Refresh on tab focus
+    window.addEventListener('focus', () => fetchData(true));
+
+    return () => {
+      clearInterval(intervalId);
+      window.removeEventListener('focus', () => fetchData(true));
+    };
   }, []);
 
   const categoryOptions = useMemo(() => {
@@ -128,7 +117,7 @@ export default function ProductsPage() {
       if (selectedCategory !== "all" && selectedCategoryId) {
         // Filter by categoryId for more reliable matching
         matchesCategory = product.categoryId === selectedCategoryId;
-        
+
         // Fallback: also check categoryName if categoryId doesn't match
         if (!matchesCategory && product.categoryName) {
           const selectedCategoryName = selectedCategory.toLowerCase().trim();

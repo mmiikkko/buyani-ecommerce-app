@@ -31,6 +31,7 @@ import {
   Layout,
   ChevronUp,
   User2,
+  BarChart3,
 } from "lucide-react";
 
 import { authClient } from "@/server/auth-client";
@@ -46,6 +47,7 @@ const items = [
   { title: "Shops", url: "/admin/shops", icon: Store },
   { title: "Products", url: "/admin/products-monitor", icon: Package },
   { title: "Tenants", url: "/admin/tenant-payments", icon: CalendarSync },
+  { title: "Revenue Reports", url: "/admin/revenue-reports", icon: BarChart3 },
   { title: "Transactions", url: "/admin/transactions", icon: Wallet },
   { title: "Site Settings", url: "/admin/site-settings", icon: Layout },
 ];
@@ -71,7 +73,7 @@ export function AppSidebar() {
 
     fetchAdminInfo();
   }, []);
-  
+
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect

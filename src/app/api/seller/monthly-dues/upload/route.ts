@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/server/drizzle";
-import { tentantBilling, tenantPayments } from "@/server/schema/auth-schema";
+import { tenantBilling, tenantPayments } from "@/server/schema/auth-schema";
 import { eq } from "drizzle-orm";
 import { getServerSession } from "@/server/session";
 import { USER_ROLES } from "@/server/schema/auth-schema";
@@ -44,8 +44,8 @@ export async function POST(req: NextRequest) {
     // Verify billing belongs to this seller
     const billing = await db
       .select()
-      .from(tentantBilling)
-      .where(eq(tentantBilling.id, billingId))
+      .from(tenantBilling)
+      .where(eq(tenantBilling.id, billingId))
       .limit(1);
 
     if (!billing.length) {
@@ -78,12 +78,12 @@ export async function POST(req: NextRequest) {
 
     // Update billing status to pending_verification
     await db
-      .update(tentantBilling)
+      .update(tenantBilling)
       .set({
         status: "pending_verification",
         updatedAt: new Date(),
       })
-      .where(eq(tentantBilling.id, billingId));
+      .where(eq(tenantBilling.id, billingId));
 
     return NextResponse.json({
       success: true,

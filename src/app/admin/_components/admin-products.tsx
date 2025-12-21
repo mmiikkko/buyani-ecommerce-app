@@ -18,6 +18,7 @@ type APIProduct = {
   id: string;
   shopId: string;
   categoryId: string;
+  categoryName?: string | null;
   productName: string;
   SKU: string | null;
   description: string | null;
@@ -34,7 +35,7 @@ type APIProduct = {
   images: Array<{
     id: string;
     product_id: string;
-    image_url: string[];
+    image_url: string;
     is_primary: boolean;
   }>;
 };
@@ -87,23 +88,31 @@ export function AdminProducts() {
     try {
       const res = await fetch("/api/products");
       const data: APIProduct[] = await res.json();
-      
+
       // Transform API response to display format
-      const transformedProducts: Product[] = data.map((p) => ({
-        id: p.id,
-        name: p.productName,
-        shopOwner: p.shopName || "Unknown Shop",
-        description: p.description || "",
-        category: p.categoryId || "Uncategorized",
-        price: Number(p.price) || 0,
-        stock: p.stock || 0,
-        dateAdded: p.createdAt,
-        status: mapProductStatus(p.status),
-        flags: 0,
-        reason: undefined,
-        image: p.images?.[0]?.image_url?.[0] || "/assets/placeholder.png",
-      }));
-      
+      const transformedProducts: Product[] = data.map((p) => {
+        // Handle Image: API returns image_url as string.
+        const rawImg = p.images?.[0]?.image_url;
+        const validImg = (rawImg && (rawImg.startsWith('/') || rawImg.startsWith('http') || rawImg.startsWith('data:')))
+          ? rawImg
+          : "";
+
+        return {
+          id: p.id,
+          name: p.productName,
+          shopOwner: p.shopName || "Unknown Shop",
+          description: p.description || "",
+          category: p.categoryName || p.categoryId || "Uncategorized",
+          price: Number(p.price) || 0,
+          stock: p.stock || 0,
+          dateAdded: p.createdAt,
+          status: mapProductStatus(p.status),
+          flags: 0,
+          reason: undefined,
+          image: validImg
+        };
+      });
+
       setProducts(transformedProducts);
     } catch (err) {
       console.error("Fetch products error:", err);
@@ -111,7 +120,7 @@ export function AdminProducts() {
       setLoading(false);
     }
   };
-  
+
   // Map API status to display status
   const mapProductStatus = (status: string | null): "normal" | "flagged" | "removed" => {
     if (!status) return "normal";
@@ -144,7 +153,7 @@ export function AdminProducts() {
         apiUpdates.isAvailable = false;
       }
     }
-    
+
     await fetch(`/api/products?id=${id}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
@@ -298,25 +307,28 @@ export function AdminProducts() {
               const isNew = isNewProduct(product.dateAdded);
               const isFlagged = product.status === "flagged";
               const isRemoved = product.status === "removed";
-              
+
               return (
-                <Card 
-                  key={product.id} 
-                  className={`overflow-hidden shadow-md hover:shadow-lg transition-all duration-300 rounded-xl border ${
-                    isFlagged 
-                      ? "border-red-200 bg-gradient-to-br from-white to-red-50/30" 
-                      : isRemoved
+                <Card
+                  key={product.id}
+                  className={`overflow-hidden shadow-md hover:shadow-lg transition-all duration-300 rounded-xl border ${isFlagged
+                    ? "border-red-200 bg-gradient-to-br from-white to-red-50/30"
+                    : isRemoved
                       ? "border-gray-200 bg-gradient-to-br from-white to-gray-50/30 opacity-75"
                       : "border-emerald-100 bg-gradient-to-br from-white to-emerald-50/30"
-                  }`}
+                    }`}
                 >
-                  <div className="relative w-full h-40 overflow-hidden">
-                    <Image
-                      src={product.image}
-                      alt={product.name}
-                      fill
-                      className={`object-cover ${isRemoved ? "grayscale opacity-60" : ""}`}
-                    />
+                  <div className="relative w-full h-40 overflow-hidden bg-gray-100 flex items-center justify-center">
+                    {product.image && (product.image.startsWith('/') || product.image.startsWith('http') || product.image.startsWith('data:')) ? (
+                      <Image
+                        src={product.image}
+                        alt={product.name}
+                        fill
+                        className={`object-cover ${isRemoved ? "grayscale opacity-60" : ""}`}
+                      />
+                    ) : (
+                      <Package className={`h-12 w-12 text-gray-300 ${isRemoved ? "opacity-60" : ""}`} />
+                    )}
 
                     {/* NEW BADGE */}
                     {isNew && (
@@ -352,7 +364,7 @@ export function AdminProducts() {
                     <h3 className="font-bold text-sm text-gray-800 mb-1 line-clamp-2 min-h-[2.5rem]">
                       {product.name}
                     </h3>
-                    
+
                     {product.description && (
                       <p className="text-xs text-gray-600 mb-2 line-clamp-1">
                         {product.description}
@@ -364,7 +376,7 @@ export function AdminProducts() {
                         <Store className="h-3 w-3 text-gray-500" />
                         <span className="truncate font-medium">{product.shopOwner}</span>
                       </div>
-                      
+
                       <div className="flex items-center gap-1.5 text-xs text-gray-600">
                         <Tag className="h-3 w-3 text-gray-500" />
                         <span>{product.category}</span>
@@ -477,9 +489,9 @@ export function AdminProducts() {
 
       </div>
 
-      <AdminProductModal 
-        open={isModalOpen} 
-        onClose={closeModal} 
+      <AdminProductModal
+        open={isModalOpen}
+        onClose={closeModal}
         product={selectedProduct}
       />
     </div>

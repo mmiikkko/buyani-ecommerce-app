@@ -20,6 +20,8 @@ interface CartItem {
   image: string | null;
   shopId: string | null;
   shopName: string | null;
+  variationName?: string | null;
+  variationId?: string | null;
 }
 
 interface CartClientProps {
@@ -45,7 +47,7 @@ export function CartClient({ initialItems, userId }: CartClientProps) {
     if (storedPath && storedPath !== "/cart") {
       setPreviousPath(storedPath);
     }
-    
+
     // Store current path as previous for next navigation
     const currentPath = window.location.pathname;
     const referrer = document.referrer;
@@ -177,10 +179,10 @@ export function CartClient({ initialItems, userId }: CartClientProps) {
       const deletePromises = Array.from(itemsToDelete).map(itemId =>
         removeFromCart(userId, itemId)
       );
-      
+
       const results = await Promise.all(deletePromises);
       const allSuccess = results.every(r => r.success);
-      
+
       if (allSuccess) {
         setItems((prev) => prev.filter((item) => !itemsToDelete.has(item.id)));
         setSelectedItems((prev) => {
@@ -387,6 +389,11 @@ export function CartClient({ initialItems, userId }: CartClientProps) {
                           <h3 className="font-semibold text-slate-900 mb-1">
                             {item.productName || t("unnamed-product")}
                           </h3>
+                          {item.variationName && item.variationName !== "Standard" && (
+                            <p className="text-sm text-slate-500 mb-2">
+                              {item.variationName}
+                            </p>
+                          )}
                           <p className="text-lg font-bold text-emerald-600 mb-3">
                             ₱{((item.price || 0) * item.quantity).toFixed(2)}
                           </p>
@@ -487,4 +494,3 @@ export function CartClient({ initialItems, userId }: CartClientProps) {
     </div>
   );
 }
-

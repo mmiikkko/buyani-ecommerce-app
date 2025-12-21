@@ -75,7 +75,7 @@ export async function PUT(
     const transactionId = uuidv4();
     await db.insert(transactions).values({
       id: transactionId,
-      userId: session.user.id,
+      userId: user.id,
       orderId: orderId,
       transactionType: "online",
       remarks: `Seller ${status === "shipped" ? "shipped" : status} the order`,

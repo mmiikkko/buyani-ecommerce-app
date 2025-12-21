@@ -18,43 +18,48 @@ export function BestSellersSection() {
   const { t } = useLanguage();
 
   useEffect(() => {
-    fetch("/api/products")
-      .then((res) => {
-        if (!res.ok) {
-          // Handle error gracefully without throwing
-          console.warn(`Failed to fetch products: HTTP ${res.status}`);
-          return res.json().catch(() => ({})); // Try to parse error response, fallback to empty object
+    let intervalId: NodeJS.Timeout;
+
+    const fetchBestSellers = async (isSilent = false) => {
+      if (!isSilent) setLoading(true);
+      try {
+        const res = await fetch("/api/products");
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+
+        if (Array.isArray(data)) {
+          const sorted = data
+            .sort((a: Product, b: Product) => {
+              const aSold = a.itemsSold ?? 0;
+              const bSold = b.itemsSold ?? 0;
+              if (bSold !== aSold) return bSold - aSold;
+              const aRating = Number(a.rating ?? 0);
+              const bRating = Number(b.rating ?? 0);
+              return bRating - aRating;
+            })
+            .slice(0, MAX_BEST_SELLERS);
+          setProducts(sorted);
         }
-        return res.json();
-      })
-      .then((data) => {
-        // Ensure data is an array before sorting
-        if (!Array.isArray(data)) {
-          // If it's an error object, log it silently
-          if (data && typeof data === 'object' && 'error' in data) {
-            console.warn("API error:", data.error);
-          }
-          setProducts([]);
-          return;
-        }
-        // Sort by itemsSold or rating, take top MAX_BEST_SELLERS
-        const sorted = data
-          .sort((a: Product, b: Product) => {
-            const aSold = a.itemsSold ?? 0;
-            const bSold = b.itemsSold ?? 0;
-            if (bSold !== aSold) return bSold - aSold;
-            const aRating = Number(a.rating ?? 0);
-            const bRating = Number(b.rating ?? 0);
-            return bRating - aRating;
-          })
-          .slice(0, MAX_BEST_SELLERS);
-        setProducts(sorted);
-      })
-      .catch((err) => {
-        // Silently handle errors - don't log to console to avoid cluttering
-        setProducts([]);
-      })
-      .finally(() => setLoading(false));
+      } catch (err) {
+        console.warn("Failed to fetch best sellers:", err);
+      } finally {
+        if (!isSilent) setLoading(false);
+      }
+    };
+
+    fetchBestSellers();
+
+    // Silent refresh every 10 seconds
+    intervalId = setInterval(() => fetchBestSellers(true), 10000);
+
+    // Refresh on focus
+    const onFocus = () => fetchBestSellers(true);
+    window.addEventListener("focus", onFocus);
+
+    return () => {
+      clearInterval(intervalId);
+      window.removeEventListener("focus", onFocus);
+    };
   }, []);
 
   return (

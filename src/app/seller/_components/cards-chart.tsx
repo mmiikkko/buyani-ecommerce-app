@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { Area, AreaChart, CartesianGrid, XAxis } from "recharts";
+import { Area, AreaChart, CartesianGrid, XAxis, YAxis } from "recharts";
 import { TrendingUp, Calendar } from "lucide-react";
 import {
   Card,
@@ -34,12 +34,16 @@ const dateRangeOptions: { value: DateRange; label: string }[] = [
   { value: "all", label: "All time" },
 ];
 
+import { useLanguage } from "@/lib/i18n/context";
+
 export function ChartAreaIcons() {
+  const { t } = useLanguage();
   const [data, setData] = useState<
-    { day: string; total: number }[]
+    { day: string; total: number; revenue: number }[]
   >([]);
   const [loading, setLoading] = useState(true);
   const [dateRange, setDateRange] = useState<DateRange>("30");
+  const [viewMode, setViewMode] = useState<"quantity" | "revenue">("revenue");
 
   const fetchData = useCallback(async (range: DateRange) => {
     try {
@@ -78,32 +82,52 @@ export function ChartAreaIcons() {
               <TrendingUp className="h-5 w-5 text-emerald-600" />
             </div>
             <div>
-              <CardTitle className="text-xl">Sales Trend</CardTitle>
+              <CardTitle className="text-xl">Analytics Trend</CardTitle>
               <CardDescription className="mt-1">
-                Items sold {selectedRangeLabel.toLowerCase()}
+                {viewMode === "revenue" ? t("total-revenue") : t("items-sold")} {selectedRangeLabel.toLowerCase()}
               </CardDescription>
             </div>
           </div>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm" className="flex items-center gap-2">
-                <Calendar className="h-4 w-4" />
-                {selectedRangeLabel}
-                <ChevronDown className="h-4 w-4" />
+          <div className="flex items-center gap-2">
+            <div className="flex bg-slate-100 p-1 rounded-lg">
+              <Button
+                variant={viewMode === "revenue" ? "default" : "ghost"}
+                size="sm"
+                onClick={() => setViewMode("revenue")}
+                className={`text-xs h-8 ${viewMode === "revenue" ? "bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm" : "hover:bg-emerald-50 text-slate-600"}`}
+              >
+                {t("revenue")}
               </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              {dateRangeOptions.map((option) => (
-                <DropdownMenuItem
-                  key={option.value}
-                  onClick={() => setDateRange(option.value)}
-                  className={dateRange === option.value ? "bg-emerald-50" : ""}
-                >
-                  {option.label}
-                </DropdownMenuItem>
-              ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
+              <Button
+                variant={viewMode === "quantity" ? "default" : "ghost"}
+                size="sm"
+                onClick={() => setViewMode("quantity")}
+                className={`text-xs h-8 ${viewMode === "quantity" ? "bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm" : "hover:bg-emerald-50 text-slate-600"}`}
+              >
+                {t("quantity")}
+              </Button>
+            </div>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm" className="flex items-center gap-2">
+                  <Calendar className="h-4 w-4" />
+                  {selectedRangeLabel}
+                  <ChevronDown className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                {dateRangeOptions.map((option) => (
+                  <DropdownMenuItem
+                    key={option.value}
+                    onClick={() => setDateRange(option.value)}
+                    className={dateRange === option.value ? "bg-emerald-50" : ""}
+                  >
+                    {option.label}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
         </div>
       </CardHeader>
 
@@ -126,9 +150,20 @@ export function ChartAreaIcons() {
               color: "hsl(142, 76%, 36%)",
               icon: TrendingUp,
             },
+            revenue: {
+              label: "Revenue",
+              color: "hsl(142, 76%, 36%)",
+              icon: TrendingUp,
+            },
           }}>
             <AreaChart data={data}>
               <CartesianGrid vertical={false} strokeDasharray="3 3" className="stroke-slate-200" />
+              <YAxis
+                axisLine={false}
+                tickLine={false}
+                tickMargin={10}
+                tickFormatter={(v) => viewMode === "revenue" ? `₱${v}` : v}
+              />
               <XAxis
                 dataKey="day"
                 tickFormatter={(v) =>
@@ -136,9 +171,9 @@ export function ChartAreaIcons() {
                 }
                 className="text-xs"
               />
-              <ChartTooltip content={<ChartTooltipContent />} />
+              <ChartTooltip content={<ChartTooltipContent formatter={(value) => viewMode === "revenue" ? `₱${Number(value).toFixed(2)}` : value} />} />
               <Area
-                dataKey="total"
+                dataKey={viewMode === "revenue" ? "revenue" : "total"}
                 type="monotone"
                 stroke="hsl(142, 76%, 36%)"
                 fill="hsl(142, 76%, 36%)"

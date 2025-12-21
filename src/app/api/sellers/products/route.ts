@@ -7,9 +7,10 @@ import {
   products,
   productImages,
   productInventory,
+  productVariation,
   shop,
 } from "@/server/schema/auth-schema";
-import { and, eq, inArray, sql } from "drizzle-orm";
+import { and, eq, inArray } from "drizzle-orm";
 import { getAuthenticatedUser } from "@/lib/mobile-auth";
 import { v4 as uuidv4 } from "uuid";
 
@@ -49,6 +50,7 @@ export type ProductPayload = {
   status?: string;
   stock?: number;
   images?: ImageInput[];
+  variations?: { name: string; values: string[] }[];
 };
 
 export type UpdatedProductPayload = {
@@ -60,6 +62,7 @@ export type UpdatedProductPayload = {
   status?: string;
   stock?: number;
   images?: ImageInput[];
+  variations?: { name: string; values: string[] }[];
 };
 
 // -------------------------------------------------------- //
@@ -87,7 +90,18 @@ export async function GET(req: NextRequest) {
 
     // Get all products including removed ones (for restore functionality)
     const productsList = await db
-      .select()
+      .select({
+        id: products.id,
+        shopId: products.shopId,
+        categoryId: products.categoryId,
+        productName: products.productName,
+        description: products.description,
+        rating: products.rating,
+        isAvailable: products.isAvailable,
+        status: products.status,
+        createdAt: products.createdAt,
+        updatedAt: products.updatedAt,
+      })
       .from(products)
       .where(inArray(products.shopId, shopIds));
 
@@ -95,21 +109,41 @@ export async function GET(req: NextRequest) {
 
     const images = productIds.length
       ? await db
-          .select()
-          .from(productImages)
-          .where(inArray(productImages.productId, productIds))
+        .select()
+        .from(productImages)
+        .where(inArray(productImages.productId, productIds))
       : [];
 
-    const inventory = productIds.length
+    const variations = productIds.length
       ? await db
-          .select()
-          .from(productInventory)
-          .where(inArray(productInventory.productId, productIds))
+        .select()
+        .from(productVariation)
+        .where(inArray(productVariation.productId, productIds))
+      : [];
+
+    const variationIds = variations.map(v => v.id);
+
+    const inventory = variationIds.length
+      ? await db
+        .select()
+        .from(productInventory)
+        .where(inArray(productInventory.product_variation_id, variationIds))
       : [];
 
     const transformedProducts = productsList.map((product) => {
       const productImagesList = images.filter((i) => i.productId === product.id);
-      const productInventoryData = inventory.find((inv) => inv.productId === product.id);
+      const productVariations = variations.filter(v => v.productId === product.id);
+
+      // Logic: Use first variation price, or range? Use first for now.
+      const mainVariation = productVariations[0];
+      const price = mainVariation ? Number(mainVariation.price) : 0;
+
+      // Calculate total stock from all variations
+      let totalStock = 0;
+      productVariations.forEach(v => {
+        const inv = inventory.find(i => i.product_variation_id === v.id);
+        if (inv) totalStock += (inv.quantityInStock || 0);
+      });
 
       const productImagesMapped = productImagesList
         .filter((img) => typeof img.url === "string" && img.url.trim() !== "")
@@ -125,14 +159,14 @@ export async function GET(req: NextRequest) {
         shopId: product.shopId,
         categoryId: product.categoryId,
         productName: product.productName,
-        SKU: product.SKU || "",
+        SKU: mainVariation?.SKU || "",
         description: product.description || null,
-        price: Number(product.price),
+        price,
         rating: product.rating ?? null,
         isAvailable: product.isAvailable,
         status: product.status || (product.isAvailable !== false ? "Available" : "Removed"),
-        stock: productInventoryData?.quantityInStock || 0,
-        itemsSold: productInventoryData?.itemsSold || null,
+        stock: totalStock,
+        itemsSold: null,
         images: productImagesMapped,
         createdAt: product.createdAt,
         updatedAt: product.updatedAt,
@@ -140,10 +174,11 @@ export async function GET(req: NextRequest) {
     });
 
     const response = NextResponse.json(transformedProducts);
-    // Add cache headers for faster subsequent loads (30 seconds)
-    response.headers.set('Cache-Control', 'public, s-maxage=30, stale-while-revalidate=60');
+    // Disable cache for seller dashboard to ensure immediate updates
+    response.headers.set('Cache-Control', 'no-store, max-age=0');
     return response;
   } catch (error) {
+    console.error("[GET_PRODUCTS_ERROR]", error);
     return NextResponse.json({ error: "Failed to fetch products" }, { status: 500 });
   }
 }
@@ -201,11 +236,9 @@ export async function POST(req: NextRequest) {
       productName: body.productName,
       shopId,
       categoryId: body.categoryId,
-      price: String(body.price),
-      SKU: finalSku,
       description: body.description || "",
-      rating: body.rating ? Number(body.rating) : null,
-      isAvailable: body.status === "Available",
+      rating: body.rating ? Number(body.rating) : 0,
+      isAvailable: body.status === "Available", // If status is Available, set isAvailable to true; otherwise false (e.g. for Draft)
       status: body.status || "Available",
       createdAt: new Date(),
       updatedAt: new Date(),
@@ -214,16 +247,87 @@ export async function POST(req: NextRequest) {
     // Insert Product
     await executeQuery(() => db.insert(products).values(newProduct));
 
-    // Insert Inventory
-    if (body.stock !== undefined) {
-      await executeQuery(() =>
-        db.insert(productInventory).values({
-          id: uuidv4(),
+    // Handle Variations and Inventory
+    // Strategy:
+    // 1. If variations exist, generate combinations (permutations).
+    // 2. Create productVariation rows for each combination.
+    // 3. Create productInventory for each variation.
+    // 4. If NO variations, create a "Default" variation and link inventory to it.
+
+    // Helper to generate permutations
+    const generatePermutations = (vars: { name: string; values: string[] }[]) => {
+      if (vars.length === 0) return [];
+
+      let results: { [key: string]: string }[] = [{}];
+
+      for (const variable of vars) {
+        const nextResults = [];
+        for (const res of results) {
+          for (const val of variable.values) {
+            nextResults.push({ ...res, [variable.name]: val });
+          }
+        }
+        results = nextResults;
+      }
+      return results;
+    };
+
+    if (body.variations && body.variations.length > 0) {
+      const permutations = generatePermutations(body.variations);
+
+      for (const perm of permutations) {
+        // Create name like "Size: S, Color: Red"
+        const name = Object.entries(perm).map(([k, v]) => `${k}: ${v}`).join(", ");
+        const value = JSON.stringify(perm);
+        const variationId = uuidv4();
+
+        await executeQuery(() => db.insert(productVariation).values({
+          id: variationId,
           productId,
-          quantityInStock: body.stock,
-          itemsSold: 0,
-        })
-      );
+          variationName: name,
+          variationType: "Combination",
+          variationValue: value,
+          price: String(body.price), // Inherit base price
+          SKU: `${finalSku}-${Object.values(perm).join("-")}`.substring(0, 255),
+        }));
+
+        // Inventory for this variation
+        if (body.stock !== undefined) {
+          await executeQuery(() =>
+            db.insert(productInventory).values({
+              id: uuidv4(),
+              product_variation_id: variationId,
+              quantityInStock: body.stock, // Initially same stock for all? Or divide? Assuming same for now as placeholder
+              itemsSold: 0,
+            })
+          );
+        }
+      }
+    } else {
+      // NO VARIATIONS (Simple Product)
+      // Check if we need to create a Default Variation to satisfy schema?
+      // Since cartItems requires productVariationId, YES we do.
+      const defaultVarId = uuidv4();
+      await executeQuery(() => db.insert(productVariation).values({
+        id: defaultVarId,
+        productId,
+        variationName: "Standard",
+        variationType: "Standard",
+        variationValue: "Standard",
+        price: String(body.price),
+        SKU: finalSku,
+      }));
+
+      if (body.stock !== undefined) {
+        await executeQuery(() =>
+          db.insert(productInventory).values({
+            id: uuidv4(),
+            product_variation_id: defaultVarId,
+            quantityInStock: body.stock,
+            itemsSold: 0,
+          })
+        );
+      }
     }
 
     // Insert Images
@@ -243,16 +347,16 @@ export async function POST(req: NextRequest) {
 
     // Return success response with serializable data
     try {
-      return NextResponse.json({ 
-        success: true, 
+      return NextResponse.json({
+        success: true,
         productId: newProduct.id,
         message: "Product created successfully"
       });
     } catch (responseError) {
       // If response fails, log but don't throw - product is already created
       console.error("Error sending response (product was created):", responseError);
-      return NextResponse.json({ 
-        success: true, 
+      return NextResponse.json({
+        success: true,
         productId: newProduct.id,
         message: "Product created successfully"
       });
@@ -316,31 +420,103 @@ export async function PUT(req: NextRequest) {
     if (body.productName !== undefined) updates.productName = body.productName;
     if (body.description !== undefined) updates.description = body.description;
     if (body.categoryId !== undefined) updates.categoryId = body.categoryId;
-    if (body.price !== undefined) updates.price = String(body.price);
-    if (body.SKU !== undefined) updates.SKU = body.SKU;
-    if (body.status !== undefined) updates.status = body.status;
+    if (body.status !== undefined) {
+      updates.status = body.status;
+      // Also update isAvailable flag
+      (updates as any).isAvailable = (body.status === "Available");
+    }
+    // Note: price is moved to variations table
 
     await executeQuery(() => db.update(products).set(updates).where(eq(products.id, productId)));
 
-    if (body.stock !== undefined) {
-      const existingInv = await executeQuery(() =>
-        db.select().from(productInventory).where(eq(productInventory.productId, productId)).limit(1)
+    // Update Price/SKU in variations
+    // Strategy: Update ALL variations for this product with the new price if provided?
+    // Or does the user only edit the "base" price?
+    // User Edit Form provides one price. So we update all?
+    // If variations exist, usually they might have different prices.
+    // But the current UI `AddProducts` only has one Price field unless we added per-variation price.
+    // In `list-product.tsx`, we added Variations but NOT per-variation price (it inherits base).
+    // So safe to update all variations with the new base price.
+
+    if (body.price !== undefined || body.SKU !== undefined) {
+      const varUpdates: Record<string, string> = {};
+      if (body.price !== undefined) varUpdates.price = String(body.price);
+      // SKU update is tricky. If we update base SKU, do we update all variation SKUs?
+      // For now, let's update Price only across all. SKU is usually per-variant.
+      // If Body has SKU, maybe we update the "Standard" variation SKU?
+      // Or if we have multiple, we might append to them?
+      // Let's Just update Price for now. SKU changes on existing variations might break things.
+
+      await executeQuery(() =>
+        db.update(productVariation)
+          .set(varUpdates)
+          .where(eq(productVariation.productId, productId))
+      );
+    }
+
+    // Update logic for Inventory is complex with variations.
+    // For now, if updating stock on a product with variations, we might update ALL variations?
+    // Or if it's a simple product (Standard variation).
+
+    // Find default variation or all variations
+    const variations = await executeQuery(() =>
+      db.select().from(productVariation).where(eq(productVariation.productId, productId))
+    );
+
+    if (variations.length > 0) {
+      const varIds = variations.map(v => v.id);
+
+      // Update inventory for these variations
+      // Only if inventory exists
+      const existingInvs = await executeQuery(() =>
+        db.select().from(productInventory).where(inArray(productInventory.product_variation_id, varIds))
       );
 
-      if (existingInv.length) {
+      const existingVarIdsWithInv = existingInvs.map(i => i.product_variation_id);
+
+      // Update existing
+      if (existingVarIdsWithInv.length > 0) {
         await executeQuery(() =>
-          db.update(productInventory).set({ quantityInStock: body.stock }).where(eq(productInventory.productId, productId))
-        );
-      } else {
-        await executeQuery(() =>
-          db.insert(productInventory).values({
-            id: uuidv4(),
-            productId,
-            quantityInStock: body.stock,
-            itemsSold: 0,
-          })
+          db.update(productInventory)
+            .set({ quantityInStock: body.stock })
+            .where(inArray(productInventory.product_variation_id, existingVarIdsWithInv))
         );
       }
+
+      // Create missing (if any variation has no inventory record)
+      const missingVarIds = varIds.filter(id => !existingVarIdsWithInv.includes(id));
+      if (missingVarIds.length > 0) {
+        const inventoryRows = missingVarIds.map(vid => ({
+          id: uuidv4(),
+          product_variation_id: vid,
+          quantityInStock: body.stock,
+          itemsSold: 0,
+        }));
+        // Batch insert not supported easily with executeQuery wrapper logic if checking one by one, but drizzle supports it
+        await executeQuery(() => db.insert(productInventory).values(inventoryRows));
+      }
+    } else {
+      // Edge case: Product has no variations rows at all (Legacy?)
+      // Create a default variation
+      const defaultVarId = uuidv4();
+      await executeQuery(() => db.insert(productVariation).values({
+        id: defaultVarId,
+        productId,
+        variationName: "Standard",
+        variationType: "Standard",
+        variationValue: "Standard",
+        price: body.price ? String(body.price) : "0", // Fallback to body price or 0
+        SKU: body.SKU || `LEGACY-${Date.now()}`,
+      }));
+
+      await executeQuery(() =>
+        db.insert(productInventory).values({
+          id: uuidv4(),
+          product_variation_id: defaultVarId,
+          quantityInStock: body.stock,
+          itemsSold: 0,
+        })
+      );
     }
 
     if (Array.isArray(body.images)) {

@@ -14,10 +14,10 @@ export const translations = {
     search: "Maghanap",
     "search-placeholder": "Maghanap ng lokal na produkto at tindahan…",
     loading: "Naglo-load...",
-    
+
     // Common
     "back-to-marketplace": "Bumalik sa Marketplace",
-    
+
     // Welcome Modal
     "welcome-title": "Maligayang pagdating sa Buyani!",
     "welcome-description": "Ang inyong campus marketplace para sa lokal na produkto at gawa ng estudyante",
@@ -49,7 +49,7 @@ export const translations = {
     "fast-pickup-desc": "Laktawan ang paghihintay gamit ang near-campus pickup spots.",
     "shop-best-sellers": "Mamili ng best-sellers",
     "view-new-arrivals": "Tingnan ang bagong arrivals",
-    
+
     // Footer
     "footer-description": "Isang tahimik, campus-first marketplace na nag-uugnay ng CNSC students at lokal na makers. Tuklasin ang snacks, crafts, at essentials nang walang kalat.",
     "explore": "Tuklasin",
@@ -61,7 +61,7 @@ export const translations = {
     "follow-us": "Sundan kami",
     "copyright": "© 2025 Buyani · CNSC University Market Hub.",
     "trusted-marketplace": "Pinagkakatiwalaang campus marketplace",
-    
+
     // Cart
     "shopping-cart": "Shopping Cart",
     "cart-empty": "Walang laman ang inyong cart",
@@ -78,12 +78,12 @@ export const translations = {
     "select-item-checkout": "Mangyaring pumili ng kahit isang item upang mag-checkout",
     "no-image": "Walang Larawan",
     "unnamed-product": "Hindi Pinangalanang Produkto",
-    
+
     // Checkout
     "delivery": "Delivery",
     "payment": "Payment",
     "review": "Review",
-    
+
     // How It Works
     "getting-started-header": "Paano Magsimula",
     "how-it-works-title": "Paano ito gumagana",
@@ -94,11 +94,11 @@ export const translations = {
     "add-to-cart-desc": "Nakahanap ng gusto mo? I-click ang anumang produkto upang tingnan ang detalye, pagkatapos ay idagdag ito sa inyong cart. Maaari kang magdagdag ng maraming items at ayusin ang quantities.",
     "checkout-order": "Mag-checkout at Mag-order",
     "checkout-order-desc": "Suriin ang inyong cart, ilagay ang inyong delivery information, at kumpletuhin ang inyong purchase nang ligtas. Subaybayan ang inyong order status sa inyong account.",
-    
+
     // Profile/Settings
     "profile-settings": "Profile Settings",
     "profile-settings-desc": "Pamahalaan ang inyong account details, email, password, at delivery addresses",
-    
+
     // Auth
     "sign-in": "Sign In",
     "sign-in-desc": "Ilagay ang inyong email sa ibaba upang mag-login sa inyong account",
@@ -114,29 +114,29 @@ export const translations = {
     "signed-in-success": "Matagumpay na nag-sign in!",
     "something-wrong": "May naging problema",
     "failed-google-signin": "Nabigo ang pag-sign in gamit ang Google. Mangyaring subukan muli.",
-    
+
     // Orders
     "order-status-pending": "Nakabinbin",
     "order-status-processing": "Pinoproseso",
     "order-status-shipped": "Naipadala",
     "order-status-delivered": "Naihatid",
     "order-status-cancelled": "Nakansela",
-    
+
     // Products
     "add-to-cart-button": "Idagdag sa Cart",
     "out-of-stock": "Walang Stock",
     "in-stock": "May Stock",
-    
+
     // General
     "unknown-shop": "Hindi Kilalang Shop",
-    
+
     // Hero Section
     "hero-badge": "Kalidad na snacks at essentials mula sa CNSC students at lokal na producers",
     "hero-title": "Tuklasin ang mga sariwang picks mula sa",
     "hero-title-highlight": "campus sellers & lokal na makers",
     "hero-description": "Tuklasin ang curated goods na ginawa ng CNSC students at pinagkakatiwalaang lokal na producers. Simple, malinis na pamimili na idinisenyo para sa araw-araw na cravings at kapaki-pakinabang na essentials.",
     "hero-tagline": "Nagdadala ng campus at komunidad na magkasama",
-    
+
     // Best Sellers
     "crowd-favorites": "Paborito ng Marami",
     "best-sellers-week": "Best sellers ngayong linggo",
@@ -146,14 +146,14 @@ export const translations = {
     "no-products-available": "Walang produkto na available sa ngayon.",
     "no-carousel-images": "Walang carousel images na nahanap.",
     "featured-item": "Featured Item",
-    
+
     // Shop by Category
     "shop-by-category": "Mamili ayon sa kategorya",
     "browse-campus-sellers": "Mag-browse mula sa campus sellers at lokal na makers",
     "find-by-category": "Hanapin ang eksaktong kailangan mo, na-organize ayon sa kategorya",
     "view-all-categories": "Tingnan lahat ng kategorya",
     "loading-categories": "Naglo-load ng kategorya...",
-    
+
     // Featured Vendors
     "trusted-campus-sellers": "Pinagkakatiwalaang Campus Sellers",
     "featured-vendors": "Featured Vendors",
@@ -161,7 +161,7 @@ export const translations = {
     "view-all-shops": "Tingnan lahat ng shops",
     "loading-shops": "Naglo-load ng shops...",
     "no-shops-available": "Walang shops na available sa ngayon.",
-    
+
     // Stats Section
     "marketplace-glance": "MARKETPLACE AT A GLANCE",
     "quick-stats": "Quick stats",
@@ -172,7 +172,7 @@ export const translations = {
     "customers": "Customers",
     "average-rating": "Average Rating",
     "connect-partner": "Gusto mong kumonekta at maging isa sa BuyAni? Makipag-ugnayan sa amin — gusto naming makipagtulungan sa inyo.",
-    
+
     // Products Page
     "all-products": "Lahat ng Produkto",
     "browse-all-products": "Mag-browse ng lahat ng available na produkto",
@@ -187,23 +187,24 @@ export const translations = {
     "sort": "Ayusin",
     "default": "Default",
     "high-ratings": "Mataas na ratings",
+    "best-sellers": "Mga Best-Seller",
     "new": "Bago",
     "old": "Luma",
     "no-products-found": "Walang produkto na nahanap na tumugma sa",
     "try-different-search": "Subukan ang ibang search term.",
-    
+
     // Shops Page
     "all-shops": "Lahat ng Shops",
     "browse-all-shops": "Mag-browse ng lahat ng available na shops",
     "could-not-load-shops": "Hindi ma-load ang shops.",
     "retry": "Subukan muli",
-    
+
     // Categories Page
     "all-categories": "Lahat ng Kategorya",
     "browse-all-categories": "Mag-browse ng lahat ng available na kategorya",
     "loading-categories-page": "Naglo-load ng kategorya...",
     "no-products-category": "Walang produkto sa kategoryang ito.",
-    
+
     // Checkout - Delivery Step
     "delivery-address": "Delivery Address",
     "where-deliver": "Saan namin dapat i-deliver ang inyong order?",
@@ -222,7 +223,7 @@ export const translations = {
     "contact-number": "Contact Number",
     "delivery-notes": "Delivery Notes (Opsyonal)",
     "delivery-notes-placeholder": "hal. Iwanan sa front desk, Tawagan pagdating",
-    
+
     // Checkout - Payment Step
     "payment-method": "Payment Method",
     "choose-payment": "Pumili kung paano kayo magbabayad",
@@ -235,7 +236,7 @@ export const translations = {
     "recommended": "Inirerekomenda",
     "back": "Bumalik",
     "continue-review": "Magpatuloy sa Review",
-    
+
     // Checkout - Review Step
     "edit": "I-edit",
     "no-address-provided": "Walang address na ibinigay",
@@ -252,10 +253,10 @@ export const translations = {
     "failed-place-order": "Nabigo ang pag-place ng order. Mangyaring subukan muli.",
     "redirecting-gcash": "Nagre-redirect sa GCash payment...",
     "not-selected": "Hindi napili",
-    
+
     // Checkout - Order Summary
     "subtotal-items": "Subtotal",
-    
+
     // Seller Dashboard
     "seller-center": "Seller Center",
     "welcome-back": "Maligayang pagbabalik",
@@ -265,7 +266,7 @@ export const translations = {
     "total-orders": "Total Orders",
     "pending-orders": "Pending Orders",
     "active-products": "Active Products",
-    "removed-products": "Removed Products",
+    "removed-products": "Out of Stock / Inactive",
     "last-7-days": "Huling 7 araw",
     "last-30-days": "Huling 30 araw",
     "last-90-days": "Huling 90 araw",
@@ -282,9 +283,18 @@ export const translations = {
     "shipped": "Naipadala",
     "completed": "Nakumpleto",
     "delivered": "Naihatid",
-    
+    "revenue": "Kita",
+    "total-revenue": "Kabuuang kita",
+    "items-sold": "Mga item na nabenta",
+    "walk-in": "Walk-in",
+    "view": "Tingnan",
+    "date-newest": "Petsa: Pinakabago",
+    "date-oldest": "Petsa: Pinakaluma",
+    "amount-highest": "Halaga: Mataas",
+    "amount-lowest": "Halaga: Mababa",
+
     // Seller Orders Page
-    "manage-orders": "Pamahalaan ang inyong online at in-store orders",
+    "manage-orders": "Pamahalaan ang inyong online at walk-in orders",
     "refresh": "I-refresh",
     "unauthorized-login": "Hindi awtorisado. Mangyaring mag-login.",
     "failed-fetch-orders": "Nabigo ang pag-fetch ng orders",
@@ -293,14 +303,14 @@ export const translations = {
     "try-again": "Subukan muli",
     "order-status-success": "Matagumpay na na-update ang order",
     "failed-update-order": "Nabigo ang pag-update ng order",
-    
+
     // Seller Sidebar
     "pos": "POS",
     "inbox": "Inbox",
     "account": "Account",
     "sign-out": "Mag-sign out",
     "username": "Username",
-    
+
     // Seller Orders Table
     "no-orders-found": "Walang orders na nahanap.",
     "order-id": "Order ID",
@@ -321,12 +331,12 @@ export const translations = {
     "next": "Susunod",
     "page": "Pahina",
     "of": "ng",
-    
+
     // Seller Orders Searchbar
     "search-order-placeholder": "Maghanap ayon sa order ID o pangalan ng customer",
     "filter": "Filter",
     "cancelled": "Nakansela",
-    
+
     // Seller Products Page
     "products-listing": "Products Listing",
     "manage-inventory": "Pamahalaan ang inyong product inventory at pricing",
@@ -344,9 +354,9 @@ export const translations = {
     "restock": "I-restock",
     "remove-product": "Tanggalin ang Product",
     "removed": "Natanggal",
-    
+
     // Seller POS Page
-    "process-transactions": "Proseso ng in-store transactions",
+    "process-transactions": "Walk in Transactions",
     "search-products": "Maghanap ng produkto...",
     "loading-products-pos": "Naglo-load ng produkto...",
     "no-products-found-pos": "Walang produkto na nahanap.",
@@ -362,7 +372,7 @@ export const translations = {
     "maya": "Maya",
     "add": "Idagdag",
     "cash": "Cash",
-    
+
     // Seller Inbox
     "customer-messages": "Mga mensahe at conversations ng customer",
     "conversations": "Conversations",
@@ -373,7 +383,7 @@ export const translations = {
     "select-conversation": "Pumili ng conversation upang magsimulang mag-chat",
     "failed-load-conversations": "Nabigo ang pag-load ng conversations",
     "failed-send-message": "Nabigo ang pag-send ng mensahe",
-    
+
     // Customer Orders Page
     "my-orders": "Aking Mga Order",
     "track-packages": "I-track ang inyong packages at manatiling updated sa real time.",
@@ -409,10 +419,10 @@ export const translations = {
     search: "Search",
     "search-placeholder": "Search local treats and shops…",
     loading: "Loading...",
-    
+
     // Common
     "back-to-marketplace": "Back to Marketplace",
-    
+
     // Welcome Modal
     "welcome-title": "Welcome to Buyani!",
     "welcome-description": "Your campus marketplace for local products and student-made goods",
@@ -444,7 +454,7 @@ export const translations = {
     "fast-pickup-desc": "Skip the wait with near-campus pickup spots.",
     "shop-best-sellers": "Shop best-sellers",
     "view-new-arrivals": "View new arrivals",
-    
+
     // Footer
     "footer-description": "A calm, campus-first marketplace connecting CNSC students and local makers. Discover snacks, crafts, and essentials without the clutter.",
     "explore": "Explore",
@@ -456,7 +466,7 @@ export const translations = {
     "follow-us": "Follow us",
     "copyright": "© 2025 Buyani · CNSC University Market Hub.",
     "trusted-marketplace": "Trusted campus marketplace",
-    
+
     // Cart
     "shopping-cart": "Shopping Cart",
     "cart-empty": "Your cart is empty",
@@ -473,12 +483,12 @@ export const translations = {
     "select-item-checkout": "Please select at least one item to checkout",
     "no-image": "No Image",
     "unnamed-product": "Unnamed Product",
-    
+
     // Checkout
     "delivery": "Delivery",
     "payment": "Payment",
     "review": "Review",
-    
+
     // How It Works
     "getting-started-header": "Getting Started",
     "how-it-works-title": "How it works",
@@ -489,11 +499,11 @@ export const translations = {
     "add-to-cart-desc": "Found something you like? Click on any product to view details, then add it to your cart. You can add multiple items and adjust quantities.",
     "checkout-order": "Checkout & Order",
     "checkout-order-desc": "Review your cart, enter your delivery information, and complete your purchase securely. Track your order status in your account.",
-    
+
     // Profile/Settings
     "profile-settings": "Profile Settings",
     "profile-settings-desc": "Manage your account details, email, password, and delivery addresses",
-    
+
     // Auth
     "sign-in": "Sign In",
     "sign-in-desc": "Enter your email below to login to your account",
@@ -509,29 +519,29 @@ export const translations = {
     "signed-in-success": "Signed in successfully!",
     "something-wrong": "Something went wrong",
     "failed-google-signin": "Failed to sign in with Google. Please try again.",
-    
+
     // Orders
     "order-status-pending": "Pending",
     "order-status-processing": "Processing",
     "order-status-shipped": "Shipped",
     "order-status-delivered": "Delivered",
     "order-status-cancelled": "Cancelled",
-    
+
     // Products
     "add-to-cart-button": "Add to Cart",
     "out-of-stock": "Out of Stock",
     "in-stock": "In Stock",
-    
+
     // General
     "unknown-shop": "Unknown Shop",
-    
+
     // Hero Section
     "hero-badge": "Quality snacks & essentials from CNSC students and local producers",
     "hero-title": "Discover fresh picks from",
     "hero-title-highlight": "campus sellers & local makers",
     "hero-description": "Explore curated goods crafted by CNSC students and trusted local producers. Simple, clean shopping designed for everyday cravings and useful essentials.",
     "hero-tagline": "Bringing campus and community together",
-    
+
     // Best Sellers
     "crowd-favorites": "Crowd favorites",
     "best-sellers-week": "Best sellers this week",
@@ -541,14 +551,14 @@ export const translations = {
     "no-products-available": "No products available at the moment.",
     "no-carousel-images": "No carousel images found.",
     "featured-item": "Featured Item",
-    
+
     // Shop by Category
     "shop-by-category": "Shop by category",
     "browse-campus-sellers": "Browse from campus sellers and local makers",
     "find-by-category": "Find exactly what you need, organized by category",
     "view-all-categories": "View all categories",
     "loading-categories": "Loading categories...",
-    
+
     // Featured Vendors
     "trusted-campus-sellers": "Trusted campus sellers",
     "featured-vendors": "Featured vendors",
@@ -556,7 +566,7 @@ export const translations = {
     "view-all-shops": "View all shops",
     "loading-shops": "Loading shops...",
     "no-shops-available": "No shops available at the moment.",
-    
+
     // Stats Section
     "marketplace-glance": "Marketplace at a glance",
     "quick-stats": "Quick stats",
@@ -567,7 +577,7 @@ export const translations = {
     "customers": "Customers",
     "average-rating": "Average Rating",
     "connect-partner": "Want to connect and be one of BuyAni? Contact us — we'd love to partner with you.",
-    
+
     // Products Page
     "all-products": "All Products",
     "browse-all-products": "Browse all available products",
@@ -582,23 +592,24 @@ export const translations = {
     "sort": "Sort",
     "default": "Default",
     "high-ratings": "High ratings",
+    "best-sellers": "Best Sellers",
     "new": "New",
     "old": "Old",
     "no-products-found": "No products found matching",
     "try-different-search": "Try a different search term.",
-    
+
     // Shops Page
     "all-shops": "All Shops",
     "browse-all-shops": "Browse all available shops",
     "could-not-load-shops": "Could not load shops.",
     "retry": "Retry",
-    
+
     // Categories Page
     "all-categories": "All Categories",
     "browse-all-categories": "Browse all available categories",
     "loading-categories-page": "Loading categories...",
     "no-products-category": "No products in this category.",
-    
+
     // Checkout - Delivery Step
     "delivery-address": "Delivery Address",
     "where-deliver": "Where should we deliver your order?",
@@ -617,7 +628,7 @@ export const translations = {
     "contact-number": "Contact Number",
     "delivery-notes": "Delivery Notes (Optional)",
     "delivery-notes-placeholder": "e.g. Leave at the front desk, Call upon arrival",
-    
+
     // Checkout - Payment Step
     "payment-method": "Payment Method",
     "choose-payment": "Choose how you want to pay",
@@ -630,7 +641,7 @@ export const translations = {
     "recommended": "Recommended",
     "back": "Back",
     "continue-review": "Continue to Review",
-    
+
     // Checkout - Review Step
     "edit": "Edit",
     "no-address-provided": "No address provided",
@@ -647,10 +658,10 @@ export const translations = {
     "failed-place-order": "Failed to place order. Please try again.",
     "redirecting-gcash": "Redirecting to GCash payment...",
     "not-selected": "Not selected",
-    
+
     // Checkout - Order Summary
     "subtotal-items": "Subtotal",
-    
+
     // Seller Dashboard
     "seller-center": "Seller Center",
     "welcome-back": "Welcome back",
@@ -660,7 +671,7 @@ export const translations = {
     "total-orders": "Total Orders",
     "pending-orders": "Pending Orders",
     "active-products": "Active Products",
-    "removed-products": "Removed Products",
+    "removed-products": "Out of Stock / Inactive",
     "last-7-days": "Last 7 days",
     "last-30-days": "Last 30 days",
     "last-90-days": "Last 90 days",
@@ -677,9 +688,18 @@ export const translations = {
     "shipped": "Shipped",
     "completed": "Completed",
     "delivered": "Delivered",
-    
+    "revenue": "Revenue",
+    "total-revenue": "Total revenue",
+    "items-sold": "Items sold",
+    "walk-in": "Walk-in",
+    "view": "View",
+    "date-newest": "Date: Newest",
+    "date-oldest": "Date: Oldest",
+    "amount-highest": "Amount: Highest",
+    "amount-lowest": "Amount: Lowest",
+
     // Seller Orders Page
-    "manage-orders": "Manage your online and in-store orders",
+    "manage-orders": "Manage your online and walk-in orders",
     "refresh": "Refresh",
     "unauthorized-login": "Unauthorized. Please log in.",
     "failed-fetch-orders": "Failed to fetch orders",
@@ -688,14 +708,14 @@ export const translations = {
     "try-again": "Try again",
     "order-status-success": "Order updated successfully",
     "failed-update-order": "Failed to update order",
-    
+
     // Seller Sidebar
     "pos": "POS",
     "inbox": "Inbox",
     "account": "Account",
     "sign-out": "Sign out",
     "username": "Username",
-    
+
     // Seller Orders Table
     "no-orders-found": "No orders found.",
     "order-id": "Order ID",
@@ -716,12 +736,12 @@ export const translations = {
     "next": "Next",
     "page": "Page",
     "of": "of",
-    
+
     // Seller Orders Searchbar
     "search-order-placeholder": "Search by order ID or customer name",
     "filter": "Filter",
     "cancelled": "Cancelled",
-    
+
     // Seller Products Page
     "products-listing": "Products Listing",
     "manage-inventory": "Manage your product inventory and pricing",
@@ -739,9 +759,9 @@ export const translations = {
     "restock": "Restock",
     "remove-product": "Remove Product",
     "removed": "Removed",
-    
+
     // Seller POS Page
-    "process-transactions": "Process in-store transactions",
+    "process-transactions": "Walk in Transactions",
     "search-products": "Search products...",
     "loading-products-pos": "Loading products...",
     "no-products-found-pos": "No products found.",
@@ -757,7 +777,7 @@ export const translations = {
     "maya": "Maya",
     "add": "Add",
     "cash": "Cash",
-    
+
     // Seller Inbox
     "customer-messages": "Customer messages and conversations",
     "conversations": "Conversations",
@@ -768,7 +788,7 @@ export const translations = {
     "select-conversation": "Select a conversation to start chatting",
     "failed-load-conversations": "Failed to load conversations",
     "failed-send-message": "Failed to send message",
-    
+
     // Customer Orders Page
     "my-orders": "My Orders",
     "track-packages": "Track your packages and stay updated in real time.",

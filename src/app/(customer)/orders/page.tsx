@@ -33,7 +33,7 @@ function StatusBadge({ status }: { status?: string }) {
     shipped: { label: t("shipped"), tone: "bg-blue-100 text-blue-800", icon: Truck },
     delivered: { label: t("delivered"), tone: "bg-emerald-100 text-emerald-800", icon: Package },
   };
-  
+
   const key = (status || "pending").toLowerCase();
   const config = STATUS_MAP[key] ?? STATUS_MAP.pending;
   const Icon = config.icon;
@@ -43,6 +43,14 @@ function StatusBadge({ status }: { status?: string }) {
       {config.label}
     </Badge>
   );
+}
+
+function getShortOrderId(id: string) {
+  if (!id) return "N/A";
+  // If it's already a short ID (e.g. contains HUB-), return it
+  if (id.startsWith("HUB-")) return id;
+  // Otherwise shorten it
+  return `HUB-${id.substring(0, 4).toUpperCase()}`;
 }
 
 export default function CustomerOrdersPage() {
@@ -92,6 +100,13 @@ export default function CustomerOrdersPage() {
 
   useEffect(() => {
     fetchOrders(true);
+
+    // Set up silent refresh every 10 seconds
+    const interval = setInterval(() => {
+      fetchOrders(false);
+    }, 10000);
+
+    return () => clearInterval(interval);
   }, []);
 
   const grouped = useMemo(() => {
@@ -118,6 +133,9 @@ export default function CustomerOrdersPage() {
       const status = o.status || "pending";
       if (statusFilter === "accepted") {
         return status === "accepted" || status === "confirmed";
+      }
+      if (statusFilter === "delivered") {
+        return status === "delivered" || status === "completed";
       }
       return status === statusFilter;
     });
@@ -272,7 +290,7 @@ export default function CustomerOrdersPage() {
                         <span className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-emerald-50 text-emerald-700">
                           <Package className="h-4 w-4" />
                         </span>
-                        {t("order")} #{order.id || order.orderId}
+                        {t("order")} #{getShortOrderId(order.id || order.orderId)}
                       </CardTitle>
                       <p className="text-xs text-muted-foreground">
                         {t("placed-on")} {new Date(order.createdAt).toLocaleString()}
@@ -348,7 +366,7 @@ export default function CustomerOrdersPage() {
                           size="sm"
                           className="bg-emerald-600 hover:bg-emerald-700"
                           onClick={() => markAsReceived(order.id || order.orderId)}
-                          disabled={actionId === (order.id || order.orderId)}
+                          disabled={actionId === (order.id || order.orderId) || (order.status !== "shipped" && order.status !== "delivered")}
                         >
                           {actionId === (order.id || order.orderId) ? t("saving") : t("mark-as-received")}
                         </Button>

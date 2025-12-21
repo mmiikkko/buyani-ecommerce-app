@@ -5,8 +5,9 @@ import Image from "next/image";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { v4 as uuidv4 } from "uuid";
-import type { Product } from "@/types/products";
+import type { Product, VariationOption } from "@/types/products";
 import { toast } from "sonner";
+import { Plus, X, Trash2 } from "lucide-react";
 
 interface AddProductsProps {
   onAdd: (product: Product) => Promise<void>;
@@ -45,6 +46,14 @@ export function AddProducts({ onAdd, onUpdate, productToEdit, onEditComplete }: 
   const [heightVal, setHeightVal] = useState("");
   const [shippingFee, setShippingFee] = useState("");
 
+  // VARIATIONS
+  const [variations, setVariations] = useState<VariationOption[]>([]);
+  const [newVarName, setNewVarName] = useState("");
+  const [newVarValue, setNewVarValue] = useState("");
+  const [activeVarIndex, setActiveVarIndex] = useState<number | null>(null);
+
+  // ERROR
+
   // ERROR
   const [error, setError] = useState("");
 
@@ -79,7 +88,7 @@ export function AddProducts({ onAdd, onUpdate, productToEdit, onEditComplete }: 
       setPrice(productToEdit.price?.toString() || "");
       setStock(productToEdit.stock?.toString() || "");
       setStatus(productToEdit.status || "Available");
-      
+
       // Load images
       if (productToEdit.images && productToEdit.images.length > 0) {
         const imageUrls = productToEdit.images
@@ -88,7 +97,7 @@ export function AddProducts({ onAdd, onUpdate, productToEdit, onEditComplete }: 
               return img.image_url;
             }
             //if (Array.isArray(img.image_url) && img.image_url.length > 0) {
-              //return img.image_url[0];
+            //return img.image_url[0];
             //}
             return null;
           })
@@ -107,6 +116,9 @@ export function AddProducts({ onAdd, onUpdate, productToEdit, onEditComplete }: 
         setHeightVal(productToEdit.shipping.height?.toString() || "");
         setShippingFee(productToEdit.shipping.shippingFee?.toString() || "");
       }
+
+      // Load variations
+      setVariations(productToEdit.variations || []);
     } else {
       if (isEditing) {
         // Only reset if we were editing and productToEdit is now null
@@ -158,15 +170,15 @@ export function AddProducts({ onAdd, onUpdate, productToEdit, onEditComplete }: 
       imagePreviews.forEach((img, idx) => {
         console.log(`[DEBUG] Preview ${idx + 1}: type=${typeof img}, length=${img?.length || 0}, startsWith data:image/=${img?.startsWith("data:image/")}`);
       });
-      
+
       const sanitizedImages = imagePreviews
         .filter(img => {
           // Only keep valid data URLs
-          const isValid = img && 
-                 typeof img === "string" && 
-                 img.trim() !== "" &&
-                 img !== "/placeholder.png" &&
-                 img.startsWith("data:image/");
+          const isValid = img &&
+            typeof img === "string" &&
+            img.trim() !== "" &&
+            img !== "/placeholder.png" &&
+            img.startsWith("data:image/");
           if (!isValid && img) {
             console.log(`[DEBUG] Filtered out image: type=${typeof img}, startsWith=${img.substring(0, 20)}...`);
           }
@@ -178,7 +190,7 @@ export function AddProducts({ onAdd, onUpdate, productToEdit, onEditComplete }: 
           image_url: img, // Already validated as data:image/ URL
           is_primary: idx === 0,
         }));
-      
+
       console.log(`[DEBUG] Sanitized ${sanitizedImages.length} images for product ${productId}`);
       if (sanitizedImages.length > 0) {
         console.log(`[DEBUG] First image URL length: ${sanitizedImages[0].image_url.length}, preview: ${sanitizedImages[0].image_url.substring(0, 50)}...`);
@@ -207,10 +219,11 @@ export function AddProducts({ onAdd, onUpdate, productToEdit, onEditComplete }: 
         isAvailable: productStatus === "Available",
         createdAt: new Date(),
         updatedAt: new Date(),
+        variations: variations,
       };
 
       const wasEditing = isEditing;
-      
+
       if (isEditing && onUpdate) {
         await onUpdate(product);
         // Close dialog immediately when updating
@@ -228,28 +241,33 @@ export function AddProducts({ onAdd, onUpdate, productToEdit, onEditComplete }: 
         }
       }
 
-      // RESET
-      setName("");
-      setDescription("");
-      setImagePreviews([]);
-      if (categories.length > 0) setCategoryId(categories[0].id);
-      setPrice("");
-      setStock("");
-      setWeight("");
-      setWeightUnit("kg");
-      setLengthVal("");
-      setWidthVal("");
-      setHeightVal("");
-      setShippingFee("");
-      setIsEditing(false);
-      
+      // RESET - Only if NOT saving as draft
+      if (!isDraft) {
+        setName("");
+        setDescription("");
+        setImagePreviews([]);
+        if (categories.length > 0) setCategoryId(categories[0].id);
+        setPrice("");
+        setStock("");
+        setWeight("");
+        setWeightUnit("kg");
+        setLengthVal("");
+        setWidthVal("");
+        setHeightVal("");
+        setShippingFee("");
+        setVariations([]);
+        setNewVarName("");
+        setNewVarValue("");
+        setIsEditing(false);
+      }
+
       // Notify parent that edit is complete
       if (wasEditing && onEditComplete) {
         onEditComplete();
       }
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : "Failed to save product. Please try again.";
-      
+
       // Don't show error for connection issues that were already retried
       if (!errorMessage.includes("connection") && !errorMessage.includes("Database")) {
         toast.error(errorMessage);
@@ -279,6 +297,7 @@ export function AddProducts({ onAdd, onUpdate, productToEdit, onEditComplete }: 
         setWidthVal("");
         setHeightVal("");
         setShippingFee("");
+        setVariations([]);
         setError("");
       }
       if (isEditing && onEditComplete) {
@@ -307,6 +326,7 @@ export function AddProducts({ onAdd, onUpdate, productToEdit, onEditComplete }: 
           <TabsList className="flex space-x-2 bg-transparent">
             <TabsTrigger value="basic">Basic Information</TabsTrigger>
             <TabsTrigger value="images">Product Images</TabsTrigger>
+            <TabsTrigger value="variations">Variations</TabsTrigger>
             <TabsTrigger value="category">Category</TabsTrigger>
             <TabsTrigger value="pricing">Pricing</TabsTrigger>
             <TabsTrigger value="shipping">Shipping Info</TabsTrigger>
@@ -332,68 +352,68 @@ export function AddProducts({ onAdd, onUpdate, productToEdit, onEditComplete }: 
           {/* IMAGES */}
           <TabsContent value="images" className="mt-4">
             <div className="border p-4 rounded-md space-y-3">
-            <div className="space-y-2">
-              <label className="block text-sm font-medium text-gray-700 mb-2">Product Images</label>
-              <input
-                type="file"
-                accept="image/*"
-                multiple
-                onChange={(e) => {
-                  const files = e.target.files;
-                  if (!files) return;
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-gray-700 mb-2">Product Images</label>
+                <input
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  onChange={(e) => {
+                    const files = e.target.files;
+                    if (!files) return;
 
-                  const currentCount = imagePreviews.filter(img => img && img !== "/placeholder.png" && img.startsWith("data:image/")).length;
-                  const filesToAdd = Array.from(files);
-                  const totalAfterAdd = currentCount + filesToAdd.length;
+                    const currentCount = imagePreviews.filter(img => img && img !== "/placeholder.png" && img.startsWith("data:image/")).length;
+                    const filesToAdd = Array.from(files);
+                    const totalAfterAdd = currentCount + filesToAdd.length;
 
-                  if (totalAfterAdd > 10) {
-                    setError(`Maximum 10 images allowed. You currently have ${currentCount} image(s) and tried to add ${filesToAdd.length} more.`);
-                    return;
-                  }
-
-                  filesToAdd.forEach((file) => {
-                    // Optional size limit (recommended)
-                    if (file.size > 2 * 1024 * 1024) {
-                      setError("Each image must be under 2MB");
+                    if (totalAfterAdd > 10) {
+                      setError(`Maximum 10 images allowed. You currently have ${currentCount} image(s) and tried to add ${filesToAdd.length} more.`);
                       return;
                     }
 
-                    const reader = new FileReader();
-                    reader.onloadend = () => {
-                      const base64 = reader.result as string;
-                      setImagePreviews((prev) => {
-                        const filtered = prev.filter(img => img && img !== "/placeholder.png" && img.startsWith("data:image/"));
-                        if (filtered.length >= 10) {
-                          setError("Maximum 10 images allowed");
-                          return prev;
-                        }
-                        return [...prev, base64];
-                      });
-                    };
-                    reader.readAsDataURL(file);
-                  });
-                }}
-              />
-              <p className="text-xs text-gray-500">
-                You can upload up to 10 images. Currently: {imagePreviews.filter(img => img && img !== "/placeholder.png" && img.startsWith("data:image/")).length}/10
-              </p>
-            </div>
+                    filesToAdd.forEach((file) => {
+                      // Optional size limit (recommended)
+                      if (file.size > 2 * 1024 * 1024) {
+                        setError("Each image must be under 2MB");
+                        return;
+                      }
+
+                      const reader = new FileReader();
+                      reader.onloadend = () => {
+                        const base64 = reader.result as string;
+                        setImagePreviews((prev) => {
+                          const filtered = prev.filter(img => img && img !== "/placeholder.png" && img.startsWith("data:image/"));
+                          if (filtered.length >= 10) {
+                            setError("Maximum 10 images allowed");
+                            return prev;
+                          }
+                          return [...prev, base64];
+                        });
+                      };
+                      reader.readAsDataURL(file);
+                    });
+                  }}
+                />
+                <p className="text-xs text-gray-500">
+                  You can upload up to 10 images. Currently: {imagePreviews.filter(img => img && img !== "/placeholder.png" && img.startsWith("data:image/")).length}/10
+                </p>
+              </div>
               <div className="mt-3 grid grid-cols-4 gap-3">
                 {imagePreviews
                   .filter(img => img && img !== "/placeholder.png" && img.startsWith("data:image/"))
                   .map((src, idx) => (
                     <div key={idx} className="relative border rounded-md overflow-hidden">
-                      <Image 
-                        src={src} 
-                        alt={name ? `${name} - Image ${idx + 1}` : `Product image ${idx + 1}`} 
-                        width={200} 
-                        height={200} 
+                      <Image
+                        src={src}
+                        alt={name ? `${name} - Image ${idx + 1}` : `Product image ${idx + 1}`}
+                        width={200}
+                        height={200}
                         className="object-cover"
                         unoptimized={true}
                       />
-                      <button 
-                        onClick={() => setImagePreviews(prev => prev.filter((_, i) => i !== idx))} 
-                        className="absolute top-1 right-1 bg-black/50 text-white text-xs px-2 py-1 rounded" 
+                      <button
+                        onClick={() => setImagePreviews(prev => prev.filter((_, i) => i !== idx))}
+                        className="absolute top-1 right-1 bg-black/50 text-white text-xs px-2 py-1 rounded"
                         type="button"
                       >
                         Remove
@@ -407,6 +427,121 @@ export function AddProducts({ onAdd, onUpdate, productToEdit, onEditComplete }: 
               <p className="text-xs text-gray-500 mt-2">
                 Note: local previews (blob:) are shown for preview only — uploading images to a CDN/storage is required for permanent product images.
               </p>
+            </div>
+          </TabsContent>
+
+          {/* VARIATIONS */}
+          {/* VARIATIONS */}
+          <TabsContent value="variations" className="mt-4 space-y-4">
+            <div className="border p-4 rounded-md space-y-4">
+              {isEditing ? (
+                <div className="bg-amber-50 border border-amber-200 text-amber-800 px-4 py-3 rounded-md text-sm">
+                  <strong>Note:</strong> Product variations cannot be modified after creation to ensure order history integrity. To change variations, please create a new product.
+                </div>
+              ) : (
+                <div className="flex items-end gap-2">
+                  <div className="space-y-2 flex-1">
+                    <label className="block text-sm font-medium text-gray-700">Add Variation Type (e.g. Size, Color)</label>
+                    <input
+                      type="text"
+                      placeholder="Enter variation name"
+                      value={newVarName}
+                      onChange={(e) => setNewVarName(e.target.value)}
+                      className="w-full border rounded-md px-3 py-2"
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          if (newVarName.trim()) {
+                            setVariations([...variations, { name: newVarName.trim(), values: [] }]);
+                            setNewVarName("");
+                          }
+                        }
+                      }}
+                    />
+                  </div>
+                  <button
+                    onClick={() => {
+                      if (newVarName.trim()) {
+                        setVariations([...variations, { name: newVarName.trim(), values: [] }]);
+                        setNewVarName("");
+                      }
+                    }}
+                    className="px-4 py-2 bg-[#2E7D32] text-white rounded-md hover:bg-[#27632a]"
+                    type="button"
+                  >
+                    <Plus className="h-4 w-4" />
+                  </button>
+                </div>
+              )}
+
+              {variations.length > 0 && (
+                <div className="space-y-4 mt-4">
+                  {variations.map((variation, vIndex) => (
+                    <div key={vIndex} className="bg-gray-50 p-3 rounded-md border text-black">
+                      <div className="flex justify-between items-center mb-2">
+                        <h4 className="font-semibold">{variation.name}</h4>
+                        {!isEditing && (
+                          <button
+                            onClick={() => setVariations(variations.filter((_, i) => i !== vIndex))}
+                            className="text-red-500 hover:text-red-700"
+                            type="button"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                        )}
+                      </div>
+
+                      <div className="flex flex-wrap gap-2 mb-2">
+                        {variation.values.map((val, valIndex) => (
+                          <span key={valIndex} className="inline-flex items-center gap-1 px-2 py-1 bg-white border rounded-full text-sm">
+                            {val}
+                            {!isEditing && (
+                              <button
+                                onClick={() => {
+                                  const newVars = [...variations];
+                                  newVars[vIndex].values = newVars[vIndex].values.filter((_, i) => i !== valIndex);
+                                  setVariations(newVars);
+                                }}
+                                className="text-gray-500 hover:text-red-500"
+                                type="button"
+                              >
+                                <X className="h-3 w-3" />
+                              </button>
+                            )}
+                          </span>
+                        ))}
+                      </div>
+
+                      {!isEditing && (
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="text"
+                            placeholder={`Add ${variation.name} option`}
+                            className="flex-1 border rounded-md px-3 py-1 text-sm text-black"
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') {
+                                e.preventDefault();
+                                const val = e.currentTarget.value.trim();
+                                if (val && !variation.values.includes(val)) {
+                                  const newVars = [...variations];
+                                  newVars[vIndex].values.push(val);
+                                  setVariations(newVars);
+                                  e.currentTarget.value = "";
+                                }
+                              }
+                            }}
+                          />
+                          <p className="text-xs text-muted-foreground">Press Enter to add</p>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {variations.length === 0 && !isEditing && (
+                <p className="text-sm text-gray-500 text-center py-4">No variations added. Add types like "Size" or "Color".</p>
+              )}
             </div>
           </TabsContent>
 
@@ -480,16 +615,16 @@ export function AddProducts({ onAdd, onUpdate, productToEdit, onEditComplete }: 
 
         <div className="flex justify-end gap-3 mt-6">
           {!isEditing && (
-            <button 
-              onClick={() => handleSubmit(true)} 
+            <button
+              onClick={() => handleSubmit(true)}
               disabled={isSubmitting}
               className="px-5 py-2 bg-gray-200 rounded-md hover:bg-gray-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isSubmitting ? "Saving..." : "Save as Draft"}
             </button>
           )}
-          <button 
-            onClick={() => handleSubmit(false)} 
+          <button
+            onClick={() => handleSubmit(false)}
             disabled={isSubmitting}
             className="px-5 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >

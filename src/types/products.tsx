@@ -26,7 +26,13 @@ export type Product = {
     shopStatus?: string | null;
     categoryName?: string | null;
     reviewCount?: number;
+    variations?: VariationOption[];
   };
+
+export type VariationOption = {
+  name: string; // e.g. "Size"
+  values: string[]; // e.g. ["S", "M", "L"]
+};
 
 export type ShippingDetails = {
   weight?: number;

@@ -25,18 +25,19 @@ export default function Products() {
         setRefreshing(true);
       }
       setError(null);
-      
+
       const res = await fetch("/api/sellers/products", {
         credentials: "include",
+        cache: "no-store",
       });
-      
+
       if (!res.ok) {
         if (res.status === 401) {
           throw new Error(t("unauthorized-login"));
         }
         throw new Error(t("failed-fetch-products"));
       }
-      
+
       const data: Product[] = await res.json();
       setProducts(data);
     } catch (err) {
@@ -78,11 +79,11 @@ export default function Products() {
         });
 
         const responseData = await res.json().catch(() => ({}));
-        
+
         if (!res.ok) {
           // Try to get error message from response
           let errorMessage = responseData.error || t("failed-create-product");
-          
+
           // If it's a connection error (503), retry
           if (res.status === 503 && attempt < maxRetries - 1) {
             const delay = Math.min(200 * Math.pow(2, attempt), 2000);
@@ -101,7 +102,7 @@ export default function Products() {
         return; // Success, exit retry loop
       } catch (err) {
         lastError = err instanceof Error ? err : new Error(t("failed-create-product"));
-        
+
         // If it's not a connection error or we've exhausted retries, throw
         if (attempt === maxRetries - 1 || !lastError.message.includes("connection")) {
           throw lastError;
@@ -125,7 +126,7 @@ export default function Products() {
       }
 
       toast.success(t("product-removed-success"));
-      
+
       // Small delay to ensure database update is complete
       await new Promise(resolve => setTimeout(resolve, 300));
       await fetchProducts(false);
@@ -197,7 +198,7 @@ export default function Products() {
         return;
       } catch (err) {
         lastError = err instanceof Error ? err : new Error(t("failed-update-product"));
-        
+
         if (attempt === maxRetries - 1 || !lastError.message.includes("connection")) {
           throw lastError;
         }
@@ -275,7 +276,7 @@ export default function Products() {
             <RefreshCw className={`h-4 w-4 ${refreshing ? "animate-spin" : ""}`} />
             {t("refresh")}
           </Button>
-          <AddProducts 
+          <AddProducts
             onAdd={handleAddProduct}
             onUpdate={handleUpdateProduct}
             productToEdit={editingProduct}
@@ -288,7 +289,7 @@ export default function Products() {
         <div className="flex justify-center items-center h-64 w-full">
           <div className="text-center">
             <p className="text-lg text-gray-500 mb-4">{t("you-have-no-products")}</p>
-            <AddProducts 
+            <AddProducts
               onAdd={handleAddProduct}
               onUpdate={handleUpdateProduct}
               productToEdit={editingProduct}
@@ -300,56 +301,63 @@ export default function Products() {
 
       {products.length > 0 && (
         <>
-          {/* Active Products */}
+          {/* Active Products (In Stock AND Available) */}
           {products.filter(p => {
-            const status = (p.status || "").toString().trim();
-            const isRemoved = status === "Removed" || status === "removed" || (!p.isAvailable && !status);
-            return !isRemoved;
+            const status = (p.status || "").toString().trim().toLowerCase();
+            const isRemoved = status === "removed" || status === "deleted" || status === "draft" || (!p.isAvailable && !status);
+            const isOutOfStock = p.stock <= 0;
+            return !isRemoved && !isOutOfStock;
           }).length > 0 && (
-            <div className="space-y-4">
-              <h2 className="text-lg font-semibold text-[#2E7D32]">{t("active-products")}</h2>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
-                {products
-                  .filter(p => {
-                    const status = (p.status || "").toString().trim();
-                    const isRemoved = status === "Removed" || status === "removed" || (!p.isAvailable && !status);
-                    return !isRemoved;
-                  })
-                  .map((item) => (
-                    <ProductCard 
-                      key={item.id} 
-                      product={item} 
-                      onDelete={handleRemoveProduct}
-                      onEdit={handleEditProduct}
-                    />
-                  ))}
+              <div className="space-y-4">
+                <h2 className="text-lg font-semibold text-[#2E7D32]">{t("active-products")}</h2>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+                  {products
+                    .filter(p => {
+                      const status = (p.status || "").toString().trim().toLowerCase();
+                      const isRemoved = status === "removed" || status === "deleted" || status === "draft" || (!p.isAvailable && !status);
+                      const isOutOfStock = p.stock <= 0;
+                      return !isRemoved && !isOutOfStock;
+                    })
+                    .map((item) => (
+                      <ProductCard
+                        key={item.id}
+                        product={item}
+                        onDelete={handleRemoveProduct}
+                        onEdit={handleEditProduct}
+                      />
+                    ))}
+                </div>
               </div>
-            </div>
-          )}
+            )}
 
-          {/* Removed Products - Only show if there are removed products */}
+          {/* Out of Stock / Removed Products */}
           {(() => {
-            const removedProducts = products.filter(p => {
-              const status = (p.status || "").toString().trim();
-              const isRemoved = status === "Removed" || status === "removed" || (!p.isAvailable && !status);
-              return isRemoved;
+            const secondaryProducts = products.filter(p => {
+              const status = (p.status || "").toString().trim().toLowerCase();
+              const isRemoved = status === "removed" || status === "deleted" || status === "draft" || (!p.isAvailable && !status);
+              const isOutOfStock = p.stock <= 0;
+              return isRemoved || isOutOfStock;
             });
-            
-            return removedProducts.length > 0 ? (
+
+            return secondaryProducts.length > 0 ? (
               <div className="space-y-4 pt-8">
-                <h2 className="text-lg font-semibold text-gray-600">{t("removed-products")}</h2>
+                <h2 className="text-lg font-semibold text-gray-600">Out of Stock / Inactive</h2>
                 <p className="text-sm text-muted-foreground">{t("restock-description")}</p>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
-                  {removedProducts.map((item) => (
-                    <ProductCard 
-                      key={item.id} 
-                      product={item} 
-                      onDelete={handleRemoveProduct}
-                      onEdit={handleEditProduct}
-                      onRestore={handleRestoreProduct}
-                      isRemoved={true}
-                    />
-                  ))}
+                  {secondaryProducts.map((item) => {
+                    const status = (item.status || "").toString().trim().toLowerCase();
+                    const isRemoved = status === "removed" || status === "deleted" || status === "draft" || (!item.isAvailable && !status);
+                    return (
+                      <ProductCard
+                        key={item.id}
+                        product={item}
+                        onDelete={handleRemoveProduct}
+                        onEdit={handleEditProduct}
+                        onRestore={handleRestoreProduct}
+                        isRemoved={isRemoved} // Only show restore button if actually removed
+                      />
+                    );
+                  })}
                 </div>
               </div>
             ) : null;

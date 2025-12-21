@@ -12,8 +12,9 @@ import {
   productInventory,
   productImages,
   shop,
+  productVariation,
 } from '@/server/schema/auth-schema';
-import { eq, inArray } from 'drizzle-orm';
+import { eq, inArray, and, ne } from 'drizzle-orm';
 import { getServerSession } from '@/server/session';
 import { v4 as uuidv4 } from 'uuid';
 import jwt from 'jsonwebtoken';
@@ -63,37 +64,41 @@ export async function GET(req: NextRequest) {
       })
       .from(orders)
       .leftJoin(user, eq(orders.buyerId, user.id))
-      .where(eq(orders.buyerId, userId));
+      .where(and(
+        eq(orders.buyerId, userId),
+        ne(orders.orderType, "walk-in")
+      ));
 
     // fetch items for each order with product images and shop info
     const orderIds = userOrders.map((o) => o.id);
     const items = orderIds.length
       ? await db
-          .select({
-            orderId: orderItems.orderId,
-            productId: orderItems.productId,
-            productName: products.productName,
-            shopId: products.shopId,
-            shopName: shop.shopName,
-            quantity: orderItems.quantity,
-            subtotal: orderItems.subtotal,
-          })
-          .from(orderItems)
-          .leftJoin(products, eq(orderItems.productId, products.id))
-          .leftJoin(shop, eq(products.shopId, shop.id))
-          .where(inArray(orderItems.orderId, orderIds))
+        .select({
+          orderId: orderItems.orderId,
+          productId: productVariation.productId,
+          productName: products.productName,
+          shopId: products.shopId,
+          shopName: shop.shopName,
+          quantity: orderItems.quantity,
+          subtotal: orderItems.subtotal,
+        })
+        .from(orderItems)
+        .leftJoin(productVariation, eq(orderItems.product_variation_id, productVariation.id))
+        .leftJoin(products, eq(productVariation.productId, products.id))
+        .leftJoin(shop, eq(products.shopId, shop.id))
+        .where(inArray(orderItems.orderId, orderIds))
       : [];
 
     // Fetch product images for each product
-    const productIds = [...new Set(items.map((i) => i.productId).filter(Boolean))];
+    const productIds = [...new Set(items.map((i) => i.productId).filter((id) => Boolean(id)))] as string[];
     const images = productIds.length
       ? await db
-          .select({
-            productId: productImages.productId,
-            imageUrl: productImages.url,
-          })
-          .from(productImages)
-          .where(inArray(productImages.productId, productIds))
+        .select({
+          productId: productImages.productId,
+          imageUrl: productImages.url,
+        })
+        .from(productImages)
+        .where(inArray(productImages.productId, productIds))
       : [];
 
     // Group images by productId and get primary image (first one)
@@ -112,15 +117,15 @@ export async function GET(req: NextRequest) {
 
     const paymentsData = orderIds.length
       ? await db
-          .select({
-            orderId: payments.orderId,
-            status: payments.status,
-            paymentMethod: payments.paymentMethod,
-            paymentReceived: payments.paymentReceived,
-            change: payments.change,
-          })
-          .from(payments)
-          .where(inArray(payments.orderId, orderIds))
+        .select({
+          orderId: payments.orderId,
+          status: payments.status,
+          paymentMethod: payments.paymentMethod,
+          paymentReceived: payments.paymentReceived,
+          change: payments.change,
+        })
+        .from(payments)
+        .where(inArray(payments.orderId, orderIds))
       : [];
 
     // Derive shop info from items (all items in an order belong to same shop)
@@ -148,7 +153,7 @@ export async function GET(req: NextRequest) {
 
 type CartItem = {
   id?: string;
-  productId: string;
+  productVariationId: string;
   price?: number;
   quantity: number;
   shopId?: string;
@@ -220,30 +225,34 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // Get product info with shop IDs
-    const productIds = items.map((item: CartItem) => item.productId);
-    const productData = await db
+    // Get variation and product info
+    const variationIds = items.map((item: CartItem) => item.productVariationId);
+    const variationData = await db
       .select({
-        id: products.id,
+        id: productVariation.id,
+        productId: productVariation.productId,
         shopId: products.shopId,
         productName: products.productName,
       })
-      .from(products)
-      .where(inArray(products.id, productIds));
+      .from(productVariation)
+      .leftJoin(products, eq(productVariation.productId, products.id))
+      .where(inArray(productVariation.id, variationIds));
+
+    const pIds = variationData.map(v => v.productId);
 
     // Check stock availability before creating orders
     const inventory = await db
       .select()
       .from(productInventory)
-      .where(inArray(productInventory.productId, productIds));
+      .where(inArray(productInventory.product_variation_id, variationIds));
 
     for (const item of items) {
-      const inv = inventory.find((inv) => inv.productId === item.productId);
+      const inv = inventory.find((inv) => inv.product_variation_id === item.productVariationId);
       if (!inv || (Number(inv.quantityInStock || 0)) < item.quantity) {
-        const product = productData.find((p) => p.id === item.productId);
+        const variation = variationData.find((v) => v.id === item.productVariationId);
         return corsResponse(
           {
-            error: `Insufficient stock for ${product?.productName || "product"}. Available: ${inv?.quantityInStock || 0}, Requested: ${item.quantity}`,
+            error: `Insufficient stock for ${variation?.productName || "product"}. Available: ${inv?.quantityInStock || 0}, Requested: ${item.quantity}`,
           },
           400
         );
@@ -253,9 +262,9 @@ export async function POST(req: NextRequest) {
     // Group items by shop
     const itemsByShop = new Map<string, CartItem[]>();
     for (const item of items) {
-      const product = productData.find((p) => p.id === item.productId);
-      const shopId = product?.shopId || item.shopId || "unknown";
-      
+      const variation = variationData.find((v) => v.id === item.productVariationId);
+      const shopId = variation?.shopId || item.shopId || "unknown";
+
       if (!itemsByShop.has(shopId)) {
         itemsByShop.set(shopId, []);
       }
@@ -266,9 +275,9 @@ export async function POST(req: NextRequest) {
     const shopIds = Array.from(itemsByShop.keys()).filter(id => id !== "unknown");
     const shopData = shopIds.length > 0
       ? await db
-          .select({ id: shop.id, shopName: shop.shopName })
-          .from(shop)
-          .where(inArray(shop.id, shopIds))
+        .select({ id: shop.id, shopName: shop.shopName })
+        .from(shop)
+        .where(inArray(shop.id, shopIds))
       : [];
 
     const createdOrders: { orderId: string; shopId: string; shopName: string; subtotal: number }[] = [];
@@ -298,13 +307,13 @@ export async function POST(req: NextRequest) {
         await db.insert(orderItems).values({
           id: uuidv4(),
           orderId,
-          productId: item.productId,
+          product_variation_id: item.productVariationId,
           quantity: item.quantity,
           subtotal: String((item.price || 0) * item.quantity),
         });
 
         // Decrease product stock
-        const inv = inventory.find((i) => i.productId === item.productId);
+        const inv = inventory.find((i) => i.product_variation_id === item.productVariationId);
         if (inv) {
           const currentStock = Number(inv.quantityInStock || 0);
           const newStock = Math.max(0, currentStock - item.quantity);
@@ -314,8 +323,8 @@ export async function POST(req: NextRequest) {
               quantityInStock: newStock,
               itemsSold: (Number(inv.itemsSold || 0) + item.quantity),
             })
-            .where(eq(productInventory.productId, item.productId));
-          
+            .where(eq(productInventory.product_variation_id, item.productVariationId));
+
           // Update the inventory object for subsequent items
           inv.quantityInStock = newStock;
           inv.itemsSold = (Number(inv.itemsSold || 0) + item.quantity);
@@ -326,7 +335,7 @@ export async function POST(req: NextRequest) {
       const paymentId = uuidv4();
       const isCOD = paymentMethod === "cod";
       const isGCash = paymentMethod === "gcash";
-      
+
       await db.insert(payments).values({
         id: paymentId,
         orderId,
@@ -353,15 +362,15 @@ export async function POST(req: NextRequest) {
 
     const cartItemIds = Array.isArray(items)
       ? items
-          .map((item: CartItem) => item.id)
-          .filter((id: string | undefined) => Boolean(id))
+        .map((item: CartItem) => item.id)
+        .filter((id: string | undefined) => Boolean(id))
       : [];
 
     if (cart.length > 0 && cartItemIds.length > 0) {
       await db
         .delete(cartItems)
         .where(
-          (
+          and(
             eq(cartItems.cartId, cart[0].id),
             inArray(cartItems.id, cartItemIds as string[])
           )
@@ -377,10 +386,10 @@ export async function POST(req: NextRequest) {
       paymentMethod,
       message: `${createdOrders.length} order(s) placed successfully`,
     });
-  } catch (error) {
-    console.error("Error creating order:", error);
+  } catch (error: any) {
+    console.error("Error creating order:", error.message, error.stack);
     return corsResponse(
-      { error: "Failed to create order" },
+      { error: "Failed to create order", message: error.message },
       500
     );
   }
@@ -392,14 +401,14 @@ export async function PUT(req: NextRequest) {
     const { searchParams } = new URL(req.url);
     const orderId = searchParams.get("id");
     if (!orderId) return corsResponse({ error: "Missing id" }, 400);
-    
+
     const userId = await getUserId(req);
     if (!userId) {
       return corsResponse({ error: "Unauthorized" }, 401);
     }
 
     const updates = await req.json();
-    
+
     // Verify order belongs to user
     const order = await db
       .select()
@@ -420,7 +429,7 @@ export async function PUT(req: NextRequest) {
       // Get order items
       const orderItemsData = await db
         .select({
-          productId: orderItems.productId,
+          productVariationId: orderItems.product_variation_id,
           quantity: orderItems.quantity,
         })
         .from(orderItems)
@@ -431,7 +440,7 @@ export async function PUT(req: NextRequest) {
         const inventory = await db
           .select()
           .from(productInventory)
-          .where(eq(productInventory.productId, item.productId))
+          .where(eq(productInventory.product_variation_id, item.productVariationId))
           .limit(1);
 
         if (inventory.length > 0) {
@@ -443,7 +452,7 @@ export async function PUT(req: NextRequest) {
               quantityInStock: currentStock + item.quantity,
               itemsSold: Math.max(0, currentSold - item.quantity),
             })
-            .where(eq(productInventory.productId, item.productId));
+            .where(eq(productInventory.product_variation_id, item.productVariationId));
         }
       }
     }

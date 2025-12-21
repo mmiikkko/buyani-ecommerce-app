@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
-import { BadgeAlert, Trash2, Undo2, Check } from "lucide-react";
+import { BadgeAlert, Trash2, Undo2, Check, Package } from "lucide-react";
 
 // Review type returned from /api/reviews
 type Review = {
@@ -104,13 +104,17 @@ export function AdminProductModal({
           <TabsContent value="details" className="mt-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* IMAGE */}
-              <div className="relative w-full h-64 rounded-lg overflow-hidden border">
-                <Image
-                  src={product.image}
-                  alt={product.name}
-                  fill
-                  className="object-cover"
-                />
+              <div className="relative w-full h-64 rounded-lg overflow-hidden border bg-gray-100 flex items-center justify-center">
+                {product.image && (product.image.startsWith('/') || product.image.startsWith('http') || product.image.startsWith('data:')) ? (
+                  <Image
+                    src={product.image}
+                    alt={product.name}
+                    fill
+                    className="object-cover"
+                  />
+                ) : (
+                  <Package className="h-16 w-16 text-gray-300" />
+                )}
               </div>
 
               {/* BASIC DETAILS */}

@@ -1,7 +1,7 @@
 "use server";
 
 import { db } from "@/server/drizzle";
-import { carts, cartItems, products, productImages, shop } from "@/server/schema/auth-schema";
+import { carts, cartItems, products, productImages, shop, productVariation } from "@/server/schema/auth-schema";
 import { eq, and, inArray } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { v4 as uuid } from "uuid";
@@ -52,15 +52,18 @@ export async function getCartItems(buyerId: string) {
     const items = await db
       .select({
         id: cartItems.id,
-        productId: cartItems.productId,
+        productId: productVariation.productId, // Derived from variation
+        variationId: cartItems.productVariationId,
         quantity: cartItems.quantity,
         productName: products.productName,
-        price: products.price,
+        price: productVariation.price, // Price from variation
         shopId: products.shopId,
         shopName: shop.shopName,
+        variationName: productVariation.variationName,
       })
       .from(cartItems)
-      .leftJoin(products, eq(cartItems.productId, products.id))
+      .leftJoin(productVariation, eq(cartItems.productVariationId, productVariation.id))
+      .leftJoin(products, eq(productVariation.productId, products.id))
       .leftJoin(shop, eq(products.shopId, shop.id))
       .where(eq(cartItems.cartId, cart.id));
 
@@ -98,6 +101,8 @@ export async function getCartItems(buyerId: string) {
       image: item.productId ? imageMap.get(item.productId) || null : null,
       shopId: item.shopId,
       shopName: item.shopName,
+      variationName: item.variationName,
+      productVariationId: item.variationId,
     }));
   } catch (error) {
     console.error("Error fetching cart items:", error);
@@ -108,12 +113,12 @@ export async function getCartItems(buyerId: string) {
 
 export async function addToCart(
   buyerId: string,
-  productId: string,
+  variationId: string,
   quantity: number = 1
 ) {
   try {
-    // Validate product ID is not a placeholder
-    if (productId.startsWith("PlaceHolder") || productId.includes("PlaceHolder")) {
+    // Validate variation ID is not a placeholder
+    if (variationId.startsWith("PlaceHolder") || variationId.includes("PlaceHolder")) {
       return {
         success: false,
         error: "Cannot add placeholder product to cart. Please select a real product."
@@ -129,7 +134,7 @@ export async function addToCart(
       .where(
         and(
           eq(cartItems.cartId, cart.id),
-          eq(cartItems.productId, productId)
+          eq(cartItems.productVariationId, variationId)
         )
       )
       .limit(1);
@@ -145,7 +150,7 @@ export async function addToCart(
       await db.insert(cartItems).values({
         id: uuid(),
         cartId: cart.id,
-        productId,
+        productVariationId: variationId,
         quantity,
       });
     }

@@ -24,18 +24,18 @@ export function ProductCard({
     if (!product.images || product.images.length === 0) {
       return "";
     }
-    
+
     const firstImage = product.images[0];
     if (!firstImage || !firstImage.image_url) {
       return "";
     }
-    
+
     // Handle array format (customer API)
     if (Array.isArray(firstImage.image_url)) {
       const url = firstImage.image_url[0];
       return url && typeof url === "string" ? url : "";
     }
-    
+
     // Handle string format (seller API) - this is the main format for seller products
     if (typeof firstImage.image_url === "string") {
       const url = firstImage.image_url.trim();
@@ -44,7 +44,7 @@ export function ProductCard({
         return url;
       }
     }
-    
+
     return "";
   };
 
@@ -52,14 +52,14 @@ export function ProductCard({
 
   // Use only valid absolute URLs or public relative paths; otherwise use placeholder
   const safeSrc =
-  firstImageUrl &&
-  (
-    firstImageUrl.startsWith("http") ||
-    firstImageUrl.startsWith("/") ||
-    firstImageUrl.startsWith("data:image/")
-  )
-    ? firstImageUrl
-    : "/placeholder.png";
+    firstImageUrl &&
+      (
+        firstImageUrl.startsWith("http") ||
+        firstImageUrl.startsWith("/") ||
+        firstImageUrl.startsWith("data:image/")
+      )
+      ? firstImageUrl
+      : "/placeholder.png";
 
 
   return (
@@ -73,7 +73,7 @@ export function ProductCard({
             <img
               src={safeSrc}
               alt={product.productName}
-              className="w-full h-full object-cover"
+              className={`w-full h-full object-cover ${product.stock <= 0 ? "grayscale opacity-60" : ""}`}
               onError={(e) => {
                 // Fallback if image fails to load
                 const target = e.target as HTMLImageElement;
@@ -90,7 +90,7 @@ export function ProductCard({
               alt={product.productName}
               width={400}
               height={160}
-              className="w-full h-full object-cover"
+              className={`w-full h-full object-cover ${product.stock <= 0 ? "grayscale opacity-60" : ""}`}
               unoptimized={true}
               onError={(e) => {
                 // Fallback if image fails to load
@@ -107,6 +107,15 @@ export function ProductCard({
           <span className="text-gray-400 text-sm flex items-center justify-center h-full">
             {t("no-image")}
           </span>
+        )}
+
+        {/* Out of Stock Overlay */}
+        {product.stock <= 0 && (
+          <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-black/30 backdrop-blur-[1px]">
+            <span className="bg-red-600 text-white px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider shadow-md">
+              {t("out-of-stock")}
+            </span>
+          </div>
         )}
       </div>
 
@@ -126,7 +135,7 @@ export function ProductCard({
       <div className="flex items-center justify-between px-5 pb-4 pt-3 border-t">
         {isRemoved ? (
           <>
-            <button 
+            <button
               onClick={() => onEdit?.(product)}
               className="flex items-center gap-1 text-blue-600 hover:text-blue-700 text-sm font-medium border rounded-md px-3 py-2 cursor-pointer"
             >
@@ -144,7 +153,7 @@ export function ProductCard({
           </>
         ) : (
           <>
-            <button 
+            <button
               onClick={() => onEdit?.(product)}
               className="flex items-center gap-1 text-blue-600 hover:text-blue-700 text-sm font-medium border rounded-md px-3 py-2 cursor-pointer"
             >

@@ -8,9 +8,10 @@ import {
   payments,
   transactions,
   productImages,
-  user,
+  user as userTable,
+  productVariation,
 } from "@/server/schema/auth-schema";
-import { eq, inArray } from "drizzle-orm";
+import { eq, and, inArray } from "drizzle-orm";
 import { getAuthenticatedUser } from "@/lib/mobile-auth";
 
 // GET /api/sellers/orders - Get orders for the current seller
@@ -50,9 +51,12 @@ export async function GET(req: NextRequest) {
 
       // Get order items containing seller's products
       const items = await db
-        .select()
+        .select({
+          orderId: orderItems.orderId,
+        })
         .from(orderItems)
-        .where(inArray(orderItems.productId, productIds));
+        .innerJoin(productVariation, eq(orderItems.product_variation_id, productVariation.id))
+        .where(inArray(productVariation.productId, productIds));
 
       const orderIds = [...new Set(items.map((item) => item.orderId))];
 
@@ -68,23 +72,27 @@ export async function GET(req: NextRequest) {
             buyerId: orders.buyerId,
             addressId: orders.addressId,
             total: orders.total,
+            orderType: orders.orderType,
+            customerName: orders.customerName,
             createdAt: orders.createdAt,
             updatedAt: orders.updatedAt,
-            buyerName: user.name,
-            buyerFirstName: user.first_name,
-            buyerLastName: user.last_name,
+            buyerName: userTable.name,
+            buyerFirstName: userTable.first_name,
+            buyerLastName: userTable.last_name,
           })
           .from(orders)
-          .leftJoin(user, eq(orders.buyerId, user.id))
+          .leftJoin(userTable, eq(orders.buyerId, userTable.id))
           .where(inArray(orders.id, orderIds)),
         db
           .select({
             orderItem: orderItems,
             product: products,
             image: productImages,
+            variation: productVariation,
           })
           .from(orderItems)
-          .leftJoin(products, eq(orderItems.productId, products.id))
+          .leftJoin(productVariation, eq(orderItems.product_variation_id, productVariation.id))
+          .leftJoin(products, eq(productVariation.productId, products.id))
           .leftJoin(productImages, eq(productImages.productId, products.id))
           .where(inArray(orderItems.orderId, orderIds)),
         db
@@ -101,94 +109,98 @@ export async function GET(req: NextRequest) {
       // 🟩 Type-safe product item group
       type GroupedOrderItem = {
         orderItem: typeof orderItems.$inferSelect;
-        product: (typeof products.$inferSelect & { images: unknown[] }) | null;
+        product: (typeof products.$inferSelect & { images: any[] }) | null;
+        variation: typeof productVariation.$inferSelect | null;
       };
 
       const transformedOrders = ordersList.map((orderRow) => {
-      const buyerName = orderRow.buyerName || 
-        (orderRow.buyerFirstName && orderRow.buyerLastName 
-          ? `${orderRow.buyerFirstName} ${orderRow.buyerLastName}`.trim()
-          : orderRow.buyerFirstName || orderRow.buyerLastName || null);
-      
-      const orderItemsForOrder = allOrderItems.filter(
-        (item) => item.orderItem.orderId === orderRow.id
-      );
+        // For walk-in orders, use customerName if available
+        const buyerName = orderRow.orderType === "walk-in" && orderRow.customerName
+          ? orderRow.customerName
+          : (orderRow.buyerName ||
+            (orderRow.buyerFirstName && orderRow.buyerLastName
+              ? `${orderRow.buyerFirstName} ${orderRow.buyerLastName}`.trim()
+              : orderRow.buyerFirstName || orderRow.buyerLastName || null));
 
-      const itemsWithProducts = orderItemsForOrder.reduce(
-        (acc, row) => {
-          const productId = row.orderItem.productId;
+        const orderItemsForOrder = allOrderItems.filter(
+          (item) => item.orderItem.orderId === orderRow.id
+        );
 
-          if (!acc[productId]) {
-            acc[productId] = {
-              orderItem: row.orderItem,
-              product: row.product
-                ? { ...row.product, images: [] }
-                : null,
-            };
-          }
+        const itemsWithProducts = orderItemsForOrder.reduce(
+          (acc, row) => {
+            const productId = row.variation?.productId || "unknown";
 
-          if (row.image) {
-            acc[productId].product?.images.push({
-              id: row.image.id,
-              product_id: row.image.productId,
-              image_url: [row.image.url],
-              is_primary: false,
-            });
-          }
+            if (!acc[productId]) {
+              acc[productId] = {
+                orderItem: row.orderItem,
+                product: row.product
+                  ? { ...row.product, images: [] }
+                  : null,
+                variation: row.variation || null,
+              };
+            }
 
-          return acc;
-        },
-        {} as Record<string, GroupedOrderItem>
-      );
+            if (row.image && acc[productId].product) {
+              acc[productId].product!.images.push({
+                id: row.image.id,
+                product_id: row.image.productId,
+                image_url: row.image.url ? [row.image.url] : [],
+                is_primary: false,
+              });
+            }
 
-      // 🟩 FIX: removed "any", strong typing applied
-      const items = Object.values(itemsWithProducts).map((item) => {
-        const primaryImage = item.product?.images?.find((img: any) => img.is_primary) || item.product?.images?.[0];
-        const productImageUrl = primaryImage?.image_url?.[0] || null;
-        
-        return {
-          id: item.orderItem.id,
-          orderId: item.orderItem.orderId,
-          productId: item.orderItem.productId,
-          productName: item.product?.productName || "Unknown Product",
-          quantity: item.orderItem.quantity,
-          subtotal: Number(item.orderItem.subtotal),
-          productImage: productImageUrl,
-          product: item.product
-            ? {
+            return acc;
+          },
+          {} as Record<string, GroupedOrderItem>
+        );
+
+        // 🟩 FIX: removed "any", strong typing applied
+        const items = Object.values(itemsWithProducts).map((item) => {
+          const primaryImage = item.product?.images?.find((img: any) => img.is_primary) || item.product?.images?.[0];
+          const productImageUrl = primaryImage?.image_url?.[0] || null;
+
+          return {
+            id: item.orderItem.id,
+            orderId: item.orderItem.orderId,
+            productId: item.product?.id || null,
+            productName: item.product?.productName || "Unknown Product",
+            quantity: item.orderItem.quantity,
+            subtotal: Number(item.orderItem.subtotal),
+            productImage: productImageUrl,
+            product: item.product
+              ? {
                 id: item.product.id,
                 shopId: item.product.shopId,
                 productName: item.product.productName,
-                price: Number(item.product.price),
                 images: item.product.images || [],
               }
-            : null,
-        };
-      });
+              : null,
+          };
+        });
 
-      const payment = allPayments.find((p) => p.orderId === orderRow.id);
-      const orderTransactions = allTransactions.filter(
-        (t) => t.orderId === orderRow.id
-      );
+        const payment = allPayments.find((p) => p.orderId === orderRow.id);
+        const orderTransactions = allTransactions.filter(
+          (t) => t.orderId === orderRow.id
+        );
 
-      // Derive shop info from items (all items in an order now belong to same shop)
-      const firstItem = items[0];
-      const shopId = firstItem?.product?.shopId || null;
-      const shopInfo = sellerShops.find((s) => s.id === shopId);
+        // Derive shop info from items (all items in an order now belong to same shop)
+        const firstItem = items[0];
+        const shopId = firstItem?.product?.shopId || null;
+        const shopInfo = sellerShops.find((s) => s.id === shopId);
 
-      return {
-        id: orderRow.id,
-        buyerId: orderRow.buyerId,
-        buyerName: buyerName,
-        shopId: shopId,
-        shopName: shopInfo?.shopName || null,
-        addressId: orderRow.addressId,
-        total: orderRow.total ? Number(orderRow.total) : null,
-        createdAt: orderRow.createdAt,
-        updatedAt: orderRow.updatedAt,
-        items,
-        payment: payment
-          ? {
+        return {
+          id: orderRow.id,
+          buyerId: orderRow.buyerId,
+          buyerName: buyerName,
+          shopId: shopId,
+          shopName: shopInfo?.shopName || null,
+          addressId: orderRow.addressId,
+          total: orderRow.total ? Number(orderRow.total) : null,
+          createdAt: orderRow.createdAt,
+          updatedAt: orderRow.updatedAt,
+          items,
+          payment: payment
+            ? {
               id: payment.id,
               orderId: payment.orderId,
               paymentMethod: payment.paymentMethod
@@ -202,19 +214,19 @@ export async function GET(req: NextRequest) {
               createdAt: payment.createdAt,
               updatedAt: payment.updatedAt,
             }
-          : null,
-        transactions: orderTransactions.map((t) => ({
-          id: t.id,
-          userId: t.userId,
-          orderId: t.orderId,
-          transactionType: t.transactionType || null,
-          remarks: t.remarks || null,
-          createdAt: t.createdAt,
-          updatedAt: t.updatedAt,
-        })),
-        status: payment?.status?.toLowerCase() || "pending",
-        type: orderTransactions[0]?.transactionType || "online",
-      };
+            : null,
+          transactions: orderTransactions.map((t) => ({
+            id: t.id,
+            userId: t.userId,
+            orderId: t.orderId,
+            transactionType: t.transactionType || null,
+            remarks: t.remarks || null,
+            createdAt: t.createdAt,
+            updatedAt: t.updatedAt,
+          })),
+          status: payment?.status?.toLowerCase() || "pending",
+          type: orderTransactions[0]?.transactionType || "online",
+        };
       });
 
       const response = NextResponse.json(transformedOrders);
@@ -223,7 +235,7 @@ export async function GET(req: NextRequest) {
       return response;
     } catch (dbError: any) {
       // Check for database connection errors
-      const isConnectionError = 
+      const isConnectionError =
         dbError?.cause?.code === "ECONNRESET" ||
         dbError?.cause?.code === "PROTOCOL_CONNECTION_LOST" ||
         dbError?.cause?.errno === -4077 ||
@@ -241,7 +253,7 @@ export async function GET(req: NextRequest) {
   } catch (error) {
     // 🟩 FIX: error is unknown → properly narrowed
     if (error instanceof Error) {
-      console.error("Error fetching seller orders:", error.message);
+      console.error("Error fetching seller orders:", error.message, error.stack);
     } else {
       console.error("Unknown error fetching seller orders:", String(error));
     }

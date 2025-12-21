@@ -19,26 +19,26 @@ export default async function AdminLayout({
   }
 
   return (
-<SidebarProvider defaultOpen={false} >
+    <SidebarProvider defaultOpen={false} >
       <div className="flex min-h-screen overflow-hidden">
         {/* Sidebar */}
         <AppSidebar />
 
-          {/* Main Content Area */}
-          <div className="flex-1 flex flex-col">
-            {/* Navbar */}
-            <Navbar>
-              <div className="flex items-center mr-3">
-                <SidebarTrigger />
-              </div>
-              
-            </Navbar>
-        
-            
+        {/* Main Content Area */}
+        <div className="flex-1 flex flex-col">
+          {/* Navbar */}
+          <Navbar>
+            <div className="flex items-center mr-3">
+              <SidebarTrigger />
+            </div>
+
+          </Navbar>
+
+
           {/* Main Page Content */}
-          <main className="flex-1 min-w-screen self-center overflow-hidden self-center p-6 mt-15 bg-#EBFEEC">
+          <main className="flex-1 min-w-screen overflow-hidden p-6 mt-15 bg-[#EBFEEC]">
             {/* Sidebar trigger at top (optional) */}
-            
+
             {children}
           </main>
         </div>

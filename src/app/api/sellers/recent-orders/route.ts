@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/server/drizzle";
-import { orders, shop, orderItems, products, payments, user } from "@/server/schema/auth-schema";
-import { eq, inArray, sql } from "drizzle-orm";
+import { orders, shop, orderItems, products, productImages, payments, user as userTable, productVariation, transactions } from "@/server/schema/auth-schema";
+import { eq, inArray, sql, and } from "drizzle-orm";
 import { getAuthenticatedUser } from "@/lib/mobile-auth";
 
 // GET /api/sellers/recent-orders - Get recent orders for seller dashboard
@@ -43,7 +43,8 @@ export async function GET(req: NextRequest) {
     const orderItemsList = await db
       .select({ orderId: orderItems.orderId })
       .from(orderItems)
-      .where(inArray(orderItems.productId, productIds))
+      .innerJoin(productVariation, eq(orderItems.product_variation_id, productVariation.id))
+      .where(inArray(productVariation.productId, productIds))
       .limit(100); // Limit to avoid too many order IDs
 
     const uniqueOrderIds = [...new Set(orderItemsList.map((item) => item.orderId))];
@@ -52,45 +53,83 @@ export async function GET(req: NextRequest) {
       return NextResponse.json([]);
     }
 
-    // Get recent orders with buyer info and payments, limited to 5
-    const recentOrders = await db
+    // Get recent orders with buyer info
+    const recentOrdersList = await db
       .select({
         id: orders.id,
         buyerId: orders.buyerId,
-        buyerName: user.name,
+        buyerName: userTable.name,
         total: orders.total,
+        orderType: orders.orderType,
+        customerName: orders.customerName,
         createdAt: orders.createdAt,
-        paymentStatus: payments.status,
       })
       .from(orders)
-      .leftJoin(user, eq(orders.buyerId, user.id))
-      .leftJoin(payments, eq(payments.orderId, orders.id))
+      .leftJoin(userTable, eq(orders.buyerId, userTable.id))
       .where(inArray(orders.id, uniqueOrderIds))
       .orderBy(sql`${orders.createdAt} DESC`)
       .limit(5);
 
-    const formattedOrders = recentOrders.map((order) => ({
-      id: order.id,
-      orderId: order.id, // Add orderId for consistency with Order type
-      status: order.paymentStatus?.toLowerCase() || "pending",
-      customer: order.buyerName || "Unknown Customer",
-      date: new Date(order.createdAt).toLocaleDateString("en-US", {
-        month: "short",
-        day: "numeric",
-        year: "numeric",
-      }),
-      amount: order.total ? Number(order.total) : 0,
-      createdAt: order.createdAt, // Add createdAt for sorting
-    }));
+    const resultOrderIds = recentOrdersList.map(o => o.id);
 
-    const response = NextResponse.json(formattedOrders);
+    // Fetch payments and transactions for these specific orders
+    const [allPayments, allTransactions, allOrderItems] = await Promise.all([
+      db.select().from(payments).where(inArray(payments.orderId, resultOrderIds)),
+      db.select().from(transactions).where(inArray(transactions.orderId, resultOrderIds)),
+      db.select({
+        orderId: orderItems.orderId,
+        productId: productVariation.productId,
+        productName: products.productName,
+        quantity: orderItems.quantity,
+        subtotal: orderItems.subtotal,
+        image: productImages.url
+      })
+        .from(orderItems)
+        .innerJoin(productVariation, eq(orderItems.product_variation_id, productVariation.id))
+        .innerJoin(products, eq(productVariation.productId, products.id))
+        .leftJoin(productImages, eq(products.id, productImages.productId))
+        .where(inArray(orderItems.orderId, resultOrderIds))
+    ]);
+
+    // Optimized: Get order with first product image
+    const ordersWithImages = recentOrdersList.map((order) => {
+      const itemsForOrder = allOrderItems.filter(i => i.orderId === order.id);
+      const payment = allPayments.find(p => p.orderId === order.id);
+      const transaction = allTransactions.find(t => t.orderId === order.id);
+
+      return {
+        id: order.id,
+        orderId: order.id,
+        status: payment?.status?.toLowerCase() || "pending",
+        customer: order.orderType === "walk-in" && order.customerName
+          ? order.customerName
+          : (order.buyerName || "Unknown Customer"),
+        date: new Date(order.createdAt).toLocaleDateString("en-US", {
+          month: "short",
+          day: "numeric",
+          year: "numeric",
+        }),
+        total: order.total ? Number(order.total) : 0,
+        createdAt: order.createdAt,
+        type: order.orderType || transaction?.transactionType || "online",
+        items: itemsForOrder.map(item => ({
+          productId: item.productId,
+          productName: item.productName,
+          quantity: item.quantity,
+          subtotal: Number(item.subtotal),
+          productImage: item.image
+        })),
+      };
+    });
+
+    const response = NextResponse.json(ordersWithImages);
     // Add cache headers for faster subsequent loads (30 seconds)
     response.headers.set('Cache-Control', 'public, s-maxage=30, stale-while-revalidate=60');
     return response;
-  } catch (error) {
-    console.error("Error fetching recent orders:", error);
+  } catch (error: any) {
+    console.error("Error fetching recent orders:", error.message, error.stack);
     return NextResponse.json(
-      { error: "Failed to fetch recent orders" },
+      { error: "Failed to fetch recent orders", message: error.message },
       { status: 500 }
     );
   }
