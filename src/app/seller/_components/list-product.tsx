@@ -7,7 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { v4 as uuidv4 } from "uuid";
 import type { Product, VariationOption, ProductVariation } from "@/types/products";
 import { toast } from "sonner";
-import { Plus, X, Trash2 } from "lucide-react";
+import { Plus, X, Trash2, Upload } from "lucide-react";
 
 interface AddProductsProps {
   onAdd: (product: Product) => Promise<void>;
@@ -22,6 +22,9 @@ export function AddProducts({ onAdd, onUpdate, productToEdit, onEditComplete }: 
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
+
+  // ✅ NEW: Upload state
+  const [uploadingImages, setUploadingImages] = useState(false);
 
   // BASIC
   const [name, setName] = useState("");
@@ -54,9 +57,13 @@ export function AddProducts({ onAdd, onUpdate, productToEdit, onEditComplete }: 
   const [activeVarIndex, setActiveVarIndex] = useState<number | null>(null);
 
   // ERROR
-
-  // ERROR
   const [error, setError] = useState("");
+
+  // ✅ HELPER: Check if image URL is valid (Cloudinary or base64)
+  const isValidImageUrl = (url: string): boolean => {
+    if (!url || typeof url !== "string" || url.trim() === "") return false;
+    return url.startsWith("https://res.cloudinary.com/") || url.startsWith("data:image/");
+  };
 
   // Fetch categories
   useEffect(() => {
@@ -89,7 +96,7 @@ export function AddProducts({ onAdd, onUpdate, productToEdit, onEditComplete }: 
       setPrice(productToEdit.price?.toString() || "");
       setStock(productToEdit.stock?.toString() || "");
       setStatus(productToEdit.status || "Available");
-
+  
       // Load images
       if (productToEdit.images && productToEdit.images.length > 0) {
         const imageUrls = productToEdit.images
@@ -97,17 +104,14 @@ export function AddProducts({ onAdd, onUpdate, productToEdit, onEditComplete }: 
             if (typeof img.image_url === "string") {
               return img.image_url;
             }
-            //if (Array.isArray(img.image_url) && img.image_url.length > 0) {
-            //return img.image_url[0];
-            //}
             return null;
           })
-          .filter((url): url is string => url !== null && url !== "" && url.startsWith("data:image/"));
+          .filter((url): url is string => url !== null && isValidImageUrl(url));
         setImagePreviews(imageUrls);
       } else {
         setImagePreviews([]);
       }
-
+  
       // Load shipping info
       if (productToEdit.shipping) {
         setWeight(productToEdit.shipping.weight?.toString() || "");
@@ -117,44 +121,39 @@ export function AddProducts({ onAdd, onUpdate, productToEdit, onEditComplete }: 
         setHeightVal(productToEdit.shipping.height?.toString() || "");
         setShippingFee(productToEdit.shipping.shippingFee?.toString() || "");
       }
-
+  
       // Load variations and matrix
       const productVariations = productToEdit.variations || [];
       setVariations(productVariations);
-
-      // If variations have nested 'combinations' or if we need to regenerate
-      // Actually, let's look at how variations are stored.
-      // In the new system, 'variations' will be the combinations themselves.
-      // In the new system, 'variations' will be the combinations themselves.
-      // API returns: { id, name, value, price, stock, sku, isStandard }
-      // We check if we have matrix data.
-      // CRITICAL: We skip populating matrix if it's a "Standard" variation (Simple Product),
-      // so the user can use the main Stock input.
+  
+      // Check if it's a "Standard" variation (Simple Product)
       const hasVariations = productVariations.length > 0;
-      const isStandard = hasVariations && (
-        productVariations[0].name === "Standard" ||
-        productVariations[0].isStandard === true ||
-        (productVariations[0] as any).value === "Standard" ||
-        (productVariations[0] as any).variationValue === "Standard"
+      
+      // ✅ FIXED: Use type assertion to safely check properties
+      const firstVariation = hasVariations ? productVariations[0] : null;
+      const isStandard = firstVariation && (
+        (firstVariation as any).name === "Standard" ||
+        (firstVariation as any).isStandard === true ||
+        (firstVariation as any).value === "Standard" ||
+        (firstVariation as any).variationValue === "Standard"
       );
-
+  
       if (hasVariations && !isStandard) {
-        // It's a real matrix product
+        // It's a real matrix product - map with type safety
         setMatrix(productVariations.map((v: any) => ({
           id: v.id,
-          name: v.name || v.variationName, // Handle both API formats
-          value: v.value || v.variationValue,
+          name: v.name || v.variationName || "Unnamed",
+          value: v.value || v.variationValue || "",
           price: v.price?.toString() || "",
-          stock: v.stock?.toString() || (v.quantityInStock?.toString()) || "",
+          stock: v.stock?.toString() || v.quantityInStock?.toString() || "",
           sku: v.sku || v.SKU || "",
         })));
       } else {
-        // Simple product or empty - ensure matrix is empty so simple inputs work
+        // Simple product or empty - ensure matrix is empty
         setMatrix([]);
       }
     } else {
       if (isEditing) {
-        // Only reset if we were editing and productToEdit is now null
         setIsEditing(false);
       }
     }
@@ -166,11 +165,9 @@ export function AddProducts({ onAdd, onUpdate, productToEdit, onEditComplete }: 
   // Auto-calculate total stock and base price from matrix/variations
   useEffect(() => {
     if (matrix.length > 0) {
-      // Stock: Sum of all parts
       const totalStock = matrix.reduce((sum, item) => sum + (Number(item.stock) || 0), 0);
       setStock(totalStock.toString());
 
-      // Price: Starting price (minimum) and Range display
       const prices = matrix.map(m => Number(m.price)).filter(p => !isNaN(p) && p > 0);
       if (prices.length > 0) {
         const minPrice = Math.min(...prices);
@@ -218,44 +215,22 @@ export function AddProducts({ onAdd, onUpdate, productToEdit, onEditComplete }: 
 
     try {
       const productId = isEditing && productToEdit ? productToEdit.id : uuidv4();
-      // Generate unique SKU: first 6 chars of name + timestamp + random chars
       const nameBase = (name || "PRD").replace(/\s+/g, "").toUpperCase().slice(0, 6);
       const timestamp = Date.now().toString(36).slice(-4).toUpperCase();
       const random = Math.random().toString(36).slice(-2).toUpperCase();
       const skuBase = `${nameBase}${timestamp}${random}`;
 
-      // SANITIZE image previews before sending:
-      // - Only keep data:image/ URLs (base64 encoded images from FileReader)
-      // - Filter out placeholder images, empty strings, and invalid formats
-      console.log(`[DEBUG] Starting image sanitization. imagePreviews.length: ${imagePreviews.length}`);
-      imagePreviews.forEach((img, idx) => {
-        console.log(`[DEBUG] Preview ${idx + 1}: type=${typeof img}, length=${img?.length || 0}, startsWith data:image/=${img?.startsWith("data:image/")}`);
-      });
-
+      // ✅ UPDATED: Accept both Cloudinary URLs and base64
       const sanitizedImages = imagePreviews
-        .filter(img => {
-          // Only keep valid data URLs
-          const isValid = img &&
-            typeof img === "string" &&
-            img.trim() !== "" &&
-            img !== "/placeholder.png" &&
-            img.startsWith("data:image/");
-          if (!isValid && img) {
-            console.log(`[DEBUG] Filtered out image: type=${typeof img}, startsWith=${img.substring(0, 20)}...`);
-          }
-          return isValid;
-        })
+        .filter(img => isValidImageUrl(img))
         .map((img, idx) => ({
           id: uuidv4(),
           product_id: productId,
-          image_url: img, // Already validated as data:image/ URL
+          image_url: img,
           is_primary: idx === 0,
         }));
 
       console.log(`[DEBUG] Sanitized ${sanitizedImages.length} images for product ${productId}`);
-      if (sanitizedImages.length > 0) {
-        console.log(`[DEBUG] First image URL length: ${sanitizedImages[0].image_url.length}, preview: ${sanitizedImages[0].image_url.substring(0, 50)}...`);
-      }
 
       const productStatus = isDraft ? "Draft" : status;
       const product: Product = {
@@ -287,16 +262,13 @@ export function AddProducts({ onAdd, onUpdate, productToEdit, onEditComplete }: 
 
       if (isEditing && onUpdate) {
         await onUpdate(product);
-        // Close dialog immediately when updating
         setIsDialogOpen(false);
         toast.success(`${name} is updated`);
       } else {
         await onAdd(product);
-        // Show success message
         if (isDraft) {
           toast.success("Product saved as draft successfully!");
         } else {
-          // Close dialog immediately when publishing
           setIsDialogOpen(false);
           toast.success(`${name} is posted`);
         }
@@ -317,19 +289,18 @@ export function AddProducts({ onAdd, onUpdate, productToEdit, onEditComplete }: 
         setHeightVal("");
         setShippingFee("");
         setVariations([]);
+        setMatrix([]);
         setNewVarName("");
         setNewVarValue("");
         setIsEditing(false);
       }
 
-      // Notify parent that edit is complete
       if (wasEditing && onEditComplete) {
         onEditComplete();
       }
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : "Failed to save product. Please try again.";
 
-      // Don't show error for connection issues that were already retried
       if (!errorMessage.includes("connection") && !errorMessage.includes("Database")) {
         toast.error(errorMessage);
       } else {
@@ -344,7 +315,6 @@ export function AddProducts({ onAdd, onUpdate, productToEdit, onEditComplete }: 
   const handleDialogChange = (open: boolean) => {
     setIsDialogOpen(open);
     if (!open) {
-      // Reset form when closing
       if (!isEditing) {
         setName("");
         setDescription("");
@@ -359,12 +329,76 @@ export function AddProducts({ onAdd, onUpdate, productToEdit, onEditComplete }: 
         setHeightVal("");
         setShippingFee("");
         setVariations([]);
+        setMatrix([]);
         setError("");
       }
       if (isEditing && onEditComplete) {
         setIsEditing(false);
         onEditComplete();
       }
+    }
+  };
+
+  // ✅ NEW: Handle image upload to Cloudinary
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files) return;
+
+    const currentCount = imagePreviews.filter(img => isValidImageUrl(img)).length;
+    const filesToAdd = Array.from(files);
+    const totalAfterAdd = currentCount + filesToAdd.length;
+
+    if (totalAfterAdd > 10) {
+      setError(`Maximum 10 images allowed. You currently have ${currentCount} image(s) and tried to add ${filesToAdd.length} more.`);
+      return;
+    }
+
+    // Check file sizes (10MB limit for Cloudinary)
+    for (const file of filesToAdd) {
+      if (file.size > 10 * 1024 * 1024) {
+        setError("Each image must be under 10MB");
+        return;
+      }
+    }
+
+    setUploadingImages(true);
+    setError("");
+
+    try {
+      // Create FormData
+      const formData = new FormData();
+      filesToAdd.forEach(file => {
+        formData.append('images', file);
+      });
+
+      // Upload to Cloudinary via API
+      const response = await fetch('/api/sellers/upload-images', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Upload failed');
+      }
+
+      const { images } = await response.json();
+      
+      // Add Cloudinary URLs to previews
+      setImagePreviews(prev => [
+        ...prev,
+        ...images.map((img: any) => img.url)
+      ]);
+
+      toast.success(`${images.length} image(s) uploaded successfully!`);
+    } catch (error) {
+      console.error('Upload error:', error);
+      setError(error instanceof Error ? error.message : 'Failed to upload images');
+      toast.error('Failed to upload images. Please try again.');
+    } finally {
+      setUploadingImages(false);
+      // Clear the input
+      e.target.value = '';
     }
   };
 
@@ -424,88 +458,67 @@ export function AddProducts({ onAdd, onUpdate, productToEdit, onEditComplete }: 
             </div>
           </TabsContent>
 
-          {/* IMAGES */}
+          {/* IMAGES - ✅ UPDATED */}
           <TabsContent value="images" className="mt-4">
             <div className="border p-4 rounded-md space-y-3">
               <div className="space-y-2">
                 <label className="block text-sm font-medium text-gray-700 mb-2">Product Images</label>
-                <input
-                  type="file"
-                  accept="image/*"
-                  multiple
-                  onChange={(e) => {
-                    const files = e.target.files;
-                    if (!files) return;
-
-                    const currentCount = imagePreviews.filter(img => img && img !== "/placeholder.png" && img.startsWith("data:image/")).length;
-                    const filesToAdd = Array.from(files);
-                    const totalAfterAdd = currentCount + filesToAdd.length;
-
-                    if (totalAfterAdd > 10) {
-                      setError(`Maximum 10 images allowed. You currently have ${currentCount} image(s) and tried to add ${filesToAdd.length} more.`);
-                      return;
-                    }
-
-                    filesToAdd.forEach((file) => {
-                      // Optional size limit (recommended)
-                      if (file.size > 2 * 1024 * 1024) {
-                        setError("Each image must be under 2MB");
-                        return;
-                      }
-
-                      const reader = new FileReader();
-                      reader.onloadend = () => {
-                        const base64 = reader.result as string;
-                        setImagePreviews((prev) => {
-                          const filtered = prev.filter(img => img && img !== "/placeholder.png" && img.startsWith("data:image/"));
-                          if (filtered.length >= 10) {
-                            setError("Maximum 10 images allowed");
-                            return prev;
-                          }
-                          return [...prev, base64];
-                        });
-                      };
-                      reader.readAsDataURL(file);
-                    });
-                  }}
-                />
+                <div className="relative">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    disabled={uploadingImages}
+                    onChange={handleImageUpload}
+                    className={`w-full ${uploadingImages ? "opacity-50 cursor-not-allowed" : ""}`}
+                  />
+                  {uploadingImages && (
+                    <div className="absolute inset-0 flex items-center justify-center bg-white/80 rounded">
+                      <div className="flex items-center gap-2 text-[#2E7D32] font-medium">
+                        <Upload className="h-5 w-5 animate-bounce" />
+                        <span>Uploading to cloud storage...</span>
+                      </div>
+                    </div>
+                  )}
+                </div>
                 <p className="text-xs text-gray-500">
-                  You can upload up to 10 images. Currently: {imagePreviews.filter(img => img && img !== "/placeholder.png" && img.startsWith("data:image/")).length}/10
+                  You can upload up to 10 images (max 10MB each). Currently: {imagePreviews.filter(img => isValidImageUrl(img)).length}/10
                 </p>
               </div>
               <div className="mt-3 grid grid-cols-4 gap-3">
                 {imagePreviews
-                  .filter(img => img && img !== "/placeholder.png" && img.startsWith("data:image/"))
+                  .filter(img => isValidImageUrl(img))
                   .map((src, idx) => (
-                    <div key={idx} className="relative border rounded-md overflow-hidden">
+                    <div key={idx} className="relative border rounded-md overflow-hidden group">
                       <Image
                         src={src}
                         alt={name ? `${name} - Image ${idx + 1}` : `Product image ${idx + 1}`}
                         width={200}
                         height={200}
                         className="object-cover"
-                        unoptimized={true}
+                        unoptimized={src.startsWith("data:image/")}
                       />
                       <button
                         onClick={() => setImagePreviews(prev => prev.filter((_, i) => i !== idx))}
-                        className="absolute top-1 right-1 bg-black/50 text-white text-xs px-2 py-1 rounded"
+                        className="absolute top-1 right-1 bg-black/70 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity"
                         type="button"
                       >
                         Remove
                       </button>
+                      {src.startsWith("https://res.cloudinary.com/") && (
+                        <div className="absolute bottom-1 left-1 bg-emerald-500 text-white text-[10px] px-2 py-0.5 rounded font-bold">
+                          ☁️ Cloud
+                        </div>
+                      )}
                     </div>
                   ))}
               </div>
-              {imagePreviews.filter(img => img && img !== "/placeholder.png" && img.startsWith("data:image/")).length === 0 && (
+              {imagePreviews.filter(img => isValidImageUrl(img)).length === 0 && (
                 <p className="text-sm text-gray-500 text-center py-4">No images uploaded yet. Select images above to add them.</p>
               )}
-              <p className="text-xs text-gray-500 mt-2">
-                Note: local previews (blob:) are shown for preview only — uploading images to a CDN/storage is required for permanent product images.
-              </p>
             </div>
           </TabsContent>
 
-          {/* VARIATIONS */}
           {/* VARIATIONS */}
           <TabsContent value="variations" className="mt-4 space-y-4">
             <div className="border p-6 rounded-xl space-y-6 bg-white shadow-sm">
@@ -545,7 +558,6 @@ export function AddProducts({ onAdd, onUpdate, productToEdit, onEditComplete }: 
                 {matrix.map((item, idx) => (
                   <div key={idx} className="group relative border rounded-2xl p-4 bg-slate-50 transition-all hover:bg-white hover:shadow-lg hover:border-emerald-200">
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                      {/* Name/Value Input */}
                       <div className="space-y-2 md:col-span-1">
                         <label className="text-[10px] font-black uppercase tracking-widest text-slate-500">Variation Name</label>
                         <input
@@ -563,7 +575,6 @@ export function AddProducts({ onAdd, onUpdate, productToEdit, onEditComplete }: 
                         />
                       </div>
 
-                      {/* Price Input */}
                       <div className="space-y-2">
                         <label className="text-[10px] font-black uppercase tracking-widest text-slate-500">Price (₱)</label>
                         <input
@@ -578,7 +589,6 @@ export function AddProducts({ onAdd, onUpdate, productToEdit, onEditComplete }: 
                         />
                       </div>
 
-                      {/* Stock Input */}
                       <div className="space-y-2">
                         <label className="text-[10px] font-black uppercase tracking-widest text-slate-500">Stock</label>
                         <input
@@ -593,7 +603,6 @@ export function AddProducts({ onAdd, onUpdate, productToEdit, onEditComplete }: 
                         />
                       </div>
 
-                      {/* SKU Input */}
                       <div className="space-y-2 relative">
                         <label className="text-[10px] font-black uppercase tracking-widest text-slate-500">SKU</label>
                         <div className="flex items-center gap-2">

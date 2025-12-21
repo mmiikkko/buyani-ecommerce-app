@@ -19,6 +19,23 @@ export function ProductCard({
   isRemoved?: boolean;
 }) {
   const { t } = useLanguage();
+  
+  // ✅ NEW: Helper to validate image URLs
+  const isValidImageUrl = (url: string): boolean => {
+    if (!url || typeof url !== "string") return false;
+    const trimmed = url.trim();
+    if (!trimmed || trimmed === "null" || trimmed === "undefined") return false;
+    
+    // Accept Cloudinary URLs, other HTTP URLs, data URIs, and public paths
+    return (
+      trimmed.startsWith("https://res.cloudinary.com/") ||
+      trimmed.startsWith("http://") ||
+      trimmed.startsWith("https://") ||
+      trimmed.startsWith("data:image/") ||
+      trimmed.startsWith("/")
+    );
+  };
+
   // Handle both string and array image_url formats
   const getImageUrl = (): string => {
     if (!product.images || product.images.length === 0) {
@@ -38,11 +55,7 @@ export function ProductCard({
 
     // Handle string format (seller API) - this is the main format for seller products
     if (typeof firstImage.image_url === "string") {
-      const url = firstImage.image_url.trim();
-      // Validate the URL is not empty or invalid
-      if (url && url !== "null" && url !== "undefined" && url.length > 0) {
-        return url;
-      }
+      return firstImage.image_url;
     }
 
     return "";
@@ -50,17 +63,11 @@ export function ProductCard({
 
   const firstImageUrl = getImageUrl();
 
-  // Use only valid absolute URLs or public relative paths; otherwise use placeholder
-  const safeSrc =
-    firstImageUrl &&
-      (
-        firstImageUrl.startsWith("http") ||
-        firstImageUrl.startsWith("/") ||
-        firstImageUrl.startsWith("data:image/")
-      )
-      ? firstImageUrl
-      : "/placeholder.png";
+  // ✅ UPDATED: Use helper function for validation
+  const safeSrc = isValidImageUrl(firstImageUrl) ? firstImageUrl : "/placeholder.png";
 
+  // ✅ NEW: Determine if we should use Next.js Image or regular img tag
+  const useRegularImg = safeSrc.startsWith("data:image/");
 
   return (
     <div className={`w-full max-w-sm shadow-md rounded-lg space-y-4 overflow-hidden bg-white ${isRemoved ? "opacity-75 border-2 border-gray-300" : ""}`}>
@@ -68,14 +75,13 @@ export function ProductCard({
       {/* IMAGE */}
       <div className={`w-full h-40 bg-gray-200 overflow-hidden relative ${isRemoved ? "grayscale" : ""}`}>
         {safeSrc && safeSrc !== "/placeholder.png" ? (
-          safeSrc.startsWith("data:image/") ? (
+          useRegularImg ? (
             // Use regular img tag for data URLs to avoid Next.js Image issues
             <img
               src={safeSrc}
               alt={product.productName}
               className={`w-full h-full object-cover ${product.stock <= 0 ? "grayscale opacity-60" : ""}`}
               onError={(e) => {
-                // Fallback if image fails to load
                 const target = e.target as HTMLImageElement;
                 target.style.display = "none";
                 const parent = target.parentElement;
@@ -85,6 +91,7 @@ export function ProductCard({
               }}
             />
           ) : (
+            // Use Next.js Image for Cloudinary and other HTTP URLs
             <Image
               src={safeSrc}
               alt={product.productName}
@@ -93,7 +100,6 @@ export function ProductCard({
               className={`w-full h-full object-cover ${product.stock <= 0 ? "grayscale opacity-60" : ""}`}
               unoptimized={true}
               onError={(e) => {
-                // Fallback if image fails to load
                 const target = e.target as HTMLImageElement;
                 target.style.display = "none";
                 const parent = target.parentElement;

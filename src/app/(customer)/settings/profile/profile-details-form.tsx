@@ -16,12 +16,13 @@ import { UserAvatar } from "@/components/user-avatar";
 import { authClient } from "@/server/auth-client";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { User } from "@/server/auth-types";
-import { XIcon, User as UserIcon, Save, Image as ImageIcon, CheckCircle2, AlertCircle } from "lucide-react";
+import { XIcon, User as UserIcon, Save, Image as ImageIcon, CheckCircle2, AlertCircle, Upload } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { CardDescription } from "@/components/ui/card";
+import { toast } from "sonner";
 
 const updateProfileSchema = z.object({
   name: z.string().trim().min(1, { message: "Name is required" }),
@@ -39,6 +40,7 @@ interface ProfileDetailsFormProps {
 export function ProfileDetailsForm({ user }: ProfileDetailsFormProps) {
   const [status, setStatus] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [uploadingImage, setUploadingImage] = useState(false);
 
   const router = useRouter();
 
@@ -73,20 +75,61 @@ export function ProfileDetailsForm({ user }: ProfileDetailsFormProps) {
       setError(error.message || "Failed to update profile");
     } else {
       setStatus("Profile updated");
+      toast.success("Profile updated successfully!");
       router.refresh();
     }
   }
 
-  function handleImageChange(e: React.ChangeEvent<HTMLInputElement>) {
+  async function handleImageChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      const base64 = reader.result as string;
-      form.setValue("image", base64, { shouldDirty: true });
-    };
-    reader.readAsDataURL(file);
+    // Validate file size (10MB limit)
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error("Image must be under 10MB");
+      return;
+    }
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      toast.error("Please select an image file");
+      return;
+    }
+
+    setUploadingImage(true);
+    setError(null);
+
+    try {
+      // Create FormData
+      const formData = new FormData();
+      formData.append('images', file);
+
+      // Upload to Cloudinary
+      const response = await fetch('/api/sellers/upload-images', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Upload failed');
+      }
+
+      const { images } = await response.json();
+      
+      // Set the Cloudinary URL
+      form.setValue("image", images[0].url, { shouldDirty: true });
+      toast.success("Profile image uploaded successfully!");
+    } catch (error) {
+      console.error('Upload error:', error);
+      const errorMsg = error instanceof Error ? error.message : 'Failed to upload image';
+      setError(errorMsg);
+      toast.error(errorMsg);
+    } finally {
+      setUploadingImage(false);
+      // Clear the input
+      e.target.value = '';
+    }
   }
 
   const imagePreview = form.watch("image");
@@ -180,27 +223,46 @@ export function ProfileDetailsForm({ user }: ProfileDetailsFormProps) {
                   </FormLabel>
                   <FormControl>
                     <div className="space-y-3">
-                      <Input
-                        type="file"
-                        accept="image/*"
-                        onChange={handleImageChange}
-                        className="h-10 cursor-pointer"
-                      />
+                      <div className="relative">
+                        <Input
+                          type="file"
+                          accept="image/*"
+                          onChange={handleImageChange}
+                          disabled={uploadingImage}
+                          className={`h-10 cursor-pointer ${uploadingImage ? 'opacity-50' : ''}`}
+                        />
+                        {uploadingImage && (
+                          <div className="absolute inset-0 flex items-center justify-center bg-white/80 rounded">
+                            <div className="flex items-center gap-2 text-[#2E7D32] font-medium text-sm">
+                              <Upload className="h-4 w-4 animate-bounce" />
+                              <span>Uploading...</span>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                      <p className="text-xs text-gray-500">
+                        Max 10MB. Images are stored securely in the cloud.
+                      </p>
                       {imagePreview && (
                         <div className="relative inline-block">
-                          <div className="relative size-20 rounded-full overflow-hidden border-2 border-[#2E7D32]">
+                          <div className="relative size-20 rounded-full overflow-hidden border-2 border-[#2E7D32] shadow-lg">
                             <UserAvatar
                               name={user.name}
                               image={imagePreview}
                               className="size-20"
                             />
                           </div>
+                          {imagePreview.startsWith("https://res.cloudinary.com/") && (
+                            <div className="absolute -bottom-1 -right-1 bg-emerald-500 text-white text-[10px] px-1.5 py-0.5 rounded-full font-bold shadow-md">
+                              ☁️
+                            </div>
+                          )}
                           <Button
                             type="button"
                             variant="destructive"
                             size="icon"
                             className="absolute -top-1 -right-1 size-6 rounded-full shadow-md"
-                            onClick={() => form.setValue("image", null)}
+                            onClick={() => form.setValue("image", null, { shouldDirty: true })}
                             aria-label="Remove image"
                           >
                             <XIcon className="size-3" />
@@ -231,6 +293,7 @@ export function ProfileDetailsForm({ user }: ProfileDetailsFormProps) {
               className="mt-auto w-full sm:w-auto bg-[#2E7D32] hover:bg-[#2E7D32]/90 text-white" 
               type="submit" 
               loading={loading}
+              disabled={uploadingImage}
             >
               <Save className="h-4 w-4 mr-2" />
               Save changes
