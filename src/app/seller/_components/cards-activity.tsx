@@ -38,7 +38,7 @@ export function CardActivity({
   onDateRangeChange,
 }: CardActivityProps) {
   const { t } = useLanguage();
-  
+
   const dateRangeOptions: { value: DateRange; label: string }[] = [
     { value: "7", label: t("last-7-days") },
     { value: "30", label: t("last-30-days") },
@@ -46,7 +46,7 @@ export function CardActivity({
     { value: "365", label: t("last-year") },
     { value: "all", label: t("all-time") },
   ];
-  
+
   const selectedRangeLabel = dateRangeOptions.find(opt => opt.value === dateRange)?.label || t("all-time");
 
   return (
@@ -79,88 +79,88 @@ export function CardActivity({
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 w-full">
         {/* Total Sales */}
         <Card className="relative overflow-hidden transition-all duration-300 hover:shadow-lg hover:-translate-y-1 border-emerald-100">
-        <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/5 rounded-full -mr-16 -mt-16" />
-        <CardHeader className="pb-3">
-          <div className="flex items-center justify-between">
-            <div className="p-2.5 rounded-lg bg-emerald-500/10">
-              <DollarSign className="h-5 w-5 text-emerald-600" />
+          <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/5 rounded-full -mr-16 -mt-16" />
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between">
+              <div className="p-2.5 rounded-lg bg-emerald-500/10">
+                <DollarSign className="h-5 w-5 text-emerald-600" />
+              </div>
+              <TrendingUp className="h-4 w-4 text-emerald-600" />
             </div>
-            <TrendingUp className="h-4 w-4 text-emerald-600" />
-          </div>
-        </CardHeader>
-        <CardContent className="space-y-1">
-          <p className="text-sm font-medium text-muted-foreground">{t("total-sales")}</p>
-          <p className="text-2xl font-bold text-[#2E7D32]">{totalSales ?? "₱0.00"}</p>
-        </CardContent>
-      </Card>
+          </CardHeader>
+          <CardContent className="space-y-1">
+            <p className="text-sm font-medium text-muted-foreground">{t("total-sales")}</p>
+            <p className="text-2xl font-bold text-[#2E7D32]">{totalSales ?? "₱0.00"}</p>
+          </CardContent>
+        </Card>
 
-      {/* Total Orders */}
-      <Card className="relative overflow-hidden transition-all duration-300 hover:shadow-lg hover:-translate-y-1 border-blue-100">
-        <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/5 rounded-full -mr-16 -mt-16" />
-        <CardHeader className="pb-3">
-          <div className="flex items-center justify-between">
-            <div className="p-2.5 rounded-lg bg-blue-500/10">
-              <ShoppingCart className="h-5 w-5 text-blue-600" />
+        {/* Total Orders */}
+        <Card className="relative overflow-hidden transition-all duration-300 hover:shadow-lg hover:-translate-y-1 border-blue-100">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/5 rounded-full -mr-16 -mt-16" />
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between">
+              <div className="p-2.5 rounded-lg bg-blue-500/10">
+                <ShoppingCart className="h-5 w-5 text-blue-600" />
+              </div>
             </div>
-          </div>
-        </CardHeader>
-        <CardContent className="space-y-1">
-          <p className="text-sm font-medium text-muted-foreground">{t("total-orders")}</p>
-          <p className="text-2xl font-bold text-blue-600">{totalOrders ?? 0}</p>
-        </CardContent>
-      </Card>
+          </CardHeader>
+          <CardContent className="space-y-1">
+            <p className="text-sm font-medium text-muted-foreground">{t("total-orders")}</p>
+            <p className="text-2xl font-bold text-blue-600">{totalOrders ?? 0}</p>
+          </CardContent>
+        </Card>
 
-      {/* Pending Orders */}
-      <Card className="relative overflow-hidden transition-all duration-300 hover:shadow-lg hover:-translate-y-1 border-amber-100">
-        <div className="absolute top-0 right-0 w-32 h-32 bg-amber-500/5 rounded-full -mr-16 -mt-16" />
-        <CardHeader className="pb-3">
-          <div className="flex items-center justify-between">
-            <div className="p-2.5 rounded-lg bg-amber-500/10">
-              <Clock className="h-5 w-5 text-amber-600" />
+        {/* Pending Orders */}
+        <Card className="relative overflow-hidden transition-all duration-300 hover:shadow-lg hover:-translate-y-1 border-amber-100">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-amber-500/5 rounded-full -mr-16 -mt-16" />
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between">
+              <div className="p-2.5 rounded-lg bg-amber-500/10">
+                <Clock className="h-5 w-5 text-amber-600" />
+              </div>
             </div>
-          </div>
-        </CardHeader>
-        <CardContent className="space-y-1">
-          <p className="text-sm font-medium text-muted-foreground">{t("pending-orders")}</p>
-          <p className="text-2xl font-bold text-amber-600">{pendingOrders ?? 0}</p>
-        </CardContent>
-      </Card>
+          </CardHeader>
+          <CardContent className="space-y-1">
+            <p className="text-sm font-medium text-muted-foreground">{t("pending-orders")}</p>
+            <p className="text-2xl font-bold text-amber-600">{pendingOrders ?? 0}</p>
+          </CardContent>
+        </Card>
 
-      {/* Total Products (Active) */}
-      <Card className="relative overflow-hidden transition-all duration-300 hover:shadow-lg hover:-translate-y-1 border-purple-100">
-        <div className="absolute top-0 right-0 w-32 h-32 bg-purple-500/5 rounded-full -mr-16 -mt-16" />
-        <CardHeader className="pb-3">
-          <div className="flex items-center justify-between">
-            <div className="p-2.5 rounded-lg bg-purple-500/10">
-              <Package className="h-5 w-5 text-purple-600" />
+        {/* Total Products (Active) */}
+        <Card className="relative overflow-hidden transition-all duration-300 hover:shadow-lg hover:-translate-y-1 border-purple-100">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-purple-500/5 rounded-full -mr-16 -mt-16" />
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between">
+              <div className="p-2.5 rounded-lg bg-purple-500/10">
+                <Package className="h-5 w-5 text-purple-600" />
+              </div>
             </div>
-          </div>
-        </CardHeader>
-        <CardContent className="space-y-1">
-          <p className="text-sm font-medium text-muted-foreground">{t("active-products")}</p>
-          <p className="text-2xl font-bold text-purple-600">{totalProducts ?? 0}</p>
-        </CardContent>
-      </Card>
+          </CardHeader>
+          <CardContent className="space-y-1">
+            <p className="text-sm font-medium text-muted-foreground">{t("active-products")}</p>
+            <p className="text-2xl font-bold text-purple-600">{totalProducts ?? 0}</p>
+          </CardContent>
+        </Card>
 
-      {/* Out of Stock Products */}
-      <Card className="relative overflow-hidden transition-all duration-300 hover:shadow-lg hover:-translate-y-1 border-red-100">
-        <div className="absolute top-0 right-0 w-32 h-32 bg-red-500/5 rounded-full -mr-16 -mt-16" />
-        <CardHeader className="pb-3">
-          <div className="flex items-center justify-between">
-            <div className="p-2.5 rounded-lg bg-red-500/10">
-              <Package className="h-5 w-5 text-red-600" />
+        {/* Out of Stock Products */}
+        <Card className="relative overflow-hidden transition-all duration-300 hover:shadow-lg hover:-translate-y-1 border-red-100">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-red-500/5 rounded-full -mr-16 -mt-16" />
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between">
+              <div className="p-2.5 rounded-lg bg-red-500/10">
+                <Package className="h-5 w-5 text-red-600" />
+              </div>
             </div>
-          </div>
-        </CardHeader>
-        <CardContent className="space-y-1">
-          <p className="text-sm font-medium text-muted-foreground">
-            {"out-of-stock-products"}
-          </p>
-          <p className="text-2xl font-bold text-red-600">
-            {outOfStockProducts ?? 0}
-          </p>
-        </CardContent>
-      </Card>
+          </CardHeader>
+          <CardContent className="space-y-1">
+            <p className="text-sm font-medium text-muted-foreground">
+              {"out-of-stock-products"}
+            </p>
+            <p className="text-2xl font-bold text-red-600">
+              {outOfStockProducts ?? 0}
+            </p>
+          </CardContent>
+        </Card>
 
       </div>
     </div>

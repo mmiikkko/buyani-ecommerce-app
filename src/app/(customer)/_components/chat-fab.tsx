@@ -94,7 +94,7 @@ export function ChatFab({ className }: { className?: string }) {
             new Map(data.map((msg: Message) => [msg.id, msg])).values()
           ) as Message[];
           setMessages(uniqueMessages);
-          
+
           // Update unread count for this conversation (messages are marked as read when fetched)
           if (open && selectedConversation === convId) {
             setUnreadCounts((prev) => ({ ...prev, [convId]: 0 }));
@@ -110,7 +110,7 @@ export function ChatFab({ className }: { className?: string }) {
   // Fetch unread counts for all conversations
   const fetchUnreadCounts = useCallback(async (convs: Conversation[]) => {
     if (!isAuthenticated || !currentUserId || convs.length === 0) return;
-    
+
     try {
       const counts: Record<string, number> = {};
       await Promise.all(
@@ -250,13 +250,13 @@ export function ChatFab({ className }: { className?: string }) {
         toast.success("Conversation deleted");
         // Remove from local state
         setConversations((prev) => prev.filter((c) => c.id !== conversationToDelete));
-        
+
         // If deleted conversation was selected, clear selection
         if (selectedConversation === conversationToDelete) {
           setSelectedConversation(null);
           setMessages([]);
         }
-        
+
         setConversationToDelete(null);
       } else {
         const error = await res.json();
@@ -291,11 +291,12 @@ export function ChatFab({ className }: { className?: string }) {
     <div
       className={cn(
         "fixed bottom-6 right-6 z-50 flex flex-col items-end gap-2",
+        open && "mobile-chat-open bottom-0 right-0 w-full h-full sm:bottom-6 sm:right-6 sm:w-auto sm:h-auto",
         className
       )}
     >
       {open && (
-        <Card className="w-[700px] h-[600px] flex flex-col shadow-2xl border-emerald-100 overflow-hidden">
+        <Card className="w-full h-full sm:w-[700px] sm:h-[600px] flex flex-col shadow-2xl border-emerald-100 overflow-hidden rounded-none sm:rounded-xl">
           {/* Header */}
           <CardHeader className="flex flex-row items-center justify-between py-4 px-6 bg-gradient-to-r from-emerald-50 to-emerald-100/50 border-b border-emerald-100">
             <div className="flex items-center gap-3">
@@ -304,9 +305,9 @@ export function ChatFab({ className }: { className?: string }) {
               </div>
               <CardTitle className="text-lg font-bold text-gray-800">Messages</CardTitle>
             </div>
-            <Button 
-              variant="ghost" 
-              size="icon" 
+            <Button
+              variant="ghost"
+              size="icon"
               onClick={() => setOpen(false)}
               className="hover:bg-emerald-100 rounded-full"
             >
@@ -314,10 +315,13 @@ export function ChatFab({ className }: { className?: string }) {
             </Button>
           </CardHeader>
 
-          <CardContent className="p-0 flex flex-col flex-1 overflow-hidden">
-            <div className="flex h-full">
-              {/* Conversations List - Left Side */}
-              <div className="w-[280px] border-r border-gray-200 flex flex-col bg-gray-50/50">
+          <CardContent className="p-0 flex flex-col flex-1 overflow-hidden relative">
+            <div className="flex h-full w-full">
+              {/* Conversations List - Left Side (Full width on mobile if no chat selected) */}
+              <div className={cn(
+                "w-full sm:w-[280px] border-r border-gray-200 flex flex-col bg-gray-50/50 absolute inset-0 sm:relative z-10 sm:z-0 transition-transform duration-300 ease-in-out",
+                selectedConv ? "-translate-x-full sm:translate-x-0" : "translate-x-0"
+              )}>
                 {/* Search Bar */}
                 <div className="p-3 border-b border-gray-200">
                   <div className="relative">
@@ -413,13 +417,26 @@ export function ChatFab({ className }: { className?: string }) {
                 </div>
               </div>
 
-              {/* Chat Area - Right Side */}
-              <div className="flex-1 flex flex-col bg-white">
+              {/* Chat Area - Right Side (Full width on mobile) */}
+              <div className={cn(
+                "flex-1 flex flex-col bg-white w-full h-full absolute inset-0 sm:relative transition-transform duration-300 ease-in-out",
+                selectedConv ? "translate-x-0" : "translate-x-full sm:translate-x-0"
+              )}>
                 {selectedConv ? (
                   <>
                     {/* Chat Header */}
-                    <div className="px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-white to-gray-50/50">
-                      <div className="flex items-center gap-3">
+                    <div className="px-4 py-3 sm:px-6 sm:py-4 border-b border-gray-200 bg-gradient-to-r from-white to-gray-50/50 flex items-center gap-3">
+                      {/* Mobile Back Button */}
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="sm:hidden -ml-2 h-8 w-8"
+                        onClick={() => setSelectedConversation(null)}
+                      >
+                        <div className="h-0 w-0 border-y-[6px] border-y-transparent border-r-[8px] border-r-slate-600 rotate-180" />
+                      </Button>
+
+                      <div className="flex items-center gap-3 flex-1 min-w-0">
                         <div className="w-10 h-10 rounded-full bg-emerald-600 flex items-center justify-center text-white">
                           {currentUserId === selectedConv.customerId ? (
                             <Store className="h-5 w-5" />
@@ -429,8 +446,8 @@ export function ChatFab({ className }: { className?: string }) {
                         </div>
                         <div>
                           <div className="font-semibold text-gray-800">
-                            {currentUserId === selectedConv.customerId 
-                              ? selectedConv.sellerName 
+                            {currentUserId === selectedConv.customerId
+                              ? selectedConv.sellerName
                               : selectedConv.customerName}
                           </div>
                           {selectedConv.productName && (
@@ -459,8 +476,8 @@ export function ChatFab({ className }: { className?: string }) {
                                 <div
                                   className={cn(
                                     "rounded-2xl px-4 py-2 max-w-[70%] shadow-sm",
-                                    isOwn 
-                                      ? "bg-emerald-600 text-white rounded-br-md" 
+                                    isOwn
+                                      ? "bg-emerald-600 text-white rounded-br-md"
                                       : "bg-gray-100 text-gray-900 rounded-bl-md"
                                   )}
                                 >
@@ -523,13 +540,17 @@ export function ChatFab({ className }: { className?: string }) {
             </div>
           </CardContent>
         </Card>
-      )}
+      )
+      }
 
-      {/* Floating Action Button */}
+      {/* Floating Action Button - Hidden when chat is open on mobile */}
       <Button
         onClick={openFab}
         size="icon"
-        className="group relative rounded-full bg-emerald-600 w-16 h-16 text-white shadow-xl shadow-emerald-600/30 transition-all hover:translate-y-[-2px] hover:bg-emerald-700 hover:shadow-2xl hover:shadow-emerald-600/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400"
+        className={cn(
+          "group relative rounded-full bg-emerald-600 w-16 h-16 text-white shadow-xl shadow-emerald-600/30 transition-all hover:translate-y-[-2px] hover:bg-emerald-700 hover:shadow-2xl hover:shadow-emerald-600/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400",
+          open && "hidden sm:flex"
+        )}
       >
         <MessageCircle className="h-9 w-9" />
         {totalUnreadCount > 0 && (
@@ -560,7 +581,7 @@ export function ChatFab({ className }: { className?: string }) {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </div>
+    </div >
   );
 }
 

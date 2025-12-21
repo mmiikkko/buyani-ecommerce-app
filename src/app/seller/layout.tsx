@@ -48,21 +48,21 @@ export default async function SellerLayout({
         {/* Sidebar */}
         <AppSidebar />
 
-          {/* Main Content Area */}
-          <div className="flex-1 flex flex-col gap-5">
-            {/* Navbar */}
-            <Navbar>
-              <div className="flex items-center mr-3">
-                <SidebarTrigger />
-              </div>
-              
-            </Navbar>
-        
-            
+        {/* Main Content Area */}
+        <div className="flex-1 flex flex-col gap-5">
+          {/* Navbar */}
+          <Navbar>
+            <div className="flex items-center mr-3">
+              <SidebarTrigger />
+            </div>
+
+          </Navbar>
+
+
           {/* Main Page Content */}
           <main className="flex-1 min-w-screen overflow-hidden px-6 py-6 mt-15 bg-[#EBFEEC]">
             {/* Sidebar trigger at top (optional) */}
-            
+
             {children}
           </main>
         </div>

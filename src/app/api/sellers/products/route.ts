@@ -165,6 +165,15 @@ export async function GET(req: NextRequest) {
         stock: totalStock,
         itemsSold: null,
         images: productImagesMapped,
+        variations: productVariations.map((v: any) => ({
+          id: v.id,
+          name: v.variationName,
+          value: v.variationValue,
+          price: v.price,
+          stock: inventoryMap.get(v.id) || 0,
+          sku: v.SKU,
+          isStandard: v.variationName === "Standard" // Flag for UI helper
+        })),
         createdAt: product.createdAt,
         updatedAt: product.updatedAt,
       };
@@ -534,41 +543,72 @@ export async function PUT(req: NextRequest) {
       db.select().from(productVariation).where(eq(productVariation.productId, productId))
     );
 
-    if (variations.length > 0) {
-      const varIds = variations.map(v => v.id);
+    // Check if we handled inventory in the variations block
+    const variationsHandled = body.variations !== undefined && Array.isArray(body.variations) && body.variations.length > 0;
 
-      // Update inventory for these variations
-      // Only if inventory exists
-      const existingInvs = await executeQuery(() =>
-        db.select().from(productInventory).where(inArray(productInventory.product_variation_id, varIds))
-      );
-
-      const existingVarIdsWithInv = existingInvs.map(i => i.product_variation_id);
-
-      // Update existing
-      if (existingVarIdsWithInv.length > 0) {
+    if (!variationsHandled && body.stock !== undefined) {
+      if (variations.length === 1) {
+        // Safe to update the single variation
         await executeQuery(() =>
           db.update(productInventory)
             .set({ quantityInStock: body.stock })
-            .where(inArray(productInventory.product_variation_id, existingVarIdsWithInv))
+            .where(eq(productInventory.product_variation_id, variations[0].id))
+        );
+      } else if (variations.length > 1) {
+        // Check if these are duplicate "Standard" variations (Data cleanup)
+        const allStandard = variations.every(v => v.variationName === "Standard" || v.variationType === "Standard");
+
+        if (allStandard) {
+          // Found multiple Standard variations. Consolidate to ONE.
+          const [keep, ...remove] = variations;
+
+          // 1. Update the 'keep' variation's stock
+          await executeQuery(() =>
+            db.update(productInventory)
+              .set({ quantityInStock: body.stock })
+              .where(eq(productInventory.product_variation_id, keep.id))
+          );
+
+          // 2. Remove the extras
+          const removeIds = remove.map(r => r.id);
+          if (removeIds.length > 0) {
+            await executeQuery(() =>
+              db.delete(productInventory).where(inArray(productInventory.product_variation_id, removeIds))
+            );
+            await executeQuery(() =>
+              db.delete(productVariation).where(inArray(productVariation.id, removeIds))
+            );
+          }
+        } else {
+          // CAUTION: Product has multiple variations (Real ones, e.g. Red/Blue), but we received a single 'stock' value.
+          // We cannot apply this total to EACH variation.
+          // The user should use the Variations tab to update stock granularly.
+          console.log("Skipping global stock update for multi-variation product to prevent data corruption.");
+        }
+      } else {
+        // No variations found?? Create default one.
+        const defaultVarId = uuidv4();
+        await executeQuery(() => db.insert(productVariation).values({
+          id: defaultVarId,
+          productId,
+          variationName: "Standard",
+          variationType: "Standard",
+          variationValue: "Standard",
+          price: body.price ? String(body.price) : "0",
+          SKU: body.SKU || `LEGACY-${Date.now()}`,
+        }));
+
+        await executeQuery(() =>
+          db.insert(productInventory).values({
+            id: uuidv4(),
+            product_variation_id: defaultVarId,
+            quantityInStock: body.stock,
+            itemsSold: 0,
+          })
         );
       }
-
-      // Create missing (if any variation has no inventory record)
-      const missingVarIds = varIds.filter(id => !existingVarIdsWithInv.includes(id));
-      if (missingVarIds.length > 0) {
-        const inventoryRows = missingVarIds.map(vid => ({
-          id: uuidv4(),
-          product_variation_id: vid,
-          quantityInStock: body.stock,
-          itemsSold: 0,
-        }));
-        // Batch insert not supported easily with executeQuery wrapper logic if checking one by one, but drizzle supports it
-        await executeQuery(() => db.insert(productInventory).values(inventoryRows));
-      }
-    } else {
-      // Edge case: Product has no variations rows at all (Legacy?)
-      // Create a default variation
+    } else if (!variationsHandled && variations.length === 0 && body.stock !== undefined) {
+      // Fallback if variations array was empty but we need to create one
       const defaultVarId = uuidv4();
       await executeQuery(() => db.insert(productVariation).values({
         id: defaultVarId,
@@ -576,7 +616,7 @@ export async function PUT(req: NextRequest) {
         variationName: "Standard",
         variationType: "Standard",
         variationValue: "Standard",
-        price: body.price ? String(body.price) : "0", // Fallback to body price or 0
+        price: body.price ? String(body.price) : "0",
         SKU: body.SKU || `LEGACY-${Date.now()}`,
       }));
 

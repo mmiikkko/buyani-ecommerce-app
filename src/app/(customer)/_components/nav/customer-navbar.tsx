@@ -29,8 +29,17 @@ import {
   Search,
   ShoppingCart,
   Tag,
-  UserIcon
+  UserIcon,
+  Menu
 } from "lucide-react";
+
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
 
 interface NavbarProps {
   className?: string;
@@ -44,6 +53,7 @@ export default function Navbar({ className }: NavbarProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [cartCount, setCartCount] = useState(0);
   const [isNavigating, setIsNavigating] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const debounceTimer = useRef<NodeJS.Timeout | null>(null);
   const { t } = useLanguage();
 
@@ -70,7 +80,7 @@ export default function Navbar({ className }: NavbarProps) {
     setIsNavigating(true);
     router.push(href);
   };
-  
+
 
   // Initialize search query from URL if on products page
   useEffect(() => {
@@ -235,6 +245,93 @@ export default function Navbar({ className }: NavbarProps) {
       >
         <div className="mx-auto flex h-16 max-w-[1400px] items-center justify-between px-4 sm:h-18 sm:px-6 lg:px-8">
 
+          {/* Mobile Menu Trigger */}
+          <div className="flex items-center gap-2 md:hidden">
+            <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
+              <SheetTrigger asChild>
+                <Button variant="ghost" size="icon" className="text-slate-600 hover:bg-emerald-50 hover:text-emerald-600">
+                  <Menu size={24} />
+                  <span className="sr-only">Toggle menu</span>
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="left" className="w-[85vw] max-w-[350px] flex flex-col p-0 border-r border-emerald-100 bg-white/95 backdrop-blur-xl">
+                <SheetHeader className="px-6 on-top-6 pb-6 pt-12 bg-gradient-to-b from-emerald-50/80 to-transparent">
+                  <SheetTitle className="flex items-center gap-3 text-2xl font-bold tracking-tight text-emerald-950">
+                    <div className="relative h-10 w-10 overflow-hidden rounded-xl border border-emerald-200 bg-white shadow-sm">
+                      <Image src={Logo} alt="BuyAni" fill className="object-contain p-1.5" />
+                    </div>
+                    BuyAni
+                  </SheetTitle>
+                  <p className="text-xs font-medium text-emerald-600/80 uppercase tracking-widest pl-1">Marketplace</p>
+                </SheetHeader>
+
+                <div className="flex-1 overflow-y-auto px-6 py-2">
+                  {/* Mobile Search */}
+                  <form onSubmit={(e) => {
+                    handleSearch(e);
+                  }} className="relative mb-8 group">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 group-focus-within:text-emerald-500 transition-colors" />
+                    <Input
+                      placeholder={t("search-placeholder")}
+                      value={searchQuery}
+                      onChange={(e) => handleSearchChange(e.target.value)}
+                      className="h-11 pl-10 bg-slate-50 border-slate-200 focus-visible:ring-emerald-500/30 focus-visible:border-emerald-500 rounded-xl shadow-sm transition-all text-sm"
+                    />
+                  </form>
+
+                  {/* Mobile Links */}
+                  <div className="flex flex-col gap-1">
+                    <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-3 ml-1">Navigation</h4>
+                    {navLinks.map((link) => {
+                      const Icon = link.icon;
+                      const active = isActive(link.href);
+                      return (
+                        <Link
+                          key={link.href}
+                          href={link.href}
+                          onClick={() => {
+                            setIsNavigating(true);
+                            setIsMobileMenuOpen(false);
+                          }}
+                          className={clsx(
+                            "flex items-center gap-3.5 rounded-xl px-4 py-3.5 text-sm font-medium transition-all duration-200",
+                            active
+                              ? "bg-emerald-50 text-emerald-800 shadow-[0_2px_8px_rgba(16,185,129,0.08)] translate-x-1"
+                              : "text-slate-600 hover:bg-slate-50 hover:text-slate-900 hover:translate-x-1"
+                          )}
+                        >
+                          <Icon size={18} className={clsx(active ? "text-emerald-600" : "text-slate-400")} />
+                          {link.label}
+                        </Link>
+                      )
+                    })}
+                  </div>
+                </div>
+
+                <div className="mt-auto border-t border-slate-100 bg-slate-50/50 p-6">
+                  {!isAuthenticated ? (
+                    <div className="flex flex-col gap-3">
+                      <Link href="/sign-in" className="w-full" onClick={() => { navigateWithLoader("/sign-in"); setIsMobileMenuOpen(false); }}>
+                        <Button className="w-full h-11 rounded-xl bg-emerald-600 hover:bg-emerald-700 shadow-lg shadow-emerald-600/20 font-semibold">{t("login")}</Button>
+                      </Link>
+                      <Link href="/sign-up" className="w-full" onClick={() => { navigateWithLoader("/sign-up"); setIsMobileMenuOpen(false); }}>
+                        <Button variant="outline" className="w-full h-11 rounded-xl border-slate-200 font-semibold text-slate-700">{t("create-account")}</Button>
+                      </Link>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-4 p-4 rounded-2xl bg-white border border-slate-100 shadow-sm">
+                      <UserDropdown user={user!} />
+                      <div className="flex flex-col min-w-0">
+                        <span className="text-sm font-bold text-slate-900 truncate">{user!.name}</span>
+                        <span className="text-xs text-slate-500 truncate max-w-[150px]">{user!.email}</span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </SheetContent>
+            </Sheet>
+          </div>
+
           {/* Brand + primary links */}
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-2">
@@ -363,8 +460,9 @@ export default function Navbar({ className }: NavbarProps) {
                     )}
                   </Button>
 
-
-                  <UserDropdown user={user!} />
+                  <div className="hidden md:block">
+                    <UserDropdown user={user!} />
+                  </div>
                 </div>
 
               ) : (
