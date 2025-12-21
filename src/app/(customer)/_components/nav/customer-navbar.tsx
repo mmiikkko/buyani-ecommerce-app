@@ -315,7 +315,7 @@ export default function Navbar({ className }: NavbarProps) {
                         <Button className="w-full h-11 rounded-xl bg-emerald-600 hover:bg-emerald-700 shadow-lg shadow-emerald-600/20 font-semibold">{t("login")}</Button>
                       </Link>
                       <Link href="/sign-up" className="w-full" onClick={() => { navigateWithLoader("/sign-up"); setIsMobileMenuOpen(false); }}>
-                        <Button variant="outline" className="w-full h-11 rounded-xl border-slate-200 font-semibold text-slate-700">{t("create-account")}</Button>
+                        <Button variant="outline" className="w-full h-11 rounded-xl border-slate-200 font-semibold text-slate-700">{"create-account"}</Button>
                       </Link>
                     </div>
                   ) : (
