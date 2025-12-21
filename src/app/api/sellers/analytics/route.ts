@@ -90,6 +90,7 @@ export async function GET(req: NextRequest) {
         createdAt: orders.createdAt,
         productName: products.productName,
         paymentStatus: payments.status,
+        paymentMethod: payments.paymentMethod,
       })
       .from(orderItems)
       .innerJoin(productVariation, eq(orderItems.product_variation_id, productVariation.id))
@@ -103,10 +104,24 @@ export async function GET(req: NextRequest) {
         )
       );
 
-    // Filter out rejected orders
-    const validOrderItems = orderItemsList.filter(
-      (item) => !item.paymentStatus || item.paymentStatus.toLowerCase() !== "rejected"
-    );
+    // Filter valid orders based on standardized success/active criteria
+    const successfulStatuses = ["paid", "completed", "succeeded", "captured"];
+    const activeCODStatuses = ["pending", "confirmed", "accepted", "shipped", "delivered"];
+    const excludedStatuses = ["rejected", "cancelled"];
+
+    const validOrderItems = orderItemsList.filter((item) => {
+      const status = item.paymentStatus?.toLowerCase();
+      const method = item.paymentMethod?.toLowerCase();
+
+      if (!status || excludedStatuses.includes(status)) {
+        return false;
+      }
+
+      const isSuccessful = successfulStatuses.includes(status);
+      const isCODActive = method === "cod" && activeCODStatuses.includes(status);
+
+      return isSuccessful || isCODActive;
+    });
 
     // Generate chart data - group by day
     const chartDataMap = new Map<string, { quantity: number; revenue: number }>();

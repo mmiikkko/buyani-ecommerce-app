@@ -9,6 +9,8 @@ import { Search, Receipt, User, ShoppingCart, Tag, MessageSquare, Calendar } fro
 import { SearchInput } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+
 type Transaction = {
   id: string;
   userId: string;
@@ -25,6 +27,7 @@ export function AdminTransactions() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
+  const [typeFilter, setTypeFilter] = useState("all");
 
   useEffect(() => {
     const fetchTransactions = async () => {
@@ -43,14 +46,23 @@ export function AdminTransactions() {
     fetchTransactions();
   }, []);
 
-  const filtered = transactions.filter(
-    (t) =>
+  const filtered = transactions.filter((t) => {
+    const matchesSearch =
       t.id.toLowerCase().includes(search.toLowerCase()) ||
       t.orderId.toLowerCase().includes(search.toLowerCase()) ||
       t.transactionType?.toLowerCase().includes(search.toLowerCase() ?? "") ||
       t.userName?.toLowerCase().includes(search.toLowerCase() ?? "") ||
-      t.userEmail?.toLowerCase().includes(search.toLowerCase() ?? "")
-  );
+      t.userEmail?.toLowerCase().includes(search.toLowerCase() ?? "");
+
+    const matchesType =
+      typeFilter === "all" ||
+      (typeFilter === "walk-in" &&
+        (t.transactionType?.toLowerCase().includes("walk-in") ||
+          t.transactionType?.toLowerCase().includes("instore"))) ||
+      (typeFilter === "online" && t.transactionType?.toLowerCase().includes("online"));
+
+    return matchesSearch && matchesType;
+  });
 
   const getTransactionTypeColor = (type: string | null) => {
     if (!type) return "bg-gray-500";
@@ -89,13 +101,27 @@ export function AdminTransactions() {
           </div>
         </div>
 
-        <div className="mt-4">
+        <div className="mt-4 flex flex-col md:flex-row gap-4 items-center justify-between">
           <SearchInput
             placeholder="Search transaction ID, order ID, or type..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="max-w-md"
+            className="max-w-md w-full"
           />
+
+          <Tabs value={typeFilter} onValueChange={setTypeFilter} className="w-full md:w-auto">
+            <TabsList className="bg-gray-100/80 p-1 rounded-lg border border-gray-200">
+              <TabsTrigger value="all" className="data-[state=active]:bg-white data-[state=active]:text-emerald-700 data-[state=active]:shadow-sm px-6">
+                All Type
+              </TabsTrigger>
+              <TabsTrigger value="online" className="data-[state=active]:bg-white data-[state=active]:text-blue-700 data-[state=active]:shadow-sm px-6">
+                Online
+              </TabsTrigger>
+              <TabsTrigger value="walk-in" className="data-[state=active]:bg-white data-[state=active]:text-emerald-700 data-[state=active]:shadow-sm px-6">
+                Walk-In
+              </TabsTrigger>
+            </TabsList>
+          </Tabs>
         </div>
       </CardHeader>
 

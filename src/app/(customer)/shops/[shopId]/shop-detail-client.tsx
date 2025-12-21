@@ -8,14 +8,7 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { AnimatedSection } from "@/components/animated-section";
 import { AnimatedProductCard } from "../../_components/animated-product-card";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from "@/components/ui/dialog";
-
+import { RatingOverlay } from "../../_components/rating-overlay";
 import type { Shop } from "@/types/shops";
 import type { Product } from "@/types/products";
 
@@ -110,18 +103,19 @@ export function ShopDetailClient({ shop, shopId }: ShopDetailClientProps) {
     return products.filter((p) => (p as any).categoryName === selectedCategory);
   }, [products, selectedCategory]);
 
-  const handleSubmitReview = async () => {
-    if (reviewRating === 0) {
-      toast.error("Please select a rating");
-      return;
-    }
+  const handleSubmitReview = async (rating: number, comment: string) => {
     setSubmittingReview(true);
     try {
       const res = await fetch(`/api/shops/${shopId}/reviews`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ rating: reviewRating, comment: "" }),
+        body: JSON.stringify({ rating, comment: comment || "" }),
       });
+      if (res.status === 403) {
+        const data = await res.json();
+        toast.error(data.error || "Only buyers can rate this shop");
+        return;
+      }
       if (!res.ok) throw new Error("Failed to submit review");
       const data = await res.json();
       toast.success("Thank you for your rating!");
@@ -202,12 +196,10 @@ export function ShopDetailClient({ shop, shopId }: ShopDetailClientProps) {
                   </div>
 
                   {/* Rating Info & Quick Rate Trigger - Now Grouped with Items */}
-                  {averageRating > 0 && (
-                    <div className="flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-amber-50/50 border border-amber-200/50 text-amber-700 shadow-sm backdrop-blur-sm">
-                      <Star className="h-4 w-4 fill-amber-400 text-amber-400" />
-                      <span className="font-extrabold text-sm">{averageRating.toFixed(1)}</span>
-                    </div>
-                  )}
+                  <div className="flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-amber-50/50 border border-amber-200/50 text-amber-700 shadow-sm backdrop-blur-sm">
+                    <Star className={`h-4 w-4 ${averageRating > 0 ? "fill-amber-400 text-amber-400" : "fill-slate-100 text-slate-200"}`} />
+                    <span className="font-extrabold text-sm">{averageRating > 0 ? averageRating.toFixed(1) : "0.0"}</span>
+                  </div>
 
                   <Button
                     onClick={() => setShowReviewOverlay(true)}
@@ -261,8 +253,8 @@ export function ShopDetailClient({ shop, shopId }: ShopDetailClientProps) {
                     size="sm"
                     onClick={() => setSelectedCategory(category)}
                     className={`rounded-xl px-4 font-bold text-xs transition-all ${selectedCategory === category
-                        ? "bg-blue-600 text-white shadow-lg shadow-blue-500/20"
-                        : "text-slate-500 hover:bg-white hover:text-blue-600 shadow-sm"
+                      ? "bg-blue-600 text-white shadow-lg shadow-blue-500/20"
+                      : "text-slate-500 hover:bg-white hover:text-blue-600 shadow-sm"
                       }`}
                   >
                     {category}
@@ -341,75 +333,14 @@ export function ShopDetailClient({ shop, shopId }: ShopDetailClientProps) {
         </div>
       </AnimatedSection>
 
-      {/* 4. Rating Overlay (Dialog) */}
-      <Dialog open={showReviewOverlay} onOpenChange={setShowReviewOverlay}>
-        <DialogContent className="sm:max-w-md rounded-[2rem] border-none bg-white p-0 overflow-hidden shadow-2xl">
-          <div className="h-2 w-full bg-gradient-to-r from-blue-500 to-indigo-600"></div>
-          <div className="p-8 space-y-8">
-            <DialogHeader className="text-left space-y-2">
-              <DialogTitle className="text-3xl font-black text-slate-900 flex items-center gap-3">
-                <Sparkles className="w-6 h-6 text-blue-500" />
-                Rate this Shop
-              </DialogTitle>
-              <DialogDescription className="text-slate-500 text-lg font-medium">
-                Your rating helps other buyers discover high-quality merchants.
-              </DialogDescription>
-            </DialogHeader>
-
-            <div className="flex items-center justify-between gap-2 px-2">
-              {[1, 2, 3, 4, 5].map((star) => (
-                <button
-                  key={star}
-                  onClick={() => setReviewRating(star)}
-                  className="group relative focus:outline-none transition-all hover:scale-110 active:scale-90"
-                >
-                  <Star
-                    className={`h-12 w-12 transition-all duration-300 ${star <= reviewRating
-                      ? "fill-amber-400 text-amber-400 drop-shadow-md"
-                      : "fill-slate-100 text-slate-200 group-hover:text-amber-200"
-                      }`}
-                  />
-                  {star === reviewRating && (
-                    <div className="absolute -top-1 -right-1 w-4 h-4 bg-blue-500 border-2 border-white rounded-full animate-ping"></div>
-                  )}
-                </button>
-              ))}
-            </div>
-
-            {reviewRating > 0 && (
-              <div className="text-center py-2 px-4 bg-blue-50 rounded-2xl animate-in zoom-in-95">
-                <span className="text-blue-700 font-black text-xl">
-                  {reviewRating === 5 ? "🌟 Excellent!" : reviewRating >= 4 ? "✨ Great" : reviewRating >= 3 ? "👍 Good" : "😊 Fair"}
-                </span>
-              </div>
-            )}
-
-            <div className="flex gap-4">
-              <Button
-                variant="outline"
-                onClick={() => setShowReviewOverlay(false)}
-                className="flex-1 rounded-2xl h-14 font-bold text-slate-600 border-slate-200 hover:bg-slate-50"
-              >
-                Cancel
-              </Button>
-              <Button
-                onClick={handleSubmitReview}
-                disabled={submittingReview || reviewRating === 0}
-                className="flex-[2] rounded-2xl h-14 bg-slate-900 hover:bg-black text-white font-black shadow-xl shadow-slate-900/10 active:scale-95 transition-all"
-              >
-                {submittingReview ? (
-                  <Loader2 className="w-6 h-6 animate-spin" />
-                ) : (
-                  <>
-                    <Send className="w-5 h-5 mr-3" />
-                    Submit Rating
-                  </>
-                )}
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
+      {/* 4. Rating Overlay */}
+      <RatingOverlay
+        open={showReviewOverlay}
+        onOpenChange={setShowReviewOverlay}
+        onSubmit={handleSubmitReview}
+        title="Rate this Shop"
+        description="Your rating helps other buyers discover high-quality merchants."
+      />
     </div>
   );
 }

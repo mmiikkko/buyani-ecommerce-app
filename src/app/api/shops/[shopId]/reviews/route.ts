@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/server/drizzle";
-import { shop, shopReviews, user } from "@/server/schema/auth-schema";
-import { eq, avg, sql } from "drizzle-orm";
+import { shop, shopReviews, user, orders, orderItems, productVariation, products } from "@/server/schema/auth-schema";
+import { eq, avg, sql, and } from "drizzle-orm";
 import { getServerSession } from "@/server/session";
 import { v4 as uuidv4 } from "uuid";
 
@@ -50,6 +50,28 @@ export async function POST(
         }
 
         const { rating, comment, orderId } = await req.json();
+
+        // Check if user has purchased from this shop
+        const purchaseHistory = await db
+            .select({ id: orders.id })
+            .from(orders)
+            .innerJoin(orderItems, eq(orders.id, orderItems.orderId))
+            .innerJoin(productVariation, eq(orderItems.product_variation_id, productVariation.id))
+            .innerJoin(products, eq(productVariation.productId, products.id))
+            .where(
+                and(
+                    eq(orders.buyerId, session.user.id),
+                    eq(products.shopId, shopId)
+                )
+            )
+            .limit(1);
+
+        if (purchaseHistory.length === 0) {
+            return NextResponse.json(
+                { error: "Only buyers of this shop's products can leave a review." },
+                { status: 403 }
+            );
+        }
 
         if (!rating || rating < 1 || rating > 5) {
             return NextResponse.json(
