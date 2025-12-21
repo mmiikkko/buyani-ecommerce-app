@@ -96,8 +96,8 @@ export function AddProducts({ onAdd, onUpdate, productToEdit, onEditComplete }: 
       setPrice(productToEdit.price?.toString() || "");
       setStock(productToEdit.stock?.toString() || "");
       setStatus(productToEdit.status || "Available");
-
-      // ✅ UPDATED: Load images (accept both Cloudinary and base64)
+  
+      // Load images
       if (productToEdit.images && productToEdit.images.length > 0) {
         const imageUrls = productToEdit.images
           .map(img => {
@@ -111,7 +111,7 @@ export function AddProducts({ onAdd, onUpdate, productToEdit, onEditComplete }: 
       } else {
         setImagePreviews([]);
       }
-
+  
       // Load shipping info
       if (productToEdit.shipping) {
         setWeight(productToEdit.shipping.weight?.toString() || "");
@@ -121,39 +121,35 @@ export function AddProducts({ onAdd, onUpdate, productToEdit, onEditComplete }: 
         setHeightVal(productToEdit.shipping.height?.toString() || "");
         setShippingFee(productToEdit.shipping.shippingFee?.toString() || "");
       }
-
+  
       // Load variations and matrix
       const productVariations = productToEdit.variations || [];
       setVariations(productVariations);
-
-      // If variations have nested 'combinations' or if we need to regenerate
-      // Actually, let's look at how variations are stored.
-      // In the new system, 'variations' will be the combinations themselves.
-      // In the new system, 'variations' will be the combinations themselves.
-      // API returns: { id, name, value, price, stock, sku, isStandard }
-      // We check if we have matrix data.
-      // CRITICAL: We skip populating matrix if it's a "Standard" variation (Simple Product),
-      // so the user can use the main Stock input.
+  
+      // Check if it's a "Standard" variation (Simple Product)
       const hasVariations = productVariations.length > 0;
-      const isStandard = hasVariations && (
-        productVariations[0].name === "Standard" ||
-        productVariations[0].isStandard === true ||
-        (productVariations[0] as any).value === "Standard" ||
-        (productVariations[0] as any).variationValue === "Standard"
+      
+      // ✅ FIXED: Use type assertion to safely check properties
+      const firstVariation = hasVariations ? productVariations[0] : null;
+      const isStandard = firstVariation && (
+        (firstVariation as any).name === "Standard" ||
+        (firstVariation as any).isStandard === true ||
+        (firstVariation as any).value === "Standard" ||
+        (firstVariation as any).variationValue === "Standard"
       );
-
+  
       if (hasVariations && !isStandard) {
-        // It's a real matrix product
+        // It's a real matrix product - map with type safety
         setMatrix(productVariations.map((v: any) => ({
           id: v.id,
-          name: v.name || v.variationName, // Handle both API formats
-          value: v.value || v.variationValue,
+          name: v.name || v.variationName || "Unnamed",
+          value: v.value || v.variationValue || "",
           price: v.price?.toString() || "",
-          stock: v.stock?.toString() || (v.quantityInStock?.toString()) || "",
+          stock: v.stock?.toString() || v.quantityInStock?.toString() || "",
           sku: v.sku || v.SKU || "",
         })));
       } else {
-        // Simple product or empty - ensure matrix is empty so simple inputs work
+        // Simple product or empty - ensure matrix is empty
         setMatrix([]);
       }
     } else {
