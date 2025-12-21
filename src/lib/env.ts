@@ -12,6 +12,11 @@ const envSchema = z.object({
   PAYMONGO_SECRET_KEY: z.string().nonempty("PAYMONGO_SECRET_KEY is required"),
   // NEXT_PUBLIC_APP_URL is optional - will fallback to origin header or host header
   NEXT_PUBLIC_APP_URL: z.string().optional(),
+  
+  // Cloudinary configuration
+  NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME: z.string().nonempty("NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME is required"),
+  CLOUDINARY_API_KEY: z.string().nonempty("CLOUDINARY_API_KEY is required"),
+  CLOUDINARY_API_SECRET: z.string().nonempty("CLOUDINARY_API_SECRET is required"),
 });
 
 const parsed = envSchema.safeParse(process.env);
