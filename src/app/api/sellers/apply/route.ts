@@ -5,13 +5,13 @@ import {
   user,
   USER_ROLES,
   sellerApplications,
-  applicatioDocuments,
+  applicationDocuments,
 } from "@/server/schema/auth-schema";
 import { eq } from "drizzle-orm";
 import { getServerSession } from "@/server/session";
 import { v4 as uuidv4 } from "uuid";
 
-const applicationDocuments = applicatioDocuments;
+// Corrected alias removed as we now import correctly
 
 // helper: convert File → base64 data URL
 async function fileToBase64(file: File) {
@@ -95,7 +95,7 @@ export async function POST(req: NextRequest) {
       status: "pending",
       submittedAt: new Date(),
     });
-    
+
 
     // Store documents
     await db.insert(applicationDocuments).values([
@@ -104,7 +104,6 @@ export async function POST(req: NextRequest) {
         applicationId,
         documentType: "notarized_agreement",
         documentURL: notarizedBase64,
-        uploadedAt: new Date(),
         verified: false,
       },
       {
@@ -112,11 +111,10 @@ export async function POST(req: NextRequest) {
         applicationId,
         documentType: "valid_id",
         documentURL: validIdBase64,
-        uploadedAt: new Date(),
         verified: false,
       },
     ]);
-    
+
 
     // Update user role
     await db

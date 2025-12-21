@@ -117,7 +117,7 @@ export default function SellerDashboard() {
             totalOrders={stats.totalOrders}
             pendingOrders={stats.pendingOrders}
             totalProducts={stats.totalProducts}
-            removedProducts={stats.removedProducts}
+            outOfStockProducts={stats.removedProducts}
             dateRange={statsDateRange}
             onDateRangeChange={(range) => {
               setStatsDateRange(range);

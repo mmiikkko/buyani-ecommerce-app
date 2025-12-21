@@ -225,7 +225,7 @@ export async function GET(req: NextRequest) {
             updatedAt: t.updatedAt,
           })),
           status: payment?.status?.toLowerCase() || "pending",
-          type: orderTransactions[0]?.transactionType || "online",
+          type: orderRow.orderType || orderTransactions[0]?.transactionType || "online",
         };
       });
 

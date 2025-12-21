@@ -11,7 +11,7 @@ import { useLanguage } from "@/lib/i18n/context";
 
 type CartItem = {
   id: string;
-  productId: string;
+  productId: string | null;
   quantity: number;
   productName: string | null;
   price: number | null;

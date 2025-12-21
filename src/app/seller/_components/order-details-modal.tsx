@@ -40,13 +40,27 @@ export function OrderDetailsModal({ open, onOpenChange, order }: Props) {
         {/* Buyer + Status */}
         <div className="space-y-1 text-sm">
           <p>
-            <span className="font-medium">{"customer"}:</span>{" "}
+            <span className="font-medium">{t("customer")}:</span>{" "}
             {order.buyerName ?? t("unknown-customer")}
           </p>
 
           <p>
-            <span className="font-medium">{"status"}:</span>{" "}
-            <Badge variant="outline">
+            <span className="font-medium">{t("status")}:</span>{" "}
+            <Badge
+              variant="outline"
+              className={(() => {
+                const s = (order.status || "pending").toLowerCase();
+                if (["completed", "complete", "delivered", "confirmed", "accepted"].includes(s))
+                  return "bg-emerald-100 text-emerald-700 border-emerald-200 capitalize";
+                if (s === "pending")
+                  return "bg-amber-100 text-amber-700 border-amber-200 capitalize";
+                if (s === "shipped")
+                  return "bg-blue-100 text-blue-700 border-blue-200 capitalize";
+                if (s === "rejected" || s === "cancelled")
+                  return "bg-red-100 text-red-700 border-red-200 capitalize";
+                return "capitalize";
+              })()}
+            >
               {order.status ?? "pending"}
             </Badge>
           </p>

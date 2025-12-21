@@ -45,6 +45,7 @@ function adaptOrdersToRecent(raw: any[]): Order[] {
     orderId: String(o.id || o.orderId),
     id: String(o.id),
     buyerId: o.buyerId || "",
+    buyerName: o.customer || o.buyerName || "",
     addressId: o.addressId ?? null,
     total: Number(o.total ?? o.amount ?? 0),
     createdAt: o.createdAt
@@ -303,7 +304,7 @@ export function RecentOrders({ orders }: RecentOrdersProps) {
                   </Badge>
                 </div>
                 <p className="text-xs text-muted-foreground truncate opacity-80">
-                  {order.shopName || "Store"} • {new Date(order.createdAt).toLocaleDateString("en-US", {
+                  {order.buyerName || t("unknown-customer")} • {new Date(order.createdAt).toLocaleDateString("en-US", {
                     month: "short",
                     day: "numeric"
                   })}

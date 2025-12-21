@@ -59,6 +59,8 @@ export async function GET(req: NextRequest) {
         id: orders.id,
         buyerId: orders.buyerId,
         buyerName: userTable.name,
+        buyerFirstName: userTable.first_name,
+        buyerLastName: userTable.last_name,
         total: orders.total,
         orderType: orders.orderType,
         customerName: orders.customerName,
@@ -97,13 +99,19 @@ export async function GET(req: NextRequest) {
       const payment = allPayments.find(p => p.orderId === order.id);
       const transaction = allTransactions.find(t => t.orderId === order.id);
 
+      // Determine customer name with fallbacks
+      const customerName = order.orderType === "walk-in" && order.customerName
+        ? order.customerName
+        : (order.buyerName ||
+          (order.buyerFirstName && order.buyerLastName
+            ? `${order.buyerFirstName} ${order.buyerLastName}`.trim()
+            : order.buyerFirstName || order.buyerLastName || "Unknown Customer"));
+
       return {
         id: order.id,
         orderId: order.id,
         status: payment?.status?.toLowerCase() || "pending",
-        customer: order.orderType === "walk-in" && order.customerName
-          ? order.customerName
-          : (order.buyerName || "Unknown Customer"),
+        customer: customerName,
         date: new Date(order.createdAt).toLocaleDateString("en-US", {
           month: "short",
           day: "numeric",

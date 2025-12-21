@@ -310,11 +310,13 @@ export const translations = {
     "account": "Account",
     "sign-out": "Mag-sign out",
     "username": "Username",
+    "monthly-dues": "Buwanang Bayad",
 
     // Seller Orders Table
     "no-orders-found": "Walang orders na nahanap.",
     "order-id": "Order ID",
     "customer": "Customer",
+    "status": "Status",
     "product": "Produkto",
     "amount": "Halaga",
     "actions": "Mga Aksyon",
@@ -715,11 +717,13 @@ export const translations = {
     "account": "Account",
     "sign-out": "Sign out",
     "username": "Username",
+    "monthly-dues": "Monthly Dues",
 
     // Seller Orders Table
     "no-orders-found": "No orders found.",
     "order-id": "Order ID",
     "customer": "Customer",
+    "status": "Status",
     "product": "Product",
     "amount": "Amount",
     "actions": "Actions",

@@ -13,7 +13,7 @@ import { toast } from "sonner";
 
 interface CartItem {
   id: string;
-  productId: string;
+  productId: string | null;
   quantity: number;
   productName: string | null;
   price: number | null;

@@ -4,7 +4,7 @@ import {
   shop,
   user,
   sellerApplications,
-  applicatioDocuments,
+  applicationDocuments,
 } from "@/server/schema/auth-schema";
 import { eq } from "drizzle-orm";
 import type { InferSelectModel } from "drizzle-orm";
@@ -66,7 +66,7 @@ export async function GET(
       .limit(1);
 
     type Application = InferSelectModel<typeof sellerApplications>;
-    type ApplicationDocument = InferSelectModel<typeof applicatioDocuments>;
+    type ApplicationDocument = InferSelectModel<typeof applicationDocuments>;
 
     let application: Application | null = null;
     let documents: ApplicationDocument[] = [];
@@ -76,8 +76,8 @@ export async function GET(
 
       documents = await db
         .select()
-        .from(applicatioDocuments)
-        .where(eq(applicatioDocuments.applicationId, application.id));
+        .from(applicationDocuments)
+        .where(eq(applicationDocuments.applicationId, application.id));
     }
 
     return NextResponse.json({
@@ -104,17 +104,16 @@ export async function GET(
       },
       application: application
         ? {
-            id: application.id,
-            status: application.status,
-            submittedAt: application.submittedAt,
-            reviewedAt: application.reviewedAt,
-          }
+          id: application.id,
+          status: application.status,
+          submittedAt: application.submittedAt,
+          reviewedAt: application.reviewedAt,
+        }
         : null,
       documents: documents.map((doc) => ({
         id: doc.id,
         documentType: doc.documentType,
         documentURL: doc.documentURL,
-        uploadedAt: doc.uploadedAt,
         verified: doc.verified,
       })),
     });

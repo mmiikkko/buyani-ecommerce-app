@@ -40,7 +40,7 @@ export function AppSidebar() {
   const [mounted, setMounted] = useState(false);
   const [loading, setLoading] = useState(false);
   const pathname = usePathname();
-  
+
   // Menu items.
   const items = [
     { title: t("home"), url: "/seller", icon: Home },
@@ -50,7 +50,7 @@ export function AppSidebar() {
     { title: t("inbox"), url: "/seller/inbox", icon: Inbox },
     { title: t("monthly-dues") || "Monthly Dues", url: "/seller/monthly-dues", icon: CalendarSync },
   ];
-  
+
   // Avoid SSR/client mismatch
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -63,7 +63,7 @@ export function AppSidebar() {
   }, [pathname]);
 
   if (!mounted) return null;
-  
+
   return (
     <>
       {/* FULL PAGE OVERLAY SPINNER */}

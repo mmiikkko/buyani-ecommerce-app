@@ -5,7 +5,7 @@ import Image from "next/image";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { v4 as uuidv4 } from "uuid";
-import type { Product, VariationOption } from "@/types/products";
+import type { Product, VariationOption, ProductVariation } from "@/types/products";
 import { toast } from "sonner";
 import { Plus, X, Trash2 } from "lucide-react";
 
@@ -47,7 +47,7 @@ export function AddProducts({ onAdd, onUpdate, productToEdit, onEditComplete }: 
   const [shippingFee, setShippingFee] = useState("");
 
   // VARIATIONS
-  const [variations, setVariations] = useState<VariationOption[]>([]);
+  const [variations, setVariations] = useState<any[]>([]);
   const [newVarName, setNewVarName] = useState("");
   const [newVarValue, setNewVarValue] = useState("");
   const [activeVarIndex, setActiveVarIndex] = useState<number | null>(null);
@@ -482,7 +482,7 @@ export function AddProducts({ onAdd, onUpdate, productToEdit, onEditComplete }: 
                         <h4 className="font-semibold">{variation.name}</h4>
                         {!isEditing && (
                           <button
-                            onClick={() => setVariations(variations.filter((_, i) => i !== vIndex))}
+                            onClick={() => setVariations(variations.filter((_: any, i: number) => i !== vIndex))}
                             className="text-red-500 hover:text-red-700"
                             type="button"
                           >
@@ -492,14 +492,14 @@ export function AddProducts({ onAdd, onUpdate, productToEdit, onEditComplete }: 
                       </div>
 
                       <div className="flex flex-wrap gap-2 mb-2">
-                        {variation.values.map((val, valIndex) => (
+                        {variation.values.map((val: string, valIndex: number) => (
                           <span key={valIndex} className="inline-flex items-center gap-1 px-2 py-1 bg-white border rounded-full text-sm">
                             {val}
                             {!isEditing && (
                               <button
                                 onClick={() => {
                                   const newVars = [...variations];
-                                  newVars[vIndex].values = newVars[vIndex].values.filter((_, i) => i !== valIndex);
+                                  newVars[vIndex].values = newVars[vIndex].values.filter((_: any, i: number) => i !== valIndex);
                                   setVariations(newVars);
                                 }}
                                 className="text-gray-500 hover:text-red-500"
