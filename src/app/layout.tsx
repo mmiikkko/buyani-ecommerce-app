@@ -26,7 +26,9 @@ export default function RootLayout({
     <html lang="fil">
       <body className={`${roboto.className} antialiased scroll-smooth`}>
         <LanguageProvider>
-          <main>{children}</main>
+          <main>
+            {children}
+          </main>
           <Toaster />
         </LanguageProvider>
       </body>

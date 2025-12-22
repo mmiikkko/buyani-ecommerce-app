@@ -9,6 +9,7 @@ import { unauthorized, redirect } from "next/navigation";
 import { db } from "@/server/drizzle";
 import { shop } from "@/server/schema/auth-schema";
 import { eq } from "drizzle-orm";
+import { Footer } from "./_components/footer";
 
 export default async function SellerLayout({
   children,
@@ -64,7 +65,9 @@ export default async function SellerLayout({
             {/* Sidebar trigger at top (optional) */}
 
             {children}
+            
           </main>
+          <Footer />
         </div>
       </div>
       <Toaster />

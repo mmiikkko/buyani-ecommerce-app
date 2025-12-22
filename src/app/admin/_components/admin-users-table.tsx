@@ -164,6 +164,11 @@ export function AdminUsersTable({
     return { total, active, pending, suspended, recentlyActive };
   }, [filtered]);
 
+  const generateShortId = (id: string, prefix: string = "USER") => {
+    if (id.startsWith(`${prefix}-`)) return id;
+    return `${prefix}-${id.substring(0, 7).toUpperCase()}`;
+  };
+
   return (
     <div className="space-y-6">
       {/* Stats Cards */}
@@ -287,7 +292,7 @@ export function AdminUsersTable({
                       className={`hover:bg-gray-50 transition-colors ${index % 2 === 0 ? "bg-white" : "bg-gray-50/50"}`}
                     >
                       <TableCell className="font-medium text-gray-800 font-mono text-xs py-1.5" title={user.id}>
-                        {user.id.slice(0, 8)}...
+                        {generateShortId(user.id, "USR")}
                       </TableCell>
                       <TableCell className="text-gray-700 font-medium text-xs py-1.5">
                         {user.fullName}

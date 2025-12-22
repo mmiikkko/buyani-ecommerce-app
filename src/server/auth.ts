@@ -103,10 +103,9 @@ export const auth = betterAuth({
     },
   },
 
-
   hooks: {
     before: createAuthMiddleware(async (ctx) => {
-      // validate password in server sside
+      // validate password in server side
 
       if (
         ctx.path === "/sign-up/email" ||
@@ -129,6 +128,8 @@ export const auth = betterAuth({
     google: {
       clientId: env.GOOGLE_CLIENT_ID,
       clientSecret: env.GOOGLE_CLIENT_SECRET,
+      // ADD THIS: Explicit redirect URI that matches Google Console
+      redirectURI: `${env.BETTER_AUTH_URL}/api/auth/callback/google`,
     },
   },
 });
