@@ -3,6 +3,7 @@ import { Roboto } from "next/font/google";
 import "@/app/globals.css";
 import icon from "@/assets/logo/favicon.ico";
 import { LanguageProvider } from "@/lib/i18n/context";
+import { Toaster } from "@/components/ui/sonner";
 
 export const metadata: Metadata = {
   title: "BuyAni",
@@ -28,6 +29,7 @@ export default function RootLayout({
           <main>
             {children}
           </main>
+          <Toaster />
         </LanguageProvider>
       </body>
     </html>

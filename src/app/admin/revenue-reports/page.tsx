@@ -281,125 +281,196 @@ export default function RevenueReportsPage() {
 
             {/* Report Table */}
             <Card>
-            <CardContent className="p-6">
-                {loading ? (
-                <div className="flex items-center justify-center py-12">
-                    <div className="text-gray-600">Loading report data...</div>
-                </div>
-                ) : !reportData ? (
-                <div className="flex items-center justify-center py-12">
-                    <div className="text-gray-600">Select a date range to view report</div>
-                </div>
-                ) : reportData.sellers.length === 0 ? (
-                <div className="flex items-center justify-center py-12">
-                    <div className="text-gray-600">No sales data found for the selected period</div>
-                </div>
-                ) : (
-                <div
-                    id="revenue-report-table"
-                    className="overflow-x-auto border border-gray-300 bg-white"
-                >
-                    <table className="w-full border-collapse text-[11px] font-sans">
-                    <thead>
-                        {/* Row 1 – Merged Weekly Header */}
-                        <tr>
-                        <th colSpan={2} className="border border-gray-300 bg-white h-6" />
-                        <th
-                            colSpan={reportData.weeks.length}
-                            className="border border-gray-300 bg-emerald-500 text-white text-center text-[10px] py-1 font-bold"
+                <CardContent className="p-6">
+                    {loading ? (
+                        <div className="flex items-center justify-center py-12">
+                            <div className="text-gray-600">Loading report data...</div>
+                        </div>
+                    ) : !reportData ? (
+                        <div className="flex items-center justify-center py-12">
+                            <div className="text-gray-600">Select a date range to view report</div>
+                        </div>
+                    ) : reportData.sellers.length === 0 ? (
+                        <div className="flex items-center justify-center py-12">
+                            <div className="text-gray-600">No sales data found for the selected period</div>
+                        </div>
+                    ) : (
+                        <div
+                            id="revenue-report-table"
+                            className="overflow-x-auto border border-gray-300 bg-white"
                         >
-                            No. of Week / Date Covered / No. of days operating in a week
-                        </th>
-                        <th colSpan={4} className="border border-gray-300 bg-white h-6" />
-                        </tr>
+                            <table className="w-full border-collapse text-[11px] font-sans">
+                                <thead>
+                                    {/* Row 1 – Merged Weekly Header */}
+                                    <tr>
+                                        <th colSpan={2} className="border border-gray-300 bg-white h-6" />
+                                        <th
+                                            colSpan={reportData.weeks.length}
+                                            className="border border-gray-300 bg-emerald-500 text-white text-center text-[10px] py-1 font-bold"
+                                        >
+                                            No. of Week / Date Covered / No. of days operating in a week
+                                        </th>
+                                        <th colSpan={4} className="border border-gray-300 bg-white h-6" />
+                                    </tr>
 
-                        {/* Row 2 – Main Headers */}
-                        <tr>
-                        <th
-                            rowSpan={3}
-                            className="border border-gray-300 bg-yellow-400 text-black px-2 py-2 w-12 font-bold text-center align-middle"
-                        >
-                            No.
-                        </th>
-                        <th
-                            rowSpan={3}
-                            className="border border-gray-300 bg-yellow-400 text-black px-4 py-2 min-w-[200px] font-bold text-center align-middle"
-                        >
-                            Name of Shop
-                        </th>
+                                    {/* Row 2 – Main Headers */}
+                                    <tr>
+                                        <th
+                                            rowSpan={3}
+                                            className="border border-gray-300 bg-yellow-400 text-black px-2 py-2 w-12 font-bold text-center align-middle"
+                                        >
+                                            No.
+                                        </th>
+                                        <th
+                                            rowSpan={3}
+                                            className="border border-gray-300 bg-yellow-400 text-black px-4 py-2 min-w-[200px] font-bold text-center align-middle"
+                                        >
+                                            Name of Shop
+                                        </th>
 
-                        {reportData.weeks.map((week) => (
-                            <th
-                            key={week.weekNumber}
-                            className="border border-gray-300 bg-[#e6f3ff] text-[#0066cc] px-2 py-1 text-center font-bold"
-                            >
-                            {week.weekNumber === 1
-                                ? "1st Week"
-                                : week.weekNumber === 2
-                                ? "2nd Week"
-                                : week.weekNumber === 3
-                                ? "3rd Week"
-                                : `${week.weekNumber}th Week`}
-                            </th>
-                        ))}
+                                        {reportData.weeks.map((week) => (
+                                            <th
+                                                key={week.weekNumber}
+                                                className="border border-gray-300 bg-[#e6f3ff] text-[#0066cc] px-2 py-1 text-center font-bold"
+                                            >
+                                                {week.weekNumber === 1
+                                                    ? "1st Week"
+                                                    : week.weekNumber === 2
+                                                        ? "2nd Week"
+                                                        : week.weekNumber === 3
+                                                            ? "3rd Week"
+                                                            : `${week.weekNumber}th Week`}
+                                            </th>
+                                        ))}
 
-                        <th
-                            rowSpan={3}
-                            className="border border-gray-300 bg-[#ccffcc] text-black px-4 py-2 w-28 font-bold text-center align-middle"
-                        >
-                            Total Sales per Shop
-                        </th>
-                        <th
-                            rowSpan={3}
-                            className="border border-gray-300 bg-[#fce4ec] text-[#d81b60] px-4 py-2 w-24 font-bold text-center align-middle"
-                        >
-                            Average Sales per Day
-                        </th>
-                        <th
-                            rowSpan={3}
-                            className="border border-gray-300 bg-[#e3f2fd] text-[#1565c0] px-4 py-2 w-24 font-bold text-center align-middle"
-                        >
-                            Average Sales in a Month
-                        </th>
-                        <th
-                            rowSpan={3}
-                            className="border border-gray-300 bg-white text-gray-800 px-4 py-2 w-32 font-bold text-center align-middle"
-                        >
-                            Rank as average sales in a month
-                        </th>
-                        </tr>
+                                        <th
+                                            rowSpan={3}
+                                            className="border border-gray-300 bg-[#ccffcc] text-black px-4 py-2 w-28 font-bold text-center align-middle"
+                                        >
+                                            Total Sales per Shop
+                                        </th>
+                                        <th
+                                            rowSpan={3}
+                                            className="border border-gray-300 bg-[#fce4ec] text-[#d81b60] px-4 py-2 w-24 font-bold text-center align-middle"
+                                        >
+                                            Average Sales per Day
+                                        </th>
+                                        <th
+                                            rowSpan={3}
+                                            className="border border-gray-300 bg-[#e3f2fd] text-[#1565c0] px-4 py-2 w-24 font-bold text-center align-middle"
+                                        >
+                                            Average Sales in a Month
+                                        </th>
+                                        <th
+                                            rowSpan={3}
+                                            className="border border-gray-300 bg-white text-gray-800 px-4 py-2 w-32 font-bold text-center align-middle"
+                                        >
+                                            Rank as average sales in a month
+                                        </th>
+                                    </tr>
 
-                        {/* Row 3 – Date Ranges */}
-                        <tr>
-                        {reportData.weeks.map((week) => (
-                            <th
-                            key={week.weekNumber}
-                            className="border border-gray-300 bg-[#f0f7ff] text-[#003366] px-2 py-1 text-center font-bold"
-                            >
-                            {week.dateRange}
-                            </th>
-                        ))}
-                        </tr>
+                                    {/* Row 3 – Date Ranges */}
+                                    <tr>
+                                        {reportData.weeks.map((week) => (
+                                            <th
+                                                key={week.weekNumber}
+                                                className="border border-gray-300 bg-[#f0f7ff] text-[#003366] px-2 py-1 text-center font-bold"
+                                            >
+                                                {week.dateRange}
+                                            </th>
+                                        ))}
+                                    </tr>
 
-                        {/* Row 4 – Day Count */}
-                        <tr>
-                        {reportData.weeks.map((week) => (
-                            <th
-                            key={week.weekNumber}
-                            className="border border-gray-300 bg-[#f3e5f5] text-[#4a148c] px-2 py-1 text-center font-bold italic"
-                            >
-                            {week.daysCount} days
-                            </th>
-                        ))}
-                        </tr>
-                    </thead>
+                                    {/* Row 4 – Day Count */}
+                                    <tr>
+                                        {reportData.weeks.map((week) => (
+                                            <th
+                                                key={week.weekNumber}
+                                                className="border border-gray-300 bg-[#f3e5f5] text-[#4a148c] px-2 py-1 text-center font-bold italic"
+                                            >
+                                                {week.daysCount} days
+                                            </th>
+                                        ))}
+                                    </tr>
+                                </thead>
 
-                    {/* 🔽 tbody UNCHANGED (already export-safe) */}
-                    <tbody>{/* your existing tbody code */}</tbody>
-                    </table>
-                </div>
-                )}
-            </CardContent>
+                                {/* 🔽 tbody Implementation */}
+                                <tbody>
+                                    {reportData.sellers.map((seller, index) => (
+                                        <tr key={seller.shopId} className="hover:bg-slate-50 transition-colors">
+                                            <td className="border border-gray-300 px-2 py-1.5 text-center font-medium bg-gray-50/30">
+                                                {index + 1}
+                                            </td>
+                                            <td className="border border-gray-300 px-3 py-1.5 font-semibold text-gray-800">
+                                                {seller.shopName}
+                                            </td>
+                                            {reportData.weeks.map((week) => (
+                                                <td
+                                                    key={week.weekNumber}
+                                                    className="border border-gray-300 px-2 py-1.5 text-right font-mono"
+                                                >
+                                                    {seller.weeklyBreakdown[week.weekNumber] > 0
+                                                        ? `₱${seller.weeklyBreakdown[week.weekNumber].toLocaleString()}`
+                                                        : "—"}
+                                                </td>
+                                            ))}
+                                            <td className="border border-gray-300 px-3 py-1.5 text-right font-bold bg-green-50/50 text-emerald-700">
+                                                ₱{seller.totalSales.toLocaleString()}
+                                            </td>
+                                            <td className="border border-gray-300 px-3 py-1.5 text-right font-bold text-pink-700 bg-pink-50/30">
+                                                ₱{Math.round(seller.averageSalesPerDay).toLocaleString()}
+                                            </td>
+                                            <td className="border border-gray-300 px-3 py-1.5 text-right font-bold text-blue-700 bg-blue-50/30">
+                                                ₱{Math.round(seller.averageSalesPerMonth).toLocaleString()}
+                                            </td>
+                                            <td
+                                                className={`border border-gray-300 px-3 py-1.5 text-center font-bold uppercase tracking-tight text-[10px] ${seller.rankLabel === "highest"
+                                                    ? "bg-yellow-100 text-yellow-800"
+                                                    : seller.rankLabel === "lowest"
+                                                        ? "bg-red-50 text-red-700"
+                                                        : "text-gray-500"
+                                                    }`}
+                                            >
+                                                {seller.rankLabel}
+                                            </td>
+                                        </tr>
+                                    ))}
+
+                                    {/* 🔽 Footer Row 1: Weekly Grand Totals */}
+                                    <tr className="bg-emerald-600 text-white font-bold text-xs uppercase">
+                                        <td colSpan={2} className="border border-emerald-700 px-4 py-2 text-right">
+                                            Grand Total Sales Weekly
+                                        </td>
+                                        {reportData.weeks.map((week) => (
+                                            <td
+                                                key={week.weekNumber}
+                                                className="border border-emerald-700 px-2 py-2 text-right font-mono"
+                                            >
+                                                ₱{(reportData.grandTotalWeekly[week.weekNumber] || 0).toLocaleString()}
+                                            </td>
+                                        ))}
+                                        <td colSpan={4} className="border border-emerald-700 bg-emerald-700/50" />
+                                    </tr>
+
+                                    {/* 🔽 Footer Row 2: Monthly Grand Total */}
+                                    <tr className="bg-yellow-400 text-black font-extrabold text-sm uppercase">
+                                        <td className="border border-yellow-500 px-4 py-2" />
+                                        <td colSpan={1} className="border border-yellow-500 px-4 py-3 text-right whitespace-nowrap overflow-hidden pr-4">
+                                            GRAND TOTAL SALES FOR THIS PERIOD
+                                        </td>
+                                        <td
+                                            colSpan={reportData.weeks.length + 1}
+                                            className="border border-yellow-500 px-6 py-3 text-[18px] text-center tracking-wider bg-yellow-300/50"
+                                        >
+                                            ₱{reportData.grandTotalMonthly.toLocaleString()}
+                                        </td>
+                                        <td colSpan={3} className="border border-yellow-500 bg-yellow-500/10" />
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    )}
+                </CardContent>
             </Card>
 
             {/* Export Dialog Overlay */}

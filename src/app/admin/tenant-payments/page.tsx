@@ -23,6 +23,12 @@ type TenantBilling = {
   amountDue: number;
   dueDate: string;
   status: "unpaid" | "pending_verification" | "paid" | "rejected" | "pending";
+  payment?: {
+    id: string;
+    receiptNumber: string;
+    paymentDate: string; // or Date if parsed
+    amountPaid: number;
+  } | null;
 };
 
 type BillingStats = {
@@ -67,6 +73,10 @@ export default function TenantPaymentsPage() {
   const [selectedBilling, setSelectedBilling] = useState<TenantBilling | null>(null);
   const [notificationMessage, setNotificationMessage] = useState("");
   const [sendingNotification, setSendingNotification] = useState(false);
+  const [showProofDialog, setShowProofDialog] = useState(false);
+  const [proofUrl, setProofUrl] = useState("");
+  const [loadingProof, setLoadingProof] = useState(false);
+  const [verifying, setVerifying] = useState(false);
 
 
   useEffect(() => {
@@ -89,7 +99,21 @@ export default function TenantPaymentsPage() {
       }
     };
     loadData();
-  }, []);
+
+    // Auto-refresh every 3 seconds
+    const interval = setInterval(() => {
+      // We can just re-fetch the data parts, skipping generation to be lighter
+      Promise.all([
+        fetchTenantBilling(),
+        fetchBillingStats(),
+      ]).then(([billingData, statsData]) => {
+        setBillings(billingData);
+        setStats(statsData);
+      });
+    }, 3000);
+
+    return () => clearInterval(interval);
+  }, []); // Run on mount (and filters change effect is separate or we merge)
 
   // Filtered billings by search term and status
   const filteredBillings = billings.filter((billing) => {
@@ -197,6 +221,65 @@ export default function TenantPaymentsPage() {
     if (diffDays <= 5) return <span className="text-amber-600 font-medium text-xs">{diffDays} days left</span>;
 
     return <span className="text-gray-500 text-xs">{diffDays} days</span>;
+  };
+
+  // Handle view proof
+  const handleViewProof = async (billing: TenantBilling) => {
+    try {
+      if (!billing.payment?.id) {
+        toast.error("No payment record found");
+        return;
+      }
+
+      setSelectedBilling(billing);
+      setLoadingProof(true);
+      setShowProofDialog(true);
+
+      const res = await fetch(`/api/admin/tenant-billing/payment-proof?paymentId=${billing.payment.id}`);
+      if (!res.ok) throw new Error("Failed to fetch proof");
+
+      const data = await res.json();
+      setProofUrl(data.receiptUrl);
+    } catch (error) {
+      console.error(error);
+      toast.error("Failed to load payment proof");
+    } finally {
+      setLoadingProof(false);
+    }
+  };
+
+  const handleVerifyPayment = async () => {
+    if (!selectedBilling) return;
+
+    try {
+      setVerifying(true);
+      const res = await fetch("/api/admin/tenant-billing", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ billingId: selectedBilling.id, status: "paid" }),
+      });
+
+      if (res.ok) {
+        toast.success("Payment verified successfully");
+        setShowProofDialog(false);
+        setProofUrl("");
+
+        // Refresh data
+        const [billingData, statsData] = await Promise.all([
+          fetchTenantBilling(),
+          fetchBillingStats(),
+        ]);
+        setBillings(billingData);
+        setStats(statsData);
+      } else {
+        toast.error("Failed to verify payment");
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error("Error verifying payment");
+    } finally {
+      setVerifying(false);
+    }
   };
 
   return (
@@ -340,13 +423,13 @@ export default function TenantPaymentsPage() {
           <TableBody>
             {loading ? (
               <TableRow>
-                <TableCell colSpan={7} className="text-center text-gray-500 py-4">
+                <TableCell colSpan={8} className="text-center text-gray-500 py-4">
                   Loading...
                 </TableCell>
               </TableRow>
             ) : filteredBillings.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={7} className="text-center text-gray-500 py-4">
+                <TableCell colSpan={8} className="text-center text-gray-500 py-4">
                   No tenants found.
                 </TableCell>
               </TableRow>
@@ -377,42 +460,27 @@ export default function TenantPaymentsPage() {
                             : "bg-gray-100 text-gray-700"
                         }`}
                     >
-                      {billing.status}
+                      {billing.status === "pending_verification" ? "Pending Verification" : billing.status}
                     </span>
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center gap-2">
-                      <div className="flex-1">
-                        {billing.status === "unpaid" && (
-                          <Button size="sm" variant="outline">
-                            Upload Payment
-                          </Button>
-                        )}
-                        {billing.status === "pending_verification" && (
-                          <span className="text-sm text-gray-500">Awaiting Verification</span>
-                        )}
-                        {billing.status === "paid" && (
-                          <span className="text-sm text-green-600 font-semibold">Paid</span>
-                        )}
-                        {billing.status === "rejected" && (
-                          <span className="text-sm text-red-600 font-semibold">Rejected</span>
-                        )}
-                      </div>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => handleNotifyClick(billing)}
-                        className="h-8 w-8 p-0"
-                        title="Notify Seller"
-                      >
-                        <Bell className="h-4 w-4" />
-                      </Button>
-                      {(billing.status === "unpaid" || billing.status === "pending_verification") && (
+                      {billing.status === "pending_verification" ? (
                         <Button
                           size="sm"
                           variant="outline"
-                          className="h-8 text-xs bg-emerald-50 text-emerald-600 border-emerald-200 hover:bg-emerald-100 hover:text-emerald-700 ml-1"
+                          className="h-8 text-xs bg-blue-50 text-blue-600 border-blue-200 hover:bg-blue-100 hover:text-blue-700 mr-1"
+                          onClick={() => handleViewProof(billing)}
+                        >
+                          View Proof
+                        </Button>
+                      ) : (billing.status === "unpaid" || billing.status === "pending") ? (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="h-8 text-xs bg-emerald-50 text-emerald-600 border-emerald-200 hover:bg-emerald-100 hover:text-emerald-700 mr-1"
                           onClick={async () => {
+                            // Mark Paid logic (Manual)
                             try {
                               const res = await fetch("/api/admin/tenant-billing", {
                                 method: "PUT",
@@ -421,8 +489,12 @@ export default function TenantPaymentsPage() {
                               });
 
                               if (res.ok) {
-                                toast.success("Marked as paid");
-                                // Refresh data
+                                const [year, month] = billing.billingMonth.split('-');
+                                const date = new Date(parseInt(year), parseInt(month) - 1);
+                                const monthName = date.toLocaleString('default', { month: 'long' });
+                                toast.success(`"${billing.tenantName}" is paid for ${year} - ${monthName}`);
+
+                                // Refresh
                                 const [billingData, statsData] = await Promise.all([
                                   fetchTenantBilling(),
                                   fetchBillingStats(),
@@ -437,12 +509,22 @@ export default function TenantPaymentsPage() {
                               toast.error("Error updating status");
                             }
                           }}
-                          title="Mark as Paid"
                         >
                           <CheckCircle className="h-3 w-3 mr-1" />
                           Mark Paid
                         </Button>
-                      )}
+                      ) : null}
+
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => handleNotifyClick(billing)}
+                        className="h-8 w-8 p-0"
+                        title="Notify Seller"
+                        disabled={billing.status === "paid"}
+                      >
+                        <Bell className={`h-4 w-4 ${billing.status === "paid" ? "text-gray-300" : ""}`} />
+                      </Button>
                     </div>
                   </TableCell>
                 </TableRow>
@@ -499,6 +581,64 @@ export default function TenantPaymentsPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </section >
+
+      {/* Proof Verification Dialog */}
+      <Dialog open={showProofDialog} onOpenChange={(open) => {
+        if (!open) {
+          setShowProofDialog(false);
+          setProofUrl("");
+        }
+      }}>
+        <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Verify Payment Proof</DialogTitle>
+          </DialogHeader>
+
+          <div className="space-y-4 py-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="text-sm font-medium text-gray-500">Receipt Number</label>
+                <p className="font-semibold">{selectedBilling?.payment?.receiptNumber}</p>
+              </div>
+              <div>
+                <label className="text-sm font-medium text-gray-500">Amount Paid</label>
+                <p className="font-semibold">₱{selectedBilling?.payment?.amountPaid?.toLocaleString()}</p>
+              </div>
+              <div>
+                <label className="text-sm font-medium text-gray-500">Payment Date</label>
+                <p>{selectedBilling?.payment?.paymentDate ? new Date(selectedBilling?.payment.paymentDate).toLocaleDateString() : 'N/A'}</p>
+              </div>
+            </div>
+
+            <div className="mt-4 border rounded-lg p-2 bg-gray-50 flex justify-center min-h-[300px] items-center">
+              {loadingProof ? (
+                <div className="flex flex-col items-center gap-2">
+                  <div className="animate-spin h-8 w-8 border-4 border-emerald-500 border-t-transparent rounded-full"></div>
+                  <p className="text-sm text-gray-500">Loading receipt image...</p>
+                </div>
+              ) : proofUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={proofUrl} alt="Payment Receipt" className="max-w-full max-h-[500px] object-contain rounded-md" />
+              ) : (
+                <p className="text-gray-400">No receipt image available</p>
+              )}
+            </div>
+          </div>
+
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button variant="outline" onClick={() => setShowProofDialog(false)}>
+              Close
+            </Button>
+            <Button
+              onClick={handleVerifyPayment}
+              className="bg-emerald-600 hover:bg-emerald-700 text-white"
+              disabled={verifying}
+            >
+              {verifying ? "Verifying..." : "Verify & Mark Paid"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </section>
   );
 }

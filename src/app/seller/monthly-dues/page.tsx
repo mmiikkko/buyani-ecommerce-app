@@ -24,7 +24,8 @@ import {
   AlertCircle,
   Upload,
   Download,
-  Eye
+  Eye,
+  ArrowUpDown
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -59,6 +60,7 @@ export default function MonthlyDuesPage() {
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
   const [selectedBilling, setSelectedBilling] = useState<BillingRecord | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [sortOrder, setSortOrder] = useState<"newest" | "oldest">("newest");
 
   // Upload form state
   const [receiptFile, setReceiptFile] = useState<File | null>(null);
@@ -70,17 +72,17 @@ export default function MonthlyDuesPage() {
   useEffect(() => {
     fetchBillings();
 
-    // Auto-refresh every 30 seconds
+    // Auto-refresh every 3 seconds (silent)
     const interval = setInterval(() => {
-      fetchBillings();
-    }, 30000);
+      fetchBillings(true);
+    }, 3000);
 
     return () => clearInterval(interval);
   }, []);
 
-  const fetchBillings = async () => {
+  const fetchBillings = async (silent = false) => {
     try {
-      setLoading(true);
+      if (!silent) setLoading(true);
       const res = await fetch("/api/seller/monthly-dues");
 
       if (res.status === 401) {
@@ -102,9 +104,10 @@ export default function MonthlyDuesPage() {
       setBillings(data.billings || []);
     } catch (error) {
       console.error("Error fetching billings:", error);
-      toast.error(error instanceof Error ? error.message : "Failed to load monthly dues");
+      // Only show error toast on initial load to avoid spamming
+      if (!silent) toast.error(error instanceof Error ? error.message : "Failed to load monthly dues");
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   };
 
@@ -258,16 +261,27 @@ export default function MonthlyDuesPage() {
     <div className="relative min-h-screen min-w-full overflow-hidden space-y-6 px-6">
       {/* Header */}
       <div className="space-y-2 mb-6">
-        <div className="flex items-center gap-3">
-          <div className="p-3 rounded-xl bg-[#2E7D32]/10">
-            <CalendarSync className="h-6 w-6 text-[#2E7D32]" />
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="p-3 rounded-xl bg-[#2E7D32]/10">
+              <CalendarSync className="h-6 w-6 text-[#2E7D32]" />
+            </div>
+            <div>
+              <h1 className="text-3xl font-bold text-[#2E7D32]">Monthly Rent</h1>
+              <p className="text-muted-foreground mt-1">
+                Manage your monthly payments and billing records
+              </p>
+            </div>
           </div>
-          <div>
-            <h1 className="text-3xl font-bold text-[#2E7D32]">Monthly Rent</h1>
-            <p className="text-muted-foreground mt-1">
-              Manage your monthly payments and billing records
-            </p>
-          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setSortOrder(prev => prev === "newest" ? "oldest" : "newest")}
+            className="flex items-center gap-2"
+          >
+            <ArrowUpDown className="h-4 w-4" />
+            {sortOrder === "newest" ? "Date: Newest" : "Date: Oldest"}
+          </Button>
         </div>
       </div>
 
@@ -292,98 +306,58 @@ export default function MonthlyDuesPage() {
                 <TableHead>Due In</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Last Payment</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {billings.map((billing) => {
-                const latestPayment = billing.payments?.[0]; // Assuming sorted by date desc from API or just taking first
-                return (
-                  <TableRow key={billing.id} className="group hover:bg-gray-50/50 transition-colors">
-                    <TableCell className="font-semibold text-gray-900">
-                      {billing.billingMonth}
-                    </TableCell>
-                    <TableCell>
-                      <span className="font-medium text-[#2E7D32]">
-                        ₱{billing.amountDue.toLocaleString()}
-                      </span>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2 text-gray-600">
-                        <CalendarSync className="w-4 h-4 text-gray-400" />
-                        {new Date(billing.dueDate).toLocaleDateString()}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      {getDueIn(billing.dueDate, billing.status)}
-                    </TableCell>
-                    <TableCell>
-                      {getStatusBadge(billing.status)}
-                    </TableCell>
-                    <TableCell>
-                      {latestPayment ? (
-                        <div className="flex flex-col text-sm">
-                          <span className="font-medium">₱{latestPayment.amountPaid.toLocaleString()}</span>
-                          <span className="text-xs text-muted-foreground">{new Date(latestPayment.paymentDate).toLocaleDateString()}</span>
-                          {latestPayment.verificationStatus !== 'verified' && (
-                            <span className="text-[10px] text-amber-600 italic">Verifying...</span>
-                          )}
+              {[...billings]
+                .sort((a, b) => {
+                  // Sort by billingMonth (YYYY-MM) as it's robust for chronological ordering
+                  if (sortOrder === "newest") {
+                    return b.billingMonth.localeCompare(a.billingMonth);
+                  } else {
+                    return a.billingMonth.localeCompare(b.billingMonth);
+                  }
+                })
+                .map((billing) => {
+                  const latestPayment = billing.payments?.[0]; // Assuming sorted by date desc from API or just taking first
+                  return (
+                    <TableRow key={billing.id} className="group hover:bg-gray-50/50 transition-colors">
+                      <TableCell className="font-semibold text-gray-900">
+                        {billing.billingMonth}
+                      </TableCell>
+                      <TableCell>
+                        <span className="font-medium text-[#2E7D32]">
+                          ₱{billing.amountDue.toLocaleString()}
+                        </span>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2 text-gray-600">
+                          <CalendarSync className="w-4 h-4 text-gray-400" />
+                          {new Date(billing.dueDate).toLocaleDateString()}
                         </div>
-                      ) : (
-                        <span className="text-muted-foreground text-sm">-</span>
-                      )}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex items-center justify-end gap-2">
-                        {billing.status === 'unpaid' || billing.status === 'rejected' ? (
-                          <Button
-                            size="sm"
-                            className="h-8 bg-[#2E7D32] hover:bg-[#1b5e20]"
-                            onClick={() => openUploadDialog(billing)}
-                          >
-                            <Upload className="w-3.5 h-3.5 mr-1.5" />
-                            Pay
-                          </Button>
-                        ) : null}
-
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon" className="h-8 w-8">
-                              <MoreHorizontal className="w-4 h-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                            <DropdownMenuSeparator />
-                            {latestPayment && (
-                              <>
-                                <DropdownMenuItem onClick={() => handleViewReceipt(latestPayment.receiptUrl)}>
-                                  <Eye className="w-4 h-4 mr-2" /> View Receipt
-                                </DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => {
-                                  const link = document.createElement("a");
-                                  link.href = latestPayment.receiptUrl;
-                                  link.download = `receipt_${latestPayment.receiptNumber}.${latestPayment.receiptUrl.includes("pdf") ? "pdf" : "jpg"}`;
-                                  document.body.appendChild(link);
-                                  link.click();
-                                  document.body.removeChild(link);
-                                }}>
-                                  <Download className="w-4 h-4 mr-2" /> Download Receipt
-                                </DropdownMenuItem>
-                              </>
+                      </TableCell>
+                      <TableCell>
+                        {getDueIn(billing.dueDate, billing.status)}
+                      </TableCell>
+                      <TableCell>
+                        {getStatusBadge(billing.status)}
+                      </TableCell>
+                      <TableCell>
+                        {latestPayment ? (
+                          <div className="flex flex-col text-sm">
+                            <span className="font-medium">₱{latestPayment.amountPaid.toLocaleString()}</span>
+                            <span className="text-xs text-muted-foreground">{new Date(latestPayment.paymentDate).toLocaleDateString()}</span>
+                            {latestPayment.verificationStatus !== 'verified' && (
+                              <span className="text-[10px] text-amber-600 italic">Verifying...</span>
                             )}
-                            {billing.status === 'unpaid' && (
-                              <DropdownMenuItem onClick={() => openUploadDialog(billing)}>
-                                <Upload className="w-4 h-4 mr-2" /> Upload Payment
-                              </DropdownMenuItem>
-                            )}
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
+                          </div>
+                        ) : (
+                          <span className="text-muted-foreground text-sm">-</span>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
             </TableBody>
           </Table>
         </div>

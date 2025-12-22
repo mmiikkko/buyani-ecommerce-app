@@ -12,7 +12,14 @@ const PERMANENT_ADMIN_EMAILS = new Set<string>(["quintelamark10@gmail.com"]);
 export const getServerSession = cache(async () => {
   try {
     const hdrs = await headers();
-    const session = await auth.api.getSession({ headers: hdrs });
+    let session = null;
+    try {
+      session = await auth.api.getSession({ headers: hdrs });
+    } catch (authError: any) {
+      // Suppress ALL session fetch errors to prevent crash
+      console.warn("Auth session fetch blocked error:", authError?.message || authError);
+      return null;
+    }
 
     // No session or no user to sync
     if (!session?.user?.id) {
