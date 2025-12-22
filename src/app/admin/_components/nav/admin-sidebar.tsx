@@ -34,6 +34,7 @@ import {
   ChevronUp,
   User2,
   BarChart3,
+  TrendingUp,
 } from "lucide-react";
 
 import { authClient } from "@/server/auth-client";
@@ -49,6 +50,7 @@ const items = [
   { title: "Products", url: "/admin/products-monitor", icon: Package },
   { title: "Tenants", url: "/admin/tenant-payments", icon: CalendarSync },
   { title: "Revenue Reports", url: "/admin/revenue-reports", icon: BarChart3 },
+  { title: "Sales Trend", url: "/admin/sales-trends", icon: TrendingUp },
   { title: "Transactions", url: "/admin/transactions", icon: Wallet },
   { title: "Platform Feedback", url: "/admin/feedback", icon: Layout },
   { title: "Site Settings", url: "/admin/site-settings", icon: Layout },
