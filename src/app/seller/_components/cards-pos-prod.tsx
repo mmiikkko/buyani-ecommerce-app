@@ -19,32 +19,41 @@ type POSProduct = {
 
 interface CardsPosProdProps {
   onAddToCart: (product: POSProduct) => void;
+  onRefreshReady?: (refreshFn: () => Promise<void>) => void;
 }
 
-export function CardsPosProd({ onAddToCart }: CardsPosProdProps) {
+export function CardsPosProd({ onAddToCart, onRefreshReady }: CardsPosProdProps) {
   const { t } = useLanguage();
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
 
-  useEffect(() => {
-    async function fetchProducts() {
-      try {
-        setLoading(true);
-        const res = await fetch("/api/sellers/products");
-        if (res.ok) {
-          const data: Product[] = await res.json();
-          // Filter only available products
-          setProducts(data.filter(p => p.isAvailable && (p.stock || 0) > 0));
-        }
-      } catch (error) {
-        console.error("Failed to fetch products:", error);
-      } finally {
-        setLoading(false);
+  const fetchProducts = async () => {
+    try {
+      setLoading(true);
+      const res = await fetch("/api/sellers/products");
+      if (res.ok) {
+        const data: Product[] = await res.json();
+        // Filter only available products
+        setProducts(data.filter(p => p.isAvailable && (p.stock || 0) > 0));
       }
+    } catch (error) {
+      console.error("Failed to fetch products:", error);
+    } finally {
+      setLoading(false);
     }
+  };
+
+  useEffect(() => {
     fetchProducts();
   }, []);
+
+  // Expose refresh function to parent
+  useEffect(() => {
+    if (onRefreshReady) {
+      onRefreshReady(fetchProducts);
+    }
+  }, [onRefreshReady]);
 
   const filteredProducts = useMemo(() => {
     if (!searchQuery.trim()) return products;
@@ -60,7 +69,7 @@ export function CardsPosProd({ onAddToCart }: CardsPosProdProps) {
     if (!product.images || product.images.length === 0) return "";
     const firstImage = product.images[0];
     if (!firstImage?.image_url) return "";
-    
+
     if (Array.isArray(firstImage.image_url)) {
       return firstImage.image_url[0] || "";
     }
@@ -71,7 +80,7 @@ export function CardsPosProd({ onAddToCart }: CardsPosProdProps) {
     if ((product.stock || 0) <= 0) {
       return;
     }
-    
+
     onAddToCart({
       id: product.id,
       name: product.productName,
@@ -106,13 +115,12 @@ export function CardsPosProd({ onAddToCart }: CardsPosProdProps) {
             {filteredProducts.map((product) => {
               const imageUrl = getImageUrl(product);
               const isOutOfStock = (product.stock || 0) <= 0;
-              
+
               return (
                 <div
                   key={product.id}
-                  className={`border rounded-lg p-3 hover:shadow-md transition-shadow ${
-                    isOutOfStock ? "opacity-50" : ""
-                  }`}
+                  className={`border rounded-lg p-3 hover:shadow-md transition-shadow ${isOutOfStock ? "opacity-50" : ""
+                    }`}
                 >
                   <div className="relative w-full h-32 mb-2 bg-gray-100 rounded overflow-hidden">
                     {imageUrl ? (

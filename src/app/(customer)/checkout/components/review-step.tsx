@@ -35,7 +35,7 @@ type AddressData = {
 
 interface ReviewStepProps {
   address: AddressData | null;
-  paymentMethod: "gcash" | "paymaya" | "cod" | null;
+  paymentMethod: "gcash" | "cod" | null;
   cartItems: CartItem[];
   onBack: () => void;
   userId: string;
@@ -154,8 +154,6 @@ export function ReviewStep({
     switch (method) {
       case "gcash":
         return t("gcash");
-      case "paymaya":
-        return t("paymaya");
       case "cod":
         return t("cash-delivery");
       default:
@@ -220,11 +218,7 @@ export function ReviewStep({
         <CardContent>
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-100 text-xl">
-              {paymentMethod === "gcash"
-                ? "💙"
-                : paymentMethod === "paymaya"
-                  ? "💚"
-                  : "💵"}
+              {paymentMethod === "gcash" ? "💙" : "💵"}
             </div>
             <p className="font-semibold text-slate-900">
               {getPaymentMethodName(paymentMethod)}

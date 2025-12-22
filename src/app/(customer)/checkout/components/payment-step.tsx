@@ -8,8 +8,8 @@ import Image from "next/image";
 import { useLanguage } from "@/lib/i18n/context";
 
 interface PaymentStepProps {
-  selectedMethod: "gcash" | "paymaya" | "cod" | null;
-  onSelect: (method: "gcash" | "paymaya" | "cod") => void;
+  selectedMethod: "gcash" | "cod" | null;
+  onSelect: (method: "gcash" | "cod") => void;
   onBack: () => void;
 }
 
@@ -22,13 +22,6 @@ export function PaymentStep({ selectedMethod, onSelect, onBack }: PaymentStepPro
       description: t("gcash-desc"),
       icon: "💙",
       recommended: true,
-    },
-    {
-      id: "paymaya" as const,
-      name: t("paymaya"),
-      description: t("paymaya-desc"),
-      icon: "💚",
-      recommended: false,
     },
     {
       id: "cod" as const,
@@ -56,22 +49,20 @@ export function PaymentStep({ selectedMethod, onSelect, onBack }: PaymentStepPro
             <button
               key={method.id}
               onClick={() => onSelect(method.id)}
-              className={`w-full text-left p-4 rounded-lg border-2 transition-all ${
-                selectedMethod === method.id
-                  ? "border-emerald-500 bg-emerald-50"
-                  : "border-slate-200 hover:border-slate-300 bg-white"
-              }`}
+              className={`w-full text-left p-4 rounded-lg border-2 transition-all ${selectedMethod === method.id
+                ? "border-emerald-500 bg-emerald-50"
+                : "border-slate-200 hover:border-slate-300 bg-white"
+                }`}
             >
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <div
-                    className={`flex h-10 w-10 items-center justify-center rounded-lg text-2xl ${
-                      method.id === "gcash"
-                        ? "bg-blue-100"
-                        : method.id === "paymaya"
+                    className={`flex h-10 w-10 items-center justify-center rounded-lg text-2xl ${method.id === "gcash"
+                      ? "bg-blue-100"
+                      : method.id === "paymaya"
                         ? "bg-green-100"
                         : "bg-orange-100"
-                    }`}
+                      }`}
                   >
                     {method.icon}
                   </div>
@@ -88,11 +79,10 @@ export function PaymentStep({ selectedMethod, onSelect, onBack }: PaymentStepPro
                   </div>
                 </div>
                 <div
-                  className={`h-5 w-5 rounded-full border-2 flex items-center justify-center ${
-                    selectedMethod === method.id
-                      ? "border-emerald-500 bg-emerald-500"
-                      : "border-slate-300"
-                  }`}
+                  className={`h-5 w-5 rounded-full border-2 flex items-center justify-center ${selectedMethod === method.id
+                    ? "border-emerald-500 bg-emerald-500"
+                    : "border-slate-300"
+                    }`}
                 >
                   {selectedMethod === method.id && (
                     <div className="h-2 w-2 rounded-full bg-white" />

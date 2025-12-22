@@ -37,6 +37,7 @@ export function CartClient({ initialItems, userId }: CartClientProps) {
   );
   const [isEditMode, setIsEditMode] = useState(false);
   const [itemsToDelete, setItemsToDelete] = useState<Set<string>>(new Set());
+  const [isCheckingOut, setIsCheckingOut] = useState(false);
   const router = useRouter();
   const { t } = useLanguage();
   const [previousPath, setPreviousPath] = useState<string | null>(null);
@@ -471,6 +472,7 @@ export function CartClient({ initialItems, userId }: CartClientProps) {
                 className="w-full bg-emerald-600 hover:bg-emerald-700"
                 size="lg"
                 onClick={() => {
+                  setIsCheckingOut(true);
                   const ids = Array.from(selectedItems);
                   router.push(
                     ids.length > 0
@@ -478,9 +480,9 @@ export function CartClient({ initialItems, userId }: CartClientProps) {
                       : "/checkout"
                   );
                 }}
-                disabled={selectedItems.size === 0}
+                disabled={selectedItems.size === 0 || isCheckingOut}
               >
-                {t("proceed-checkout")} ({selectedItems.size} {selectedItems.size === 1 ? t("item") : t("items")})
+                {isCheckingOut ? "Loading..." : `${t("proceed-checkout")} (${selectedItems.size} ${selectedItems.size === 1 ? t("item") : t("items")})`}
               </Button>
               {selectedItems.size === 0 && (
                 <p className="text-xs text-center text-muted-foreground mt-2">

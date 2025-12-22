@@ -121,7 +121,11 @@ export default function CustomerOrdersPage() {
   const statusCounts = useMemo(() => {
     const counts: Record<string, number> = { all: grouped.length };
     grouped.forEach((o) => {
-      const key = o.status || "pending";
+      let key = o.status || "pending";
+      // Normalize "confirmed" to "accepted" for counting
+      if (key === "confirmed") key = "accepted";
+      // Normalize "completed" to "delivered" for counting
+      if (key === "completed") key = "delivered";
       counts[key] = (counts[key] || 0) + 1;
     });
     return counts;

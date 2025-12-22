@@ -17,6 +17,15 @@ export const auth = betterAuth({
     schema: { user, account, session, verification },
   }),
 
+  session: {
+    expiresIn: 60 * 60 * 24 * 7, // 7 days
+    updateAge: 60 * 60 * 24, // 1 day
+    cookieCache: {
+      enabled: true,
+      maxAge: 5 * 60, // 5 minutes
+    },
+  },
+
   emailAndPassword: {
     enabled: true,
     password: {
@@ -93,7 +102,7 @@ export const auth = betterAuth({
       },
     },
   },
-  
+
 
   hooks: {
     before: createAuthMiddleware(async (ctx) => {
