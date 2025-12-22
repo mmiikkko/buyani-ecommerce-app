@@ -56,16 +56,6 @@ export function PaymentStep({ selectedMethod, onSelect, onBack }: PaymentStepPro
             >
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <div
-                    className={`flex h-10 w-10 items-center justify-center rounded-lg text-2xl ${method.id === "gcash"
-                        ? "bg-blue-100"
-                        : method.id === "paymaya"
-                          ? "bg-green-100"
-                          : "bg-orange-100"
-                      }`}
-                  >
-                    {method.icon}
-                  </div>
                   <div>
                     <div className="flex items-center gap-2">
                       <h3 className="font-semibold text-slate-900">{method.name}</h3>
