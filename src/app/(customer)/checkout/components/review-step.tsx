@@ -218,7 +218,13 @@ export function ReviewStep({
         <CardContent>
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-100 text-xl">
+<<<<<<< HEAD
               {paymentMethod === "gcash" ? "💙" : "💵"}
+=======
+              {paymentMethod === "gcash"
+                ? "💙"
+                : "💵"}
+>>>>>>> 646f1eaaa423e0d8f5faf8c9d05083e287436eaa
             </div>
             <p className="font-semibold text-slate-900">
               {getPaymentMethodName(paymentMethod)}

@@ -50,12 +50,18 @@ export function PaymentStep({ selectedMethod, onSelect, onBack }: PaymentStepPro
               key={method.id}
               onClick={() => onSelect(method.id)}
               className={`w-full text-left p-4 rounded-lg border-2 transition-all ${selectedMethod === method.id
+<<<<<<< HEAD
                 ? "border-emerald-500 bg-emerald-50"
                 : "border-slate-200 hover:border-slate-300 bg-white"
+=======
+                  ? "border-emerald-500 bg-emerald-50"
+                  : "border-slate-200 hover:border-slate-300 bg-white"
+>>>>>>> 646f1eaaa423e0d8f5faf8c9d05083e287436eaa
                 }`}
             >
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
+<<<<<<< HEAD
                   <div
                     className={`flex h-10 w-10 items-center justify-center rounded-lg text-2xl ${method.id === "gcash"
                       ? "bg-blue-100"
@@ -66,6 +72,8 @@ export function PaymentStep({ selectedMethod, onSelect, onBack }: PaymentStepPro
                   >
                     {method.icon}
                   </div>
+=======
+>>>>>>> 646f1eaaa423e0d8f5faf8c9d05083e287436eaa
                   <div>
                     <div className="flex items-center gap-2">
                       <h3 className="font-semibold text-slate-900">{method.name}</h3>
@@ -80,8 +88,13 @@ export function PaymentStep({ selectedMethod, onSelect, onBack }: PaymentStepPro
                 </div>
                 <div
                   className={`h-5 w-5 rounded-full border-2 flex items-center justify-center ${selectedMethod === method.id
+<<<<<<< HEAD
                     ? "border-emerald-500 bg-emerald-500"
                     : "border-slate-300"
+=======
+                      ? "border-emerald-500 bg-emerald-500"
+                      : "border-slate-300"
+>>>>>>> 646f1eaaa423e0d8f5faf8c9d05083e287436eaa
                     }`}
                 >
                   {selectedMethod === method.id && (

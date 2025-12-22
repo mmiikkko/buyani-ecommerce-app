@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useImperativeHandle, forwardRef } from "react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { SearchInput } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -19,10 +19,13 @@ type POSProduct = {
 
 interface CardsPosProdProps {
   onAddToCart: (product: POSProduct) => void;
-  onRefreshReady?: (refreshFn: () => Promise<void>) => void;
 }
 
-export function CardsPosProd({ onAddToCart, onRefreshReady }: CardsPosProdProps) {
+export interface CardsPosProdRef {
+  refreshProducts: () => void;
+}
+
+export const CardsPosProd = forwardRef<CardsPosProdRef, CardsPosProdProps>(({ onAddToCart }, ref) => {
   const { t } = useLanguage();
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
@@ -48,12 +51,10 @@ export function CardsPosProd({ onAddToCart, onRefreshReady }: CardsPosProdProps)
     fetchProducts();
   }, []);
 
-  // Expose refresh function to parent
-  useEffect(() => {
-    if (onRefreshReady) {
-      onRefreshReady(fetchProducts);
-    }
-  }, [onRefreshReady]);
+  // Expose refresh method to parent
+  useImperativeHandle(ref, () => ({
+    refreshProducts: fetchProducts,
+  }));
 
   const filteredProducts = useMemo(() => {
     if (!searchQuery.trim()) return products;
@@ -172,4 +173,6 @@ export function CardsPosProd({ onAddToCart, onRefreshReady }: CardsPosProdProps)
       </CardContent>
     </Card>
   );
-}
+});
+
+CardsPosProd.displayName = "CardsPosProd";

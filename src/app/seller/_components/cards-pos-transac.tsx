@@ -25,10 +25,10 @@ type CartItem = {
 interface CardsPosTransacProps {
   cartItems: CartItem[];
   onUpdateCart: (items: CartItem[]) => void;
-  onRefresh?: () => void;
+  onSaleComplete?: () => void;
 }
 
-export function CardsPosTransac({ cartItems, onUpdateCart, onRefresh }: CardsPosTransacProps) {
+export function CardsPosTransac({ cartItems, onUpdateCart, onSaleComplete }: CardsPosTransacProps) {
   const { t } = useLanguage();
   const [collapsed, setCollapsed] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState("Cash");
@@ -103,10 +103,8 @@ export function CardsPosTransac({ cartItems, onUpdateCart, onRefresh }: CardsPos
       setCustomerName("");
       setPaymentMethod("Cash");
 
-      // Refresh product list to show updated stock
-      if (onRefresh) {
-        onRefresh();
-      }
+      // Trigger product refresh to update stock
+      onSaleComplete?.();
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : t("failed-complete-sale");
       toast.error(errorMessage);
