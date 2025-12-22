@@ -35,7 +35,8 @@ type Props = {
     name: string;
     shopOwner: string;
     description: string;
-    category: string;
+    categoryId: string;
+    categoryName: string;
     price: number;
     stock: number;
     dateAdded: string;
@@ -125,7 +126,7 @@ export function AdminProductModal({
                 </p>
                 <p>
                   <span className="font-semibold">Category:</span>{" "}
-                  {product.category}
+                  {product.categoryName}
                 </p>
                 <p>
                   <span className="font-semibold">Price:</span> ₱

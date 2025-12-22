@@ -48,7 +48,8 @@ type Product = {
   name: string;
   shopOwner: string;
   description: string;
-  category: string;
+  categoryId: string;
+  categoryName: string;
   price: number;
   stock: number;
   dateAdded: string;
@@ -57,6 +58,7 @@ type Product = {
   reason?: string;
   image: string;
 };
+
 
 // ------------------------------------------------------------
 // MAIN COMPONENT
@@ -69,6 +71,7 @@ export function AdminProducts() {
 
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [isModalOpen, setModalOpen] = useState(false);
+  const [categoryFilter, setCategoryFilter] = useState<string | null>(null);
 
   const openModal = (product: Product) => {
     setSelectedProduct(product);
@@ -97,20 +100,20 @@ export function AdminProducts() {
           ? rawImg
           : "";
 
-        return {
-          id: p.id,
-          name: p.productName,
-          shopOwner: p.shopName || "Unknown Shop",
-          description: p.description || "",
-          category: p.categoryName || p.categoryId || "Uncategorized",
-          price: Number(p.price) || 0,
-          stock: p.stock || 0,
-          dateAdded: p.createdAt,
-          status: mapProductStatus(p.status),
-          flags: 0,
-          reason: undefined,
-          image: validImg
-        };
+          return {
+            id: p.id,
+            name: p.productName,
+            shopOwner: p.shopName || "Unknown Shop",
+            description: p.description || "",
+            categoryId: p.categoryId,
+            categoryName: p.categoryName || "Uncategorized",
+            price: Number(p.price) || 0,
+            stock: p.stock || 0,
+            dateAdded: p.createdAt,
+            status: mapProductStatus(p.status),
+            image: validImg,
+          };
+          
       });
 
       setProducts(transformedProducts);
@@ -188,16 +191,19 @@ export function AdminProducts() {
       const matchesSearch =
         p.name.toLowerCase().includes(search.toLowerCase()) ||
         p.shopOwner.toLowerCase().includes(search.toLowerCase());
-
+  
       let matchesFilter = true;
-
       if (filter === "new") matchesFilter = isNewProduct(p.dateAdded);
       else if (filter === "removed") matchesFilter = p.status === "removed";
-
-      return matchesSearch && matchesFilter;
+  
+      const matchesCategory =
+      !categoryFilter || p.categoryId === categoryFilter;    
+  
+      return matchesSearch && matchesFilter && matchesCategory;
     });
-  }, [products, search, filter]);
-
+  }, [products, search, filter, categoryFilter]);
+  
+  
   // ------------------------------------------------------------
   // STATS CALCULATION
   // ------------------------------------------------------------
@@ -289,10 +295,10 @@ export function AdminProducts() {
             { value: "removed", label: "Removed" },
           ]}
           onFilterChange={setFilter}
-          onSearchChange={setSearch}
-        />
+          onSearchChange={setSearch} 
+          onCategoryChange={setCategoryFilter}/>
 
-        {/* PRODUCT GRID */}
+          
         {filteredProducts.length === 0 ? (
           <div className="text-center py-16 bg-gray-50 rounded-xl border-2 border-dashed mt-6">
             <Package className="h-16 w-16 text-gray-400 mx-auto mb-4" />
@@ -379,7 +385,7 @@ export function AdminProducts() {
 
                       <div className="flex items-center gap-1.5 text-xs text-gray-600">
                         <Tag className="h-3 w-3 text-gray-500" />
-                        <span>{product.category}</span>
+                        <span>{product.categoryName}</span>
                       </div>
                     </div>
 

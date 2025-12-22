@@ -49,7 +49,7 @@ export default function ASNavbar({ children }: { children?: React.ReactNode }) {
           <Image src={Logo} alt="BuyAni Logo" width={38} height={38} className="rounded-md" />
 
           <div className="ml-2 text-center">
-            <div className="text-[#2E7D32]">BUYANI</div>
+            <div className="text-[#2E7D32]">BuyAni</div>
             <div className="text-xs text-[#6A7282]">Admin Panel</div>
           </div>
         </div>

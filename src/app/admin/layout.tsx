@@ -5,6 +5,7 @@ import { ReactNode } from "react";
 import { getServerSession } from "@/server/session";
 import { USER_ROLES } from "@/server/schema/auth-schema";
 import { unauthorized } from "next/navigation";
+import { Footer } from "./_components/footer";
 
 export default async function AdminLayout({
   children,
@@ -38,9 +39,9 @@ export default async function AdminLayout({
           {/* Main Page Content */}
           <main className="flex-1 min-w-screen overflow-hidden p-6 mt-15 bg-[#EBFEEC]">
             {/* Sidebar trigger at top (optional) */}
-
             {children}
           </main>
+          <Footer />
         </div>
       </div>
     </SidebarProvider>
