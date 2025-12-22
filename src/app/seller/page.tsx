@@ -8,6 +8,7 @@ import { ChartAreaIcons } from "./_components/cards-chart";
 import { FrequentBought } from "./_components/cards-frequentbought";
 import { MonthlyDuesNotification } from "./_components/monthly-dues-notification";
 import { SellerNotificationOverlay } from "./_components/seller-notification-overlay";
+import { SellerNotificationsCard } from "./_components/seller-notification";
 import { Order } from "@/types/orders";
 import { Store } from "lucide-react";
 import { useLanguage } from "@/lib/i18n/context";
@@ -77,19 +78,22 @@ export default function SellerDashboard() {
 
   return (
     <div className="relative min-h-screen min-w-full overflow-hidden space-y-6 px-6">
-      {/* Enhanced Header */}
-      <div className="space-y-2 mb-6">
-        <div className="flex items-center gap-3">
-          <div className="p-3 rounded-xl bg-[#2E7D32]/10">
-            <Store className="h-6 w-6 text-[#2E7D32]" />
-          </div>
-          <div>
-            <h1 className="text-3xl font-bold text-[#2E7D32]">
-              {t("welcome-back")}
-            </h1>
-            <p className="text-muted-foreground mt-1">
-              {t("store-today")}
-            </p>
+      {/* Enhanced Header with Notifications */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+        {/* Welcome Section */}
+        <div className="space-y-2">
+          <div className="flex items-center gap-3">
+            <div className="p-3 rounded-xl bg-[#2E7D32]/10">
+              <Store className="h-6 w-6 text-[#2E7D32]" />
+            </div>
+            <div>
+              <h1 className="text-3xl font-bold text-[#2E7D32]">
+                {t("welcome-back")}
+              </h1>
+              <p className="text-muted-foreground mt-1">
+                {t("store-today")}
+              </p>
+            </div>
           </div>
         </div>
       </div>
@@ -122,7 +126,16 @@ export default function SellerDashboard() {
               fetchStats(range);
             }}
           />
+
+          
         )}
+
+
+      </section>
+
+      <section className="w-full">
+        {/* Notifications Card */}
+        <SellerNotificationsCard />
       </section>
 
       {/* Recent Orders */}

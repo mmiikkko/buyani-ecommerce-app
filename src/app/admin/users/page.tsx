@@ -106,8 +106,9 @@ export default function AdminUsersPage() {
           { value: "suspended", label: "Suspended" },
         ]}
         onFilterChange={(val) => setFilter(val)}
-        onSearchChange={(val) => setSearch(val)}
-      />
+        onSearchChange={(val) => setSearch(val)} onCategoryChange={function (categoryId: string | null): void {
+          throw new Error("Function not implemented.");
+        } }      />
 
       {loading ? (
         <div className="text-center py-12">
