@@ -75,7 +75,7 @@ export function AdminUsersTable({
   // Suspend seller accounts and block seller access
   const handleSuspend = async (userId: string, userName: string) => {
     if (!confirm(`Suspend ${userName}? Their seller access will be revoked and they must re-apply.`)) return;
-    
+
     setActionLoading(userId);
     try {
       const res = await fetch(`/api/users?id=${userId}`, {
@@ -83,7 +83,7 @@ export function AdminUsersTable({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ role: USER_ROLES.SUSPENDED }),
       });
-      
+
       if (res.ok) {
         toast.success(`${userName} has been suspended`);
         onRefresh?.();
@@ -101,7 +101,7 @@ export function AdminUsersTable({
   // Restore user by changing their role back to "customer"
   const handleRestore = async (userId: string, userName: string) => {
     if (!confirm(`Restore ${userName} as a customer?`)) return;
-    
+
     setActionLoading(userId);
     try {
       const res = await fetch(`/api/users?id=${userId}`, {
@@ -109,7 +109,7 @@ export function AdminUsersTable({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ role: USER_ROLES.CUSTOMER }),
       });
-      
+
       if (res.ok) {
         toast.success(`${userName} has been restored`);
         onRefresh?.();
@@ -127,13 +127,13 @@ export function AdminUsersTable({
   // Delete user permanently
   const handleDelete = async (userId: string, userName: string) => {
     if (!confirm(`Are you sure you want to permanently delete ${userName}? This action cannot be undone.`)) return;
-    
+
     setActionLoading(userId);
     try {
       const res = await fetch(`/api/users?id=${userId}`, {
         method: "DELETE",
       });
-      
+
       if (res.ok) {
         toast.success(`${userName} has been deleted`);
         onRefresh?.();
@@ -282,26 +282,26 @@ export function AdminUsersTable({
 
                 <TableBody>
                   {currentRows.map((user, index) => (
-                    <TableRow 
+                    <TableRow
                       key={user.id}
                       className={`hover:bg-gray-50 transition-colors ${index % 2 === 0 ? "bg-white" : "bg-gray-50/50"}`}
                     >
-                      <TableCell className="font-medium text-gray-800 font-mono text-xs py-1.5">
+                      <TableCell className="font-medium text-gray-800 font-mono text-xs py-1.5" title={user.id}>
                         {user.id.slice(0, 8)}...
                       </TableCell>
                       <TableCell className="text-gray-700 font-medium text-xs py-1.5">
                         {user.fullName}
                       </TableCell>
                       <TableCell className="py-1.5">
-                        <Badge 
+                        <Badge
                           className={
-                            user.role === "Admin" 
+                            user.role === "Admin"
                               ? "bg-purple-600 text-white border-0 text-xs py-0"
                               : user.role === "Seller"
-                              ? "bg-blue-600 text-white border-0 text-xs py-0"
-                              : user.role === "Suspended"
-                              ? "bg-red-600 text-white border-0 text-xs py-0"
-                              : "bg-gray-600 text-white border-0 text-xs py-0"
+                                ? "bg-blue-600 text-white border-0 text-xs py-0"
+                                : user.role === "Suspended"
+                                  ? "bg-red-600 text-white border-0 text-xs py-0"
+                                  : "bg-gray-600 text-white border-0 text-xs py-0"
                           }
                         >
                           {user.role === "Admin" && <Shield className="h-2.5 w-2.5 mr-1" />}
@@ -332,13 +332,13 @@ export function AdminUsersTable({
                       </TableCell>
 
                       <TableCell className="py-1.5">
-                        <Badge 
+                        <Badge
                           className={
                             user.status === "active"
                               ? "bg-emerald-100 text-emerald-700 border-emerald-200 text-xs py-0"
                               : user.status === "pending"
-                              ? "bg-amber-100 text-amber-700 border-amber-200 text-xs py-0"
-                              : "bg-red-100 text-red-700 border-red-200 text-xs py-0"
+                                ? "bg-amber-100 text-amber-700 border-amber-200 text-xs py-0"
+                                : "bg-red-100 text-red-700 border-red-200 text-xs py-0"
                           }
                         >
                           {user.status === "active" && <UserCheck className="h-2.5 w-2.5 mr-1" />}
@@ -358,18 +358,18 @@ export function AdminUsersTable({
 
                       <TableCell className="py-1.5">
                         <div className="flex items-center gap-1.5">
-                          <Button 
-                            variant="ghost" 
-                            size="icon" 
+                          <Button
+                            variant="ghost"
+                            size="icon"
                             className="h-7 w-7"
                             title="View Details"
                           >
                             <Eye className="h-3 w-3" />
                           </Button>
-                          
+
                           {/* Show Suspend or Restore button based on status */}
                           {user.role === "Suspended" || user.status === "suspended" ? (
-                            <Button 
+                            <Button
                               size="sm"
                               className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs cursor-pointer h-7 px-2"
                               onClick={() => handleRestore(user.id, user.fullName)}
@@ -380,7 +380,7 @@ export function AdminUsersTable({
                               {actionLoading === user.id ? "..." : "Restore"}
                             </Button>
                           ) : user.role !== "Admin" ? (
-                            <Button 
+                            <Button
                               size="sm"
                               className="bg-amber-600 hover:bg-amber-700 text-white text-xs cursor-pointer h-7 px-2"
                               onClick={() => handleSuspend(user.id, user.fullName)}
@@ -394,7 +394,7 @@ export function AdminUsersTable({
 
                           {/* Delete button - don't show for admin users */}
                           {user.role !== "Admin" && (
-                            <Button 
+                            <Button
                               variant="destructive"
                               size="sm"
                               className="text-xs cursor-pointer h-7 w-7 p-0"

@@ -43,7 +43,7 @@ type CheckoutData = {
     contactNumber: string;
     deliveryNotes: string;
   } | null;
-  paymentMethod: "gcash" | "paymaya" | "cod" | null;
+  paymentMethod: "gcash" | "cod" | null;
 };
 
 interface CheckoutClientProps {
@@ -83,7 +83,7 @@ export function CheckoutClient({ cartItems, userId, user }: CheckoutClientProps)
     }
   };
 
-  const handlePaymentSelect = (method: "gcash" | "paymaya" | "cod") => {
+  const handlePaymentSelect = (method: "gcash" | "cod") => {
     setCheckoutData((prev) => ({ ...prev, paymentMethod: method }));
     setCurrentStep(3);
   };

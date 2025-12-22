@@ -106,7 +106,7 @@ export default function SellerApprovalDetailsPage() {
       }
 
       toast.success("Shop approved successfully!");
-      router.push("/admin/shops");
+      router.push("/admin");
     } catch (error) {
       console.error("Error approving shop:", error);
       toast.error("Failed to approve shop");
@@ -133,7 +133,7 @@ export default function SellerApprovalDetailsPage() {
       }
 
       toast.success("Application rejected");
-      router.push("/admin/shops");
+      router.push("/admin");
     } catch (error) {
       console.error("Error rejecting shop:", error);
       toast.error("Failed to reject application");
@@ -184,9 +184,9 @@ export default function SellerApprovalDetailsPage() {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen gap-4">
         <p className="text-gray-500">Application not found</p>
-        <Button onClick={() => router.push("/admin/shops")}>
+        <Button onClick={() => router.push("/admin")}>
           <ArrowLeft className="h-4 w-4 mr-2" />
-          Back to Shops
+          Back to Home
         </Button>
       </div>
     );
@@ -203,7 +203,7 @@ export default function SellerApprovalDetailsPage() {
       <div className="flex items-center gap-4">
         <Button
           variant="outline"
-          onClick={() => router.push("/admin/shops")}
+          onClick={() => router.push("/admin")}
           className="flex items-center gap-2"
         >
           <ArrowLeft className="h-4 w-4" />
@@ -241,13 +241,12 @@ export default function SellerApprovalDetailsPage() {
               <div>
                 <span className="font-semibold text-sm text-gray-600">Status:</span>
                 <span
-                  className={`ml-2 px-2 py-1 rounded text-sm font-medium ${
-                    data.shop.status === "approved"
+                  className={`ml-2 px-2 py-1 rounded text-sm font-medium ${data.shop.status === "approved"
                       ? "bg-green-100 text-green-700"
                       : data.shop.status === "pending"
-                      ? "bg-yellow-100 text-yellow-700"
-                      : "bg-red-100 text-red-700"
-                  }`}
+                        ? "bg-yellow-100 text-yellow-700"
+                        : "bg-red-100 text-red-700"
+                    }`}
                 >
                   {data.shop.status}
                 </span>
@@ -290,13 +289,12 @@ export default function SellerApprovalDetailsPage() {
                 <div>
                   <span className="font-semibold text-sm text-gray-600">Application Status:</span>
                   <span
-                    className={`ml-2 px-2 py-1 rounded text-sm font-medium ${
-                      data.application.status === "approved"
+                    className={`ml-2 px-2 py-1 rounded text-sm font-medium ${data.application.status === "approved"
                         ? "bg-green-100 text-green-700"
                         : data.application.status === "pending"
-                        ? "bg-yellow-100 text-yellow-700"
-                        : "bg-red-100 text-red-700"
-                    }`}
+                          ? "bg-yellow-100 text-yellow-700"
+                          : "bg-red-100 text-red-700"
+                      }`}
                   >
                     {data.application.status}
                   </span>

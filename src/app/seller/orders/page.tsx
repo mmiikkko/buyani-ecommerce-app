@@ -2,7 +2,7 @@
 
 import { SellerOrdersSearchbar } from "../_components/seller-orders-searchbar";
 import { OrdersTabsTable } from "../_components/seller-orders-table";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import type { Order } from "../../../types/orders";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -63,7 +63,6 @@ export default function Orders() {
     return () => clearInterval(interval);
   }, [fetchOrders]);
 
-  // Handle order status update
   const handleOrderStatusUpdate = async (orderId: string, newStatus: string) => {
     try {
       // Update payment status (which determines order status)
@@ -86,6 +85,39 @@ export default function Orders() {
       toast.error(errorMessage);
     }
   };
+
+  // Calculate order counts by status
+  const orderCounts = useMemo(() => {
+    const counts = {
+      all: orders.length,
+      pending: 0,
+      confirmed: 0,
+      shipped: 0,
+      delivered: 0,
+      cancelled: 0,
+      walkIn: 0,
+    };
+
+    orders.forEach((order) => {
+      const status = order.status?.toLowerCase() || order.payment?.status?.toLowerCase() || "";
+
+      if (order.type === "walk-in") {
+        counts.walkIn++;
+      } else if (status === "pending") {
+        counts.pending++;
+      } else if (status === "confirmed" || status === "accepted") {
+        counts.confirmed++;
+      } else if (status === "shipped") {
+        counts.shipped++;
+      } else if (status === "delivered" || status === "completed" || status === "complete") {
+        counts.delivered++;
+      } else if (status === "cancelled" || status === "rejected") {
+        counts.cancelled++;
+      }
+    });
+
+    return counts;
+  }, [orders]);
 
   if (loading) {
     return (
@@ -157,6 +189,7 @@ export default function Orders() {
         currentSort={sort}
         onSortChange={setSort}
         onSearchChange={setSearch}
+        orderCounts={orderCounts}
       />
       <OrdersTabsTable
         ordersData={orders}

@@ -17,6 +17,15 @@ type SellerOrdersSearchbarProps = {
   currentSort: string;
   onSortChange: (value: string) => void;
   onSearchChange: (value: string) => void;
+  orderCounts?: {
+    all: number;
+    pending: number;
+    confirmed: number;
+    shipped: number;
+    delivered: number;
+    cancelled: number;
+    walkIn: number;
+  };
 };
 
 export function SellerOrdersSearchbar({
@@ -25,6 +34,7 @@ export function SellerOrdersSearchbar({
   currentSort,
   onSortChange,
   onSearchChange,
+  orderCounts,
 }: SellerOrdersSearchbarProps) {
   const { t } = useLanguage();
   return (
@@ -61,37 +71,37 @@ export function SellerOrdersSearchbar({
 
         <DropdownMenuContent side="bottom" align="start" sideOffset={8} className="z-[9999] min-w-[140px]">
           <DropdownMenuItem onClick={() => onFilterChange("all")} className="flex items-center justify-between">
-            <span>{t("all")}</span>
+            <span>{t("all")}{orderCounts && ` (${orderCounts.all})`}</span>
             {currentFilter === "all" && <Check className="h-4 w-4 text-[#2E7D32]" />}
           </DropdownMenuItem>
 
           <DropdownMenuItem onClick={() => onFilterChange("pending")} className="flex items-center justify-between">
-            <span>{t("order-status-pending")}</span>
+            <span>{t("order-status-pending")}{orderCounts && ` (${orderCounts.pending})`}</span>
             {currentFilter === "pending" && <Check className="h-4 w-4 text-[#2E7D32]" />}
           </DropdownMenuItem>
 
           <DropdownMenuItem onClick={() => onFilterChange("confirmed")} className="flex items-center justify-between">
-            <span>{t("accepted")}</span>
+            <span>{t("accepted")}{orderCounts && ` (${orderCounts.confirmed})`}</span>
             {currentFilter === "confirmed" && <Check className="h-4 w-4 text-[#2E7D32]" />}
           </DropdownMenuItem>
 
           <DropdownMenuItem onClick={() => onFilterChange("shipped")} className="flex items-center justify-between">
-            <span>{t("shipped")}</span>
+            <span>{t("shipped")}{orderCounts && ` (${orderCounts.shipped})`}</span>
             {currentFilter === "shipped" && <Check className="h-4 w-4 text-[#2E7D32]" />}
           </DropdownMenuItem>
 
           <DropdownMenuItem onClick={() => onFilterChange("delivered")} className="flex items-center justify-between">
-            <span>{t("delivered")}</span>
+            <span>{t("delivered")}{orderCounts && ` (${orderCounts.delivered})`}</span>
             {currentFilter === "delivered" && <Check className="h-4 w-4 text-[#2E7D32]" />}
           </DropdownMenuItem>
 
           <DropdownMenuItem onClick={() => onFilterChange("cancelled")} className="flex items-center justify-between">
-            <span>{t("cancelled")}</span>
+            <span>{t("cancelled")}{orderCounts && ` (${orderCounts.cancelled})`}</span>
             {currentFilter === "cancelled" && <Check className="h-4 w-4 text-[#2E7D32]" />}
           </DropdownMenuItem>
 
           <DropdownMenuItem onClick={() => onFilterChange("walk-in")} className="flex items-center justify-between">
-            <span>{t("walk-in")}</span>
+            <span>{t("walk-in")}{orderCounts && ` (${orderCounts.walkIn})`}</span>
             {currentFilter === "walk-in" && <Check className="h-4 w-4 text-[#2E7D32]" />}
           </DropdownMenuItem>
         </DropdownMenuContent>

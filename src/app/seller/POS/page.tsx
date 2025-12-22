@@ -1,6 +1,6 @@
 "use client";
-import { useState } from "react";
-import { CardsPosProd } from "../_components/cards-pos-prod";
+import { useState, useRef } from "react";
+import { CardsPosProd, type CardsPosProdRef } from "../_components/cards-pos-prod";
 import { CardsPosTransac } from "../_components/cards-pos-transac";
 import { useLanguage } from "@/lib/i18n/context";
 
@@ -23,6 +23,7 @@ type POSProduct = {
 export default function POS() {
   const { t } = useLanguage();
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
+  const productsRef = useRef<CardsPosProdRef>(null);
 
   const handleAddToCart = (product: POSProduct) => {
     setCartItems((prev) => {
@@ -54,6 +55,11 @@ export default function POS() {
     });
   };
 
+  const handleSaleComplete = () => {
+    // Refresh products to show updated stock
+    productsRef.current?.refreshProducts();
+  };
+
   return (
     <section className="relative min-h-screen min-w-[80%] max-w-[100%] overflow-hidden space-y-5 mx-3">
       <div className="flex flex-row justify-between">
@@ -64,9 +70,13 @@ export default function POS() {
       </div>
       <div className="flex flex-row gap-4">
         <div className="flex-1">
-          <CardsPosProd onAddToCart={handleAddToCart} />
+          <CardsPosProd ref={productsRef} onAddToCart={handleAddToCart} />
         </div>
-        <CardsPosTransac cartItems={cartItems} onUpdateCart={setCartItems} />
+        <CardsPosTransac
+          cartItems={cartItems}
+          onUpdateCart={setCartItems}
+          onSaleComplete={handleSaleComplete}
+        />
       </div>
     </section>
   );
