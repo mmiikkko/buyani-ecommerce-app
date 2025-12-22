@@ -55,7 +55,7 @@ export default function POS() {
     });
   };
 
-  const handleSaleComplete = () => {
+  const handleSaleComplete = async () => {
     // Refresh products to show updated stock
     productsRef.current?.refreshProducts();
   };

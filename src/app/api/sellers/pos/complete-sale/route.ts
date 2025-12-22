@@ -90,20 +90,52 @@ export async function POST(req: NextRequest) {
       .where(inArray(productInventory.product_variation_id, variationIds));
 
     for (const item of items) {
-      const variation = variations.find(v => v.productId === item.productId);
-      if (!variation) {
+      // Find all variations for this product
+      const productVariations = variations.filter(v => v.productId === item.productId);
+
+      if (productVariations.length === 0) {
         return NextResponse.json({ error: `No variation found for product ${item.productId}` }, { status: 400 });
       }
-      const inv = inventory.find((inv) => inv.product_variation_id === variation.id);
-      if (!inv || (inv.quantityInStock || 0) < item.quantity) {
+
+      // POS Logic: Find a variation that has enough stock. 
+      // Prioritize "Standard" if it exists and has stock, otherwise pick any with stock.
+      let targetVariation = null;
+      let availableStock = 0;
+
+      // 1. Try to find a variation with enough stock
+      for (const v of productVariations) {
+        const inv = inventory.find(i => i.product_variation_id === v.id);
+        const qty = inv?.quantityInStock || 0;
+
+        if (qty >= item.quantity) {
+          targetVariation = v;
+          availableStock = qty;
+          break;
+        }
+      }
+
+      // If no single variation has enough stock, check if TOTAL stock across variations is enough?
+      // For now, let's strictly require one variation to satisfy the line item to avoid splitting complexity.
+      // But we should report the error correctly.
+
+      if (!targetVariation) {
+        // Calculate total available stock for error message
+        const totalStock = productVariations.reduce((sum, v) => {
+          const inv = inventory.find(i => i.product_variation_id === v.id);
+          return sum + (inv?.quantityInStock || 0);
+        }, 0);
+
         const product = validProducts.find((p) => p.id === item.productId);
         return NextResponse.json(
           {
-            error: `Insufficient stock for ${product?.productName || "product"}`,
+            error: `Insufficient stock for ${product?.productName || "product"} (Requested: ${item.quantity}, Available: ${totalStock})`,
           },
           { status: 400 }
         );
       }
+
+      // Attach the selected variation ID to the item for later processing
+      (item as any)._selectedVariationId = targetVariation.id;
     }
 
     // Calculate total
@@ -125,19 +157,21 @@ export async function POST(req: NextRequest) {
 
     // Create order items
     for (const item of items) {
-      const variation = variations.find(v => v.productId === item.productId);
-      if (!variation) continue;
+      // Use the variation we selected during validation
+      const selectedVariationId = (item as any)._selectedVariationId;
+
+      if (!selectedVariationId) continue; // Should not happen given validation above
 
       await db.insert(orderItems).values({
         id: uuidv4(),
         orderId,
-        product_variation_id: variation.id,
+        product_variation_id: selectedVariationId,
         quantity: item.quantity,
         subtotal: String((item.price || 0) * item.quantity),
       });
 
       // Update inventory - decrease stock
-      const inv = inventory.find((inv) => inv.product_variation_id === variation.id);
+      const inv = inventory.find((inv) => inv.product_variation_id === selectedVariationId);
       if (inv) {
         await db
           .update(productInventory)
@@ -145,7 +179,7 @@ export async function POST(req: NextRequest) {
             quantityInStock: (inv.quantityInStock || 0) - item.quantity,
             itemsSold: (inv.itemsSold || 0) + item.quantity,
           })
-          .where(eq(productInventory.product_variation_id, variation.id));
+          .where(eq(productInventory.product_variation_id, selectedVariationId));
       }
     }
 

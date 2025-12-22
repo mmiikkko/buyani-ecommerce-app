@@ -23,14 +23,19 @@ export async function GET(req: NextRequest) {
     const totalTenants = Number(totalSellers[0]?.count || 0);
 
     // Get billing statistics by status
+    // We need to allow for "Pending Verification" to count items that might have a pending payment,
+    // even if the billing status itself hasn't been updated perfectly (though it should be).
+    // Let's rely on the billing status first.
+
+    // Also, the user mentioned "Pending" in the table (which is "unpaid" usually, or "pending" initial state).
+
     const statusStats = await db
       .select({
         status: tenantBilling.status,
-        count: sql<number>`COUNT(*)`,
-        totalAmount: sql<number>`COALESCE(SUM(${tenantBilling.amountDue}), 0)`,
+        dueDate: tenantBilling.dueDate,
+        amount: tenantBilling.amountDue,
       })
-      .from(tenantBilling)
-      .groupBy(tenantBilling.status);
+      .from(tenantBilling);
 
     let paid = 0;
     let unpaid = 0;
@@ -39,20 +44,37 @@ export async function GET(req: NextRequest) {
     let totalPaid = 0;
     let totalUnpaid = 0;
 
-    statusStats.forEach((stat) => {
-      const count = Number(stat.count || 0);
-      const amount = Number(stat.totalAmount || 0);
+    const now = new Date();
 
-      if (stat.status === "paid") {
-        paid = count;
-        totalPaid = amount;
-      } else if (stat.status === "unpaid") {
-        unpaid = count;
-        totalUnpaid = amount;
-      } else if (stat.status === "pending_verification") {
-        pendingVerification = count;
-      } else if (stat.status === "rejected") {
-        rejected = count;
+    statusStats.forEach((record) => {
+      const amount = Number(record.amount || 0);
+      const status = record.status?.toLowerCase()?.trim();
+      const dueDate = new Date(record.dueDate);
+      const isOverdue = dueDate < now;
+
+      if (status === "paid") {
+        paid++;
+        totalPaid += amount;
+      } else if (status === "rejected") {
+        rejected++;
+      } else {
+        // Handle Unpaid, Pending, Pending Verification
+        if (status === "pending_verification") {
+          // Always pending verification if proof uploaded
+          pendingVerification++;
+        } else if (status === "pending") {
+          // "Pending" (Future/Next Month) -> User wants this in Pending Verification (or just Pending bucket)
+          pendingVerification++;
+        } else if (status === "unpaid") {
+          if (isOverdue) {
+            // Unpaid AND Overdue -> Unpaid Stats
+            unpaid++;
+            totalUnpaid += amount;
+          } else {
+            // Unpaid but NOT Overdue -> Treat as active/pending
+            pendingVerification++;
+          }
+        }
       }
     });
 

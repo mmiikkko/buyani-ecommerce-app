@@ -23,7 +23,7 @@ export async function POST(req: NextRequest) {
         }
 
         const results = [];
-        const monthlyRent = 500; // Default monthly rent amount
+        const monthlyRent = 2500; // Default monthly rent amount
 
         for (const shopData of approvedShops) {
             // Check if billing records already exist
